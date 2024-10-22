@@ -1,0 +1,44 @@
+# *****************************************************************
+# Problem size and geometry
+# *****************************************************************
+geometry.prob_lo     =  0.0  0.0  0.0 
+#geometry.prob_hi     =  1.199169832e+11 1.0  1.0
+geometry.prob_hi     =  4.0 1.0  1.0
+geometry.is_periodic =  1    1    1
+
+# *****************************************************************
+# VERBOSITY
+# *****************************************************************
+amr.v              = 0       # verbosity in Amr
+
+# *****************************************************************
+# Resolution and refinement
+# *****************************************************************
+amr.n_cell          = 256 4 4
+amr.max_level       = 0     # number of levels = max_level + 1
+amr.blocking_factor = 4     # grid size must be divisible by this
+amr.max_grid_size   = 64
+
+do_reflux = 0
+do_subcycle = 0
+suppress_output = 1
+
+radiation.print_iteration_counts = 0
+
+integrator.jacobian = 1
+integrator.burner_verbose = 0					# Should we print out diagnostic output after the solve?
+integrator.ode_max_steps = 1000
+integrator.use_number_densities = 1 	# treat Erad as species number density. If set to 0, it will be clipped to [0, 1]
+
+# # These are irrelavent since we are doing a single-step BE
+# integrator.rtol_spec = 1e-100 					# Tolerances for the solver (relative and absolute), for the species and energy equations.
+# integrator.rtol_enuc = 1e-100
+# integrator.atol_spec = 1e-100
+# integrator.atol_enuc = 1e-100
+
+integrator.max_iter = 1000
+integrator.tol = 1e-11
+
+#integrator.retry_swap_jacobian = 0		# do we swap the Jacobian (from analytic to numerical or vice versa) on a retry?
+
+eos.eos_assume_neutral = 1

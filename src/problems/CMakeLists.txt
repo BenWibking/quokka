@@ -37,6 +37,7 @@ add_subdirectory(RadDust)
 add_subdirectory(RadDustMG)
 add_subdirectory(RadMarshakDust)
 add_subdirectory(RadMarshakDustPE)
+add_subdirectory(RadThermalCooling)
 
 add_subdirectory(RadhydroShell)
 add_subdirectory(RadhydroShock)
