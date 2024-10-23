@@ -102,27 +102,27 @@ template <> struct ISM_Traits<PulseProblem> {
 // 	state.e = C_V * state.rho * state.T;
 // }
 
-// // template <typename problem_t>
-// AMREX_GPU_HOST_DEVICE AMREX_INLINE
-// void actual_rhs(burn_t& state, Array1D<Real, 1, neqs>& ydot)
-// {
-// 	Array1D<Real, 0, NumSpec-1> X;
-// 	for (int i = 0; i < NumSpec; ++i) {
-// 		X(i) = state.xn[i];
-// 	}
+// template <typename problem_t>
+AMREX_GPU_HOST_DEVICE AMREX_INLINE
+void actual_rhs(burn_t& state, Array1D<Real, 1, neqs>& ydot)
+{
+	Array1D<Real, 0, NumSpec-1> X;
+	for (int i = 0; i < NumSpec; ++i) {
+		X(i) = state.xn[i];
+	}
 
-// 	Real const rho = state.rho;
-// 	Real const T = state.T;
-// 	// Real const T = state.e / (rho * C_V);
+	Real const rho = state.rho;
+	Real const T = state.T;
+	// Real const T = state.e / (rho * C_V);
 
-// 	const Real fourPiBoverc = a_rad * T * T * T * T;
+	const Real fourPiBoverc = a_rad * T * T * T * T;
 
-// 	ydot(1) = chat * rho * kappa0 * (fourPiBoverc - X(0));
-// 	const Real edot = - c * rho * kappa0 * (fourPiBoverc - X(0));
+	ydot(1) = chat * rho * kappa0 * (fourPiBoverc - X(0));
+	const Real edot = - c * rho * kappa0 * (fourPiBoverc - X(0));
 
-// 	// Append the energy equation (this is erg/g/s)
-// 	ydot(net_ienuc) = edot;
-// }
+	// Append the energy equation (this is erg/g/s)
+	ydot(net_ienuc) = edot;
+}
 
 
 // template<class MatrixType>

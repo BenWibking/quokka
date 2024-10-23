@@ -142,4 +142,24 @@ set (QuokkaSourcesNoEOS "${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 
 set (QuokkaObjSources "${QuokkaSourcesNoEOS}" "${gamma_law_sources}")
 
+# Microphysics stuff for matter-radiation coupling
+set(microphysics_dir "${PROJECT_SOURCE_DIR}/extern/Microphysics")
+include_directories("${microphysics_dir}/integration")
+include_directories("${microphysics_dir}/EOS")
+include_directories("${microphysics_dir}/interfaces")
+include_directories("${microphysics_dir}/networks")
+#include_directories("${microphysics_dir}/integration/VODE")
+include_directories("${microphysics_dir}/integration/BackwardEuler")
+include_directories("${microphysics_dir}/integration/utils")
+
+# set(microphysics_dir "../../../extern/Microphysics")
+# set(networkparamfile "${microphysics_dir}/networks/_parameters")
+# set(VODEparamfile "${microphysics_dir}/integration/VODE/_parameters")
+# set(integrationparamfile "${microphysics_dir}/integration/BackwardEuler/_parameters")
+# set(unittestparamfile "${microphysics_dir}/unit_test/_parameters")
+# set(paramfile "${microphysics_dir}/unit_test/burn_cell_primordial_chem/_parameters")
+# set(EOSparamfile "${microphysics_dir}/EOS/primordial_chem/_parameters")
+# set(networkpcparamfile "${microphysics_dir}/networks/primordial_chem/_parameters")
+
+
 add_subdirectory(problems)

@@ -28,6 +28,16 @@
 #include "physics_info.hpp"
 #include "radiation/planck_integral.hpp"
 #include "util/valarray.hpp"
+// #include "variables.H"
+
+// Microphysics
+#include <eos.H>
+#include <burn_type.H>
+#include <burner.H>
+// #include <network.H>
+
+#include <network.H>
+#include <extern_parameters.H>
 
 using Real = amrex::Real;
 
