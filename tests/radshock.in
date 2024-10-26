@@ -13,7 +13,7 @@ amr.v              = 0       # verbosity in Amr
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 512 4 4
+amr.n_cell          = 128 4 4
 amr.max_level       = 0     # number of levels = max_level + 1
 amr.blocking_factor = 4     # grid size must be divisible by this
 
