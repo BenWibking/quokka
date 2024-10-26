@@ -193,9 +193,14 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	static constexpr amrex::Real c_light_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
-			return C::c_light;
+			return c_light_cgs_;
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
 			return RadSystem_Traits<problem_t>::c_light;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			// c / c_bar = u_l / u_t
+			return c_light_cgs_ / (Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_time);
+		} else {
+			static_assert(false, "Invalid unit system");
 		}
 	}();
 	static constexpr double c_hat_ = RadSystem_Traits<problem_t>::c_hat;
@@ -205,6 +210,11 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			return C::a_rad;
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
 			return RadSystem_Traits<problem_t>::radiation_constant;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			// a_rad / a_rad_bar = 1 / u_l * u_m / u_t^2 / u_T^4
+			return C::a_rad / (1.0 / Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / (Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature));
+		} else {
+			static_assert(false, "Invalid unit system");
 		}
 	}();
 
