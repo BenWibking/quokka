@@ -76,7 +76,7 @@ template <typename problem_t> class EOS
 			return Physics_Traits<problem_t>::boltzmann_constant;
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			// k_B / k_B_bar = u_l^2 / u_m / u_t^2 * u_T
-			return Physics_Traits<problem_t>::boltzmann_constant / (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) * Physics_Traits<problem_t>::unit_temperature);
+			return C::k_B / (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) * Physics_Traits<problem_t>::unit_temperature);
 		} else {
 			static_assert(false, "Invalid unit system");
 		}
