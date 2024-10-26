@@ -67,8 +67,15 @@ template <typename problem_t> class EOS
 
       private:
 	static constexpr amrex::Real gamma_ = EOS_Traits<problem_t>::gamma;
-	static constexpr amrex::Real boltzmann_constant_ = EOS_Traits<problem_t>::boltzmann_constant;
 	static constexpr amrex::Real mean_molecular_weight_ = EOS_Traits<problem_t>::mean_molecular_weight;
+
+	static constexpr amrex::Real boltzmann_constant_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::k_B;
+		} else {
+			return Physics_Traits<problem_t>::boltzmann_constant;
+		}
+	}();
 };
 
 template <typename problem_t>

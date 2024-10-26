@@ -2,7 +2,15 @@
 #define PHYSICS_INFO_HPP_
 
 #include "physics_numVars.hpp"
+#include "fundamental_constants.H"
 #include <AMReX.H>
+
+// enum for unit system
+enum class UnitSystem {
+	CGS = 0,
+	CONSTANTS = 1,
+	CUSTOM = 2
+};
 
 // this struct is specialized by the user application code.
 template <typename problem_t> struct Physics_Traits {
@@ -14,6 +22,12 @@ template <typename problem_t> struct Physics_Traits {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
+	static constexpr double boltzmann_constant = C::k_B; // Hydro, EOS
+	static constexpr double gravitational_constant = C::Gconst; // gravity
+	static constexpr double c_light = C::c_light; // Radiation
+	static constexpr double c_hat = C::c_light; // Radiation
+	static constexpr double radiation_constant = C::a_rad; // Radiation
 };
 
 // this struct stores the indices at which quantities start

@@ -64,7 +64,6 @@ template <> struct RadSystem_Traits<ShockProblem> {
 
 template <> struct quokka::EOS_Traits<ShockProblem> {
 	static constexpr double mean_molecular_weight = C::m_p + C::m_e;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = gamma_gas;
 };
 
@@ -77,6 +76,7 @@ template <> struct Physics_Traits<ShockProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<ShockProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real
