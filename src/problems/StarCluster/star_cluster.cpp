@@ -54,6 +54,8 @@ template <> struct Physics_Traits<StarCluster> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr amrex::Real gravitational_constant = 1.0;
 };
 
 template <> struct SimulationData<StarCluster> {

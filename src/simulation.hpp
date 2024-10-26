@@ -389,7 +389,13 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	amrex::Vector<amrex::Long> cellUpdatesEachLevel_;
 
 	// gravity
-	amrex::Real Gconst_ = C::Gconst; // gravitational constant G
+	static constexpr amrex::Real Gconst_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::Gconst; // gravitational constant G, CGS units
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
+			return Physics_Traits<problem_t>::gravitational_constant; // gravitational constant G, user defined
+		}
+	}();
 
 	// tracer particles
 #ifdef AMREX_PARTICLES
@@ -626,12 +632,6 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	if (nargs == 3) {
 		maxWalltime_ = 3600 * hours + 60 * minutes + seconds;
 		amrex::Print() << fmt::format("Setting walltime limit to {} hours, {} minutes, {} seconds.\n", hours, minutes, seconds);
-	}
-
-	// set gravity runtime parameters
-	{
-		const amrex::ParmParse hpp("gravity");
-		hpp.query("Gconst", Gconst_);
 	}
 }
 
