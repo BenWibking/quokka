@@ -55,9 +55,7 @@ constexpr double shock_position = 0.01305; // 0.0132; // cm (shock position drif
 constexpr double Lx = 0.01575; // cm
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_light = c;
 	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };

@@ -22,6 +22,7 @@
 #include "AMReX_REAL.H"
 
 // internal headers
+#include "fundamental_constants.H"
 #include "hydro/EOS.hpp"
 #include "hyperbolic_system.hpp"
 #include "math/math_impl.hpp"
@@ -189,9 +190,23 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	// C++ standard does not allow constexpr to be uninitialized, even in a
 	// templated class!
-	static constexpr double c_light_ = RadSystem_Traits<problem_t>::c_light;
+
+	static constexpr amrex::Real c_light_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::c_light;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
+			return RadSystem_Traits<problem_t>::c_light;
+		}
+	}();
 	static constexpr double c_hat_ = RadSystem_Traits<problem_t>::c_hat;
-	static constexpr double radiation_constant_ = RadSystem_Traits<problem_t>::radiation_constant;
+
+	static constexpr double radiation_constant_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::a_rad;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
+			return RadSystem_Traits<problem_t>::radiation_constant;
+		}
+	}();
 
 	static constexpr int beta_order_ = RadSystem_Traits<problem_t>::beta_order;
 
