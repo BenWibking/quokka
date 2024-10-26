@@ -74,7 +74,12 @@ template <> struct Physics_Traits<ShockProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
-	static constexpr UnitSystem unit_system = UnitSystem::CGS;
+	// A custom unit system is used here to replicate the CGS units, for testing units conversion
+	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
+	static constexpr double unit_length = 1.0; // cm
+	static constexpr double unit_mass = 1.0; // g
+	static constexpr double unit_time = 1.0; // s
+	static constexpr double unit_temperature = 1.0; // K
 };
 
 template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<ShockProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real

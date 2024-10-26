@@ -44,7 +44,6 @@ template <> struct SimulationData<CoolingProblem> {
 
 template <> struct quokka::EOS_Traits<CoolingProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -57,15 +56,26 @@ template <> struct Physics_Traits<CoolingProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	// A custom unit system is used here to replicate the dimentionless units (c = k_B = a_rad = G = 1), for testing units conversion
+	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
+	static constexpr double unit_length = 1.733039549e-33;
+	static constexpr double unit_mass = 2.333695323e-05;
+	static constexpr double unit_time = 5.780797690e-44;
+	static constexpr double unit_temperature = 1.519155670e+32;
+	// Equivalently, set
+	// static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	// static constexpr double boltzmann_constant = k_B;
+	// static constexpr double gravitational_constant = 1.0;
 };
 
 template <> struct RadSystem_Traits<CoolingProblem> {
-	static constexpr double c_light = c;
 	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = nu_unit;
+	// Equivalently, set
+	// static constexpr double c_light = c;
+	// static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct ISM_Traits<CoolingProblem> {

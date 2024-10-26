@@ -252,7 +252,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 		      "PPL_opacity_full_spectrum requires at least 3 photon groups.");
 
 	static constexpr double mean_molecular_mass_ = quokka::EOS_Traits<problem_t>::mean_molecular_weight;
-	static constexpr double boltzmann_constant_ = quokka::EOS_Traits<problem_t>::boltzmann_constant;
+	static constexpr double boltzmann_constant_ = quokka::EOS_Traits<problem_t>::boltzmann_constant_;
 	static constexpr double gamma_ = quokka::EOS_Traits<problem_t>::gamma;
 
 	// static functions
