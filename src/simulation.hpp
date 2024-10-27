@@ -463,23 +463,6 @@ template <typename problem_t> auto AMRSimulation<problem_t>::getNewMF_fc() const
 	return state_new_fc_;
 }
 
-// initialize metadata
-template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulationMetadata()
-{
-	if constexpr (Physics_Traits<problem_t>::unit_system != UnitSystem::CONSTANTS) {
-		simulationMetadata_["unit_length"] = unit_length;
-		simulationMetadata_["unit_mass"] = unit_mass;
-		simulationMetadata_["unit_time"] = unit_time;
-		simulationMetadata_["unit_temperature"] = unit_temperature;
-	} else {
-		// if unit system is CONSTANTS, the units are not well defined unless all four constants, G, k_B, c, and a_rad, are defined. However, in a hydro simulation, only k_B is defined. In a radiation-hydrodynamics simulation, only k_B, c, and a_rad are defined. Besides, CONSTANTS is only used for testing purposes, so we don't care about the units in that case.
-		simulationMetadata_["unit_length"] = "undefined";
-		simulationMetadata_["unit_mass"] = "undefined";
-		simulationMetadata_["unit_time"] = "undefined";
-		simulationMetadata_["unit_temperature"] = "undefined";
-	}
-}
-
 template <typename problem_t> void AMRSimulation<problem_t>::initialize()
 {
 	BL_PROFILE("AMRSimulation::initialize()");

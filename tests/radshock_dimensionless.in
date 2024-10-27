@@ -20,5 +20,6 @@ amr.max_grid_size_x = 256
 
 do_reflux = 0
 do_subcycle = 0
+checkpoint_interval = 10000000
 
 radiation.print_iteration_counts = 1
