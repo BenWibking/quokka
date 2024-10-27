@@ -25,4 +25,4 @@ do_reflux = 0
 do_subcycle = 0
 suppress_output = 1
 
-checkpoint_interval = 10000000
+plotfile_interval = 10000000
