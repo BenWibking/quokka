@@ -42,7 +42,6 @@ constexpr double a0 = 4.0295519855200705e7; // cm s^-1
 
 template <> struct quokka::EOS_Traits<TubeProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = gamma_gas;
 };
 
@@ -56,12 +55,11 @@ template <> struct Physics_Traits<TubeProblem> {
 	static constexpr bool is_mhd_enabled = false;
 	// number of radiation groups
 	static constexpr int nGroups = 2;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<TubeProblem> {
-	static constexpr double c_light = c_light_cgs_;
 	static constexpr double c_hat = 10.0 * a0;
-	static constexpr double radiation_constant = a_rad;
 	static constexpr double Erad_floor = 0.;
 	static constexpr double energy_unit = C::k_B;
 	static constexpr amrex::GpuArray<double, Physics_Traits<TubeProblem>::nGroups + 1> radBoundaries{0.01 * T0, 3.3 * T0, 1000. * T0}; // Kelvin

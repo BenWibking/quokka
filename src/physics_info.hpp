@@ -6,11 +6,7 @@
 #include <AMReX.H>
 
 // enum for unit system
-enum class UnitSystem {
-	CGS = 0,
-	CONSTANTS = 1,
-	CUSTOM = 2
-};
+enum class UnitSystem { CGS, CONSTANTS, CUSTOM };
 
 // this struct is specialized by the user application code.
 template <typename problem_t> struct Physics_Traits {

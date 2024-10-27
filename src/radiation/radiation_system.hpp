@@ -252,8 +252,20 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 		      "PPL_opacity_full_spectrum requires at least 3 photon groups.");
 
 	static constexpr double mean_molecular_mass_ = quokka::EOS_Traits<problem_t>::mean_molecular_weight;
-	static constexpr double boltzmann_constant_ = quokka::EOS_Traits<problem_t>::boltzmann_constant_;
 	static constexpr double gamma_ = quokka::EOS_Traits<problem_t>::gamma;
+
+	static constexpr amrex::Real boltzmann_constant_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::k_B;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {	
+			return Physics_Traits<problem_t>::boltzmann_constant;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			// k_B / k_B_bar = u_l^2 * u_m / u_t^2 / u_T
+			return C::k_B / (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
+		} else {
+			static_assert(false, "Invalid unit system");
+		}
+	}();
 
 	// static functions
 

@@ -56,7 +56,7 @@ template <> struct Physics_Traits<CoolingProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
-	// A custom unit system is used here to replicate the dimentionless units (c = k_B = a_rad = G = 1), for testing units conversion
+	// A custom unit system is used here to replicate a dimentionless unit system (c = k_B = a_rad = G = 1), for testing units conversion
 	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
 	static constexpr double unit_length = 1.733039549e-33;
 	static constexpr double unit_mass = 2.333695323e-05;
