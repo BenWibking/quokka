@@ -5,7 +5,7 @@
 #include "fundamental_constants.H"
 #include <AMReX.H>
 
-// enum for unit system
+// enum for unit system, one of CGS, CONSTANTS, CUSTOM
 enum class UnitSystem { CGS, CONSTANTS, CUSTOM };
 
 // this struct is specialized by the user application code.
