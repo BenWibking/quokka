@@ -212,7 +212,10 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			return RadSystem_Traits<problem_t>::radiation_constant;
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			// a_rad / a_rad_bar = 1 / u_l * u_m / u_t^2 / u_T^4
-			return C::a_rad / (1.0 / Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / (Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature));
+			return C::a_rad / (1.0 / Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
+					   (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) /
+					   (Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature *
+					    Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature));
 		} else {
 			static_assert(false, "Invalid unit system");
 		}
@@ -257,11 +260,13 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 	static constexpr amrex::Real boltzmann_constant_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
 			return C::k_B;
-		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {	
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
 			return Physics_Traits<problem_t>::boltzmann_constant;
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			// k_B / k_B_bar = u_l^2 * u_m / u_t^2 / u_T
-			return C::k_B / (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
+			return C::k_B /
+			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
+				(Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
 		} else {
 			static_assert(false, "Invalid unit system");
 		}

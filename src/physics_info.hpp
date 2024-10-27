@@ -1,8 +1,8 @@
 #ifndef PHYSICS_INFO_HPP_ // NOLINT
 #define PHYSICS_INFO_HPP_
 
-#include "physics_numVars.hpp"
 #include "fundamental_constants.H"
+#include "physics_numVars.hpp"
 #include <AMReX.H>
 
 // enum for unit system, one of CGS, CONSTANTS, CUSTOM
@@ -19,7 +19,7 @@ template <typename problem_t> struct Physics_Traits {
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CGS;
-	static constexpr double boltzmann_constant = C::k_B; // Hydro, EOS
+	static constexpr double boltzmann_constant = C::k_B;	    // Hydro, EOS
 	static constexpr double gravitational_constant = C::Gconst; // gravity
 	static constexpr double unit_length = 1.0;
 	static constexpr double unit_mass = 1.0;

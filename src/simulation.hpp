@@ -399,7 +399,9 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 			return Physics_Traits<problem_t>::gravitational_constant; // gravitational constant G, user defined
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			// G / G_bar = u_l^3 / u_m / u_t^2
-			return C::Gconst / (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time));
+			return C::Gconst /
+			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length /
+				Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time));
 		} else {
 			static_assert(false, "Invalid unit system");
 		}

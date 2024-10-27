@@ -325,8 +325,9 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentN
 template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulationMetadata()
 {
 	if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
-		// if unit system is CONSTANTS, the units are not well defined unless all four constants, G, k_B, c, and a_rad, are defined. However, in a hydro simulation, only k_B is defined. In a radiation-hydrodynamics simulation, only k_B, c, and a_rad are defined. Besides, CONSTANTS is only used for testing purposes, so we don't care about the units in that case.
-		// units
+		// if unit system is CONSTANTS, the units are not well defined unless all four constants, G, k_B, c, and a_rad, are defined. However, in a hydro
+		// simulation, only k_B is defined. In a radiation-hydrodynamics simulation, only k_B, c, and a_rad are defined. Besides, CONSTANTS is only used
+		// for testing purposes, so we don't care about the units in that case. units
 		simulationMetadata_["unit_length"] = "undefined";
 		simulationMetadata_["unit_mass"] = "undefined";
 		simulationMetadata_["unit_time"] = "undefined";
@@ -353,7 +354,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 			k_B = C::k_B;
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			// Have to do a conversion because EOS class is not accessible here
-			k_B = C::k_B / (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
+			k_B = C::k_B /
+			      (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
+			       (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
 		}
 		simulationMetadata_["k_B"] = k_B;
 		simulationMetadata_["G"] = Gconst_;

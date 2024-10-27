@@ -76,9 +76,9 @@ template <> struct Physics_Traits<ShockProblem> {
 	static constexpr int nGroups = 1;
 	// A custom unit system is used here to replicate the CGS units, for testing units conversion
 	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
-	static constexpr double unit_length = 1.0; // cm
-	static constexpr double unit_mass = 1.0; // g
-	static constexpr double unit_time = 1.0; // s
+	static constexpr double unit_length = 1.0;	// cm
+	static constexpr double unit_mass = 1.0;	// g
+	static constexpr double unit_time = 1.0;	// s
 	static constexpr double unit_temperature = 1.0; // K
 };
 
