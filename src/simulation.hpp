@@ -409,29 +409,37 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	static constexpr amrex::Real unit_length = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			return Physics_Traits<problem_t>::unit_length;
-		} else {
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
 			return 1.0;
+		} else {
+			return NAN;
 		}
 	}();
 	static constexpr amrex::Real unit_mass = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			return Physics_Traits<problem_t>::unit_mass;
-		} else {
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
 			return 1.0;
+		} else {
+			return NAN;
 		}
 	}();
 	static constexpr amrex::Real unit_time = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			return Physics_Traits<problem_t>::unit_time;
-		} else {
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
 			return 1.0;
+		} else {
+			return NAN;
 		}
 	}();
 	static constexpr amrex::Real unit_temperature = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			return Physics_Traits<problem_t>::unit_temperature;
-		} else {
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
 			return 1.0;
+		} else {
+			return NAN;
 		}
 	}();
 
