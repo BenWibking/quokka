@@ -25,8 +25,10 @@ template <typename problem_t> struct Physics_Traits {
 	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 	static constexpr double boltzmann_constant = C::k_B; // Hydro, EOS
 	static constexpr double gravitational_constant = C::Gconst; // gravity
-	// static constexpr double c_light = C::c_light; // Radiation
-	// static constexpr double radiation_constant = C::a_rad; // Radiation
+	static constexpr double unit_length = 1.0;
+	static constexpr double unit_mass = 1.0;
+	static constexpr double unit_time = 1.0;
+	static constexpr double unit_temperature = 1.0;
 };
 
 // this struct stores the indices at which quantities start
