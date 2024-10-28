@@ -30,14 +30,11 @@ constexpr double initial_time = 1.0e-8;
 
 template <> struct quokka::EOS_Traits<PulseProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
-	static constexpr double boltzmann_constant = (2. / 3.);
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
 };
@@ -51,6 +48,11 @@ template <> struct Physics_Traits<PulseProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = (2. / 3.);
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = a_rad;
 };
 
 AMREX_GPU_HOST_DEVICE

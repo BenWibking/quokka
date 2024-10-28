@@ -40,14 +40,11 @@ template <> struct SimulationData<DustProblem> {
 
 template <> struct quokka::EOS_Traits<DustProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<DustProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
@@ -67,6 +64,11 @@ template <> struct Physics_Traits<DustProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = k_B;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<DustProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real

@@ -25,7 +25,6 @@ constexpr bool PE_on = 1;
 constexpr double gas_dust_coupling_threshold_ = 1.0e-4;
 
 constexpr double c = 1.0;    // speed of light
-constexpr double chat = 1.0; // reduced speed of light
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight
@@ -41,7 +40,6 @@ static constexpr OpacityModel opacity_model_ = OpacityModel::piecewise_constant_
 
 template <> struct quokka::EOS_Traits<MarshakProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -54,12 +52,15 @@ template <> struct Physics_Traits<MarshakProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_group_; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = 1.0;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 1;
 	static constexpr double energy_unit = 1.0;

@@ -19,8 +19,7 @@ struct CoolingProblemMG {
 constexpr int n_groups_ = 4;
 constexpr amrex::GpuArray<double, 5> rad_boundaries_ = {1.00000000e-03, 1.77827941e-02, 3.16227766e-01, 5.62341325e+00, 1.00000000e+02};
 
-constexpr double c = 1.0;
-constexpr double chat = c;
+constexpr double chat_over_c = 1.0;
 constexpr double v0 = 0.0;
 constexpr double kappa0 = 0.0;
 
@@ -29,7 +28,6 @@ constexpr double rho0 = 1.0; // matter density
 constexpr double a_rad = 1.0;
 constexpr double mu = 1.5; // mean molecular weight; so that C_V = 1.0
 constexpr double C_V = 1.0;
-constexpr double k_B = 1.0;
 
 constexpr double nu_unit = 1.0;
 constexpr double Erad_bar = a_rad * T0 * T0 * T0 * T0;
@@ -50,7 +48,6 @@ template <> struct SimulationData<CoolingProblemMG> {
 
 template <> struct quokka::EOS_Traits<CoolingProblemMG> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -63,12 +60,15 @@ template <> struct Physics_Traits<CoolingProblemMG> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = 1.0;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = 1.0;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<CoolingProblemMG> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat_over_c;
 	static constexpr double Erad_floor = Erad_floor_;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = nu_unit;
@@ -235,7 +235,7 @@ auto problem_main() -> int
 		    std::exp(-cooling_rate * t_exact) * (cooling_rate * T0 - heating_rate_ + heating_rate_ * std::exp(cooling_rate * t_exact)) / cooling_rate;
 		const double T_exact_solution = Egas_exact_solution / C_V;
 		Tgas_exact_vec.push_back(T_exact_solution);
-		const double Erad_line_exact_solution = -(Egas_exact_solution - C_V * T0 - heating_rate_ * t_exact) * (chat / c);
+		const double Erad_line_exact_solution = -(Egas_exact_solution - C_V * T0 - heating_rate_ * t_exact) * chat_over_c;
 		Erad_line_exact_vec.push_back(Erad_line_exact_solution);
 		t_exact_vec.push_back(t_exact);
 		t_exact += t_end / N_dt;

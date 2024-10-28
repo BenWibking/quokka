@@ -16,7 +16,6 @@ struct DustProblem {
 
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
-constexpr double chat = c;
 constexpr double v0 = 0.0;
 constexpr double chi0 = 10000.0;
 
@@ -24,7 +23,6 @@ constexpr double T0 = 1.0;
 constexpr double rho0 = 1.0;
 constexpr double a_rad = 1.0;
 constexpr double mu = 1.0;
-constexpr double k_B = 1.0;
 
 constexpr double max_time = 1.0e-5;
 constexpr double delta_time = 1.0e-8;
@@ -40,7 +38,6 @@ template <> struct SimulationData<DustProblem> {
 
 template <> struct quokka::EOS_Traits<DustProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -53,12 +50,15 @@ template <> struct Physics_Traits<DustProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 4;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = 1.0;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = 1.0;
 };
 
 template <> struct RadSystem_Traits<DustProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 	static constexpr double energy_unit = 1.;

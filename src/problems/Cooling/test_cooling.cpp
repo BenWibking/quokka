@@ -27,7 +27,6 @@ constexpr double seconds_in_year = 3.154e7;
 template <> struct quokka::EOS_Traits<CoolingTest> {
 	static constexpr double gamma = 5. / 3.; // default value
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> struct Physics_Traits<CoolingTest> {
@@ -39,6 +38,7 @@ template <> struct Physics_Traits<CoolingTest> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct SimulationData<CoolingTest> {

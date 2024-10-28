@@ -34,6 +34,7 @@ template <> struct Physics_Traits<SawtoothProblem> {
 	static constexpr bool is_radiation_enabled = false;
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 AMREX_GPU_DEVICE void ComputeExactSolution(int i, int j, int k, int n, amrex::Array4<amrex::Real> const &exact_arr,

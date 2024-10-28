@@ -21,7 +21,7 @@ struct CouplingProblem {
 
 // Su & Olson (1997) test problem
 constexpr double eps_SuOlson = 1.0;
-constexpr double a_rad = 7.5646e-15; // cgs
+constexpr double a_rad = C::a_rad; // cgs
 constexpr double alpha_SuOlson = 4.0 * a_rad / eps_SuOlson;
 
 template <> struct SimulationData<CouplingProblem> {
@@ -32,14 +32,11 @@ template <> struct SimulationData<CouplingProblem> {
 
 template <> struct quokka::EOS_Traits<CouplingProblem> {
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<CouplingProblem> {
-	static constexpr double c_light = c_light_cgs_;
-	static constexpr double c_hat = c_light_cgs_;
-	static constexpr double radiation_constant = radiation_constant_cgs_;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -53,6 +50,7 @@ template <> struct Physics_Traits<CouplingProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<CouplingProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
