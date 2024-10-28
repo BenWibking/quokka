@@ -39,6 +39,7 @@ template <> struct Physics_Traits<SquareProblem> {
 	static constexpr bool is_radiation_enabled = false;
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto exactSolutionAtIndex(int i, int j, amrex::GpuArray<Real, AMREX_SPACEDIM> const &prob_lo,
