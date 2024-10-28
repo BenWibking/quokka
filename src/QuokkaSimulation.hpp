@@ -327,11 +327,11 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 	if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
 		// if unit system is CONSTANTS, the units are not well defined unless all four constants, G, k_B, c, and a_rad, are defined. However, in a hydro
 		// simulation, only k_B is defined. In a radiation-hydrodynamics simulation, only k_B, c, and a_rad are defined. Besides, CONSTANTS is only used
-		// for testing purposes, so we don't care about the units in that case. units
-		simulationMetadata_["unit_length"] = "undefined";
-		simulationMetadata_["unit_mass"] = "undefined";
-		simulationMetadata_["unit_time"] = "undefined";
-		simulationMetadata_["unit_temperature"] = "undefined";
+		// for testing purposes, so we don't care about the units in that case.
+		simulationMetadata_["unit_length"] = NAN;
+		simulationMetadata_["unit_mass"] = NAN;
+		simulationMetadata_["unit_time"] = NAN;
+		simulationMetadata_["unit_temperature"] = NAN;
 
 		// constants
 		simulationMetadata_["k_B"] = Physics_Traits<problem_t>::boltzmann_constant;
