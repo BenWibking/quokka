@@ -66,6 +66,8 @@ template <> struct Physics_Traits<CoolingProblem> {
 	// static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	// static constexpr double boltzmann_constant = k_B;
 	// static constexpr double gravitational_constant = 1.0;
+	// static constexpr double c_light = c;
+	// static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<CoolingProblem> {
@@ -73,9 +75,6 @@ template <> struct RadSystem_Traits<CoolingProblem> {
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = nu_unit;
 	static constexpr double c_hat_over_c = chat / c;
-	// Equivalently, set
-	// static constexpr double c_light = c;
-	// static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct ISM_Traits<CoolingProblem> {
