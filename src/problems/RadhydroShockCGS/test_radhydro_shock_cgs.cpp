@@ -55,7 +55,6 @@ constexpr double shock_position = 0.01305; // 0.0132; // cm (shock position drif
 constexpr double Lx = 0.01575; // cm
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_hat = chat;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -76,6 +75,7 @@ template <> struct Physics_Traits<ShockProblem> {
 	static constexpr int nGroups = 1;
 	// A custom unit system is used here to replicate the CGS units, for testing units conversion
 	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
+	static constexpr double c_hat = chat;
 	static constexpr double unit_length = 1.0;	// cm
 	static constexpr double unit_mass = 1.0;	// g
 	static constexpr double unit_time = 1.0;	// s

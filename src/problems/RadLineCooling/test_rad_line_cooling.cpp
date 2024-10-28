@@ -58,6 +58,7 @@ template <> struct Physics_Traits<CoolingProblem> {
 	static constexpr int nGroups = 1;
 	// A custom unit system is used here to replicate a dimentionless unit system (c = k_B = a_rad = G = 1), for testing units conversion
 	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
+	static constexpr double c_hat = chat;
 	static constexpr double unit_length = 1.733039549e-33;
 	static constexpr double unit_mass = 2.333695323e-05;
 	static constexpr double unit_time = 5.780797690e-44;
@@ -69,7 +70,6 @@ template <> struct Physics_Traits<CoolingProblem> {
 };
 
 template <> struct RadSystem_Traits<CoolingProblem> {
-	static constexpr double c_hat = chat;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = nu_unit;

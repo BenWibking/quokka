@@ -56,9 +56,6 @@ constexpr double shock_position = 0.0130; // 0.0132; // cm
 // we initialize slightly to the left...)
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -80,6 +77,9 @@ template <> struct Physics_Traits<ShockProblem> {
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gravitational_constant = Ggrav;
+	static constexpr double c_light = c;
+	static constexpr double c_hat = chat;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<ShockProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real
