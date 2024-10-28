@@ -402,8 +402,6 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 			return C::Gconst /
 			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length /
 				Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time));
-		} else {
-			static_assert(false, "Invalid unit system");
 		}
 	}();
 

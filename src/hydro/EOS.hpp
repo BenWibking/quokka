@@ -78,8 +78,6 @@ template <typename problem_t> class EOS
 			return C::k_B /
 			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
 				(Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
-		} else {
-			static_assert(false, "Invalid unit system");
 		}
 	}();
 };

@@ -197,8 +197,6 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
 			// c / c_bar = u_l / u_t
 			return c_light_cgs_ / (Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_time);
-		} else {
-			static_assert(false, "Invalid unit system");
 		}
 	}();
 	static constexpr double c_hat_ = c_light_ * RadSystem_Traits<problem_t>::c_hat_over_c;
@@ -214,8 +212,6 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 					   (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) /
 					   (Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature *
 					    Physics_Traits<problem_t>::unit_temperature * Physics_Traits<problem_t>::unit_temperature));
-		} else {
-			static_assert(false, "Invalid unit system");
 		}
 	}();
 
@@ -265,8 +261,6 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			return C::k_B /
 			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
 				(Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
-		} else {
-			static_assert(false, "Invalid unit system");
 		}
 	}();
 
