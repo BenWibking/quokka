@@ -152,7 +152,8 @@ AMRSimulation<MarshakProblem>::setCustomBoundaryConditions(const amrex::IntVect 
 
 	// const auto Erads = RadSystem<MarshakProblem>::ComputeThermalRadiation(T_rad_L, radBoundaries_);
 	quokka::valarray<double, 2> const Erads = {erad_floor, EradL};
-	const auto Frads = Erads * c;
+	const double c_device = c;
+	const auto Frads = Erads * c_device;
 
 	if (i < lo[0]) {
 		// streaming inflow boundary
