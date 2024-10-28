@@ -22,7 +22,7 @@ constexpr int direction = 1;
 constexpr double initial_Erad = 1.0e-5;
 constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
-constexpr double chat = 0.3; // reduced speed of light
+constexpr double chat = 0.3;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-10; // opacity
 constexpr double rho = 1.0;
 
