@@ -406,15 +406,15 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	std::unique_ptr<amrex::AmrTracerParticleContainer> TracerPC;
 	std::unique_ptr<quokka::CICParticleContainer> CICParticles;
 	std::unique_ptr<quokka_sinkparticle::SinkParticleContainer> SinkParticles;
-        const amrex::ParGDBBase* gdb = SinkParticles->GetParGDB();
+  //        const amrex::ParGDBBase* gdb = SinkParticles->GetParGDB();
         int R_merge=8;
   //  std::unique_ptr<quokka_sinkparticle::NeighborSinkParticleContainer<problem_t>> NeighborSinkParticles(amrex::ParGDBBase* gdb, int R_merge);
   //  amrex::NeighborParticleContainer::NeighborParticleContainer NeighborSinkParticles(amrex::ParGDBBase* gdb, int R_merge);
   //       std::unique_ptr<quokka_sinkparticle::NeighborSinkParticleContainer> NeighborSinkParticles(amrex::ParGDBBase* gdb, int R_merge);
   //       std::unique_ptr<quokka_sinkparticle::NeighborSinkParticleContainer> NeighborSinkParticles;
-      std::unique_ptr<quokka_sinkparticle::NeighborSinkParticleContainer> NeighborSinkParticles(new NeighborSinkParticleContainer(gdb, R_merge));
-
-  //  NeighborSinkParticles = std::make_unique<NeighborSinkParticleContainer(gdb, R_merge)>;
+  std::unique_ptr<quokka_sinkparticle::NeighborSinkParticleContainer> NeighborSinkParticles=std::make_unique<quokka_sinkparticle::NeighborSinkParticleContainer>(SinkParticles->GetParGDB(), R_merge);
+  //        NeighborSinkParticles = std::make_unique<NeighborSinkParticleContainer(gdb, R_merge)>;
+  
 #endif
 
 	// external objects
