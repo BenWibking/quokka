@@ -529,7 +529,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::initialize()
 		}
 	}
 
-	initializeSimulationMetadata();
+	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
+		initializeSimulationMetadata();
+	}
 
 #ifdef AMREX_USE_ASCENT
 	// initialize Ascent

@@ -67,7 +67,7 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto dQ_dx_inflow_x1_lower(quokka::valarray<
 	const Real eta_5 = 2.;
 	const Real eta_6 = 2.;
 
-	const Real R = quokka::EOS_Traits<problem_t>::boltzmann_constant / quokka::EOS_Traits<problem_t>::mean_molecular_weight;
+	const Real R = quokka::EOS<problem_t>::boltzmann_constant_ / quokka::EOS_Traits<problem_t>::mean_molecular_weight;
 
 	// see SymPy notebook for derivation
 	quokka::valarray<Real, HydroSystem<problem_t>::nvar_> dQ_dx{};
