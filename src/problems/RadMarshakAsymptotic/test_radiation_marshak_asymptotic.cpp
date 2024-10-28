@@ -206,14 +206,6 @@ auto problem_main() -> int
 	// const int nx = 60; // [18 == matches resolution of McClarren & Lowrie (2008)]
 	// const double Lx = 0.66; // cm
 
-	// Problem initialization
-	std::cout << "radiation constant (code units) = " << RadSystem_Traits<SuOlsonProblemCgs>::radiation_constant << "\n";
-	std::cout << "c_light (code units) = " << RadSystem_Traits<SuOlsonProblemCgs>::c_light << "\n";
-	std::cout << "rho * c_v = " << rho0 * c_v << "\n";
-	std::cout << "initial_dt = " << initial_dt << "\n";
-	std::cout << "max_dt = " << max_dt << "\n";
-	std::cout << "max_time = " << max_time << std::endl;
-
 	constexpr int nvars = RadSystem<SuOlsonProblemCgs>::nvar_;
 	amrex::Vector<amrex::BCRec> BCs_cc(nvars);
 	for (int n = 0; n < nvars; ++n) {
