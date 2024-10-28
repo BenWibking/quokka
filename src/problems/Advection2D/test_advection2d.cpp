@@ -107,7 +107,12 @@ template <> void AdvectionSimulation<SquareProblem>::ErrorEst(int lev, amrex::Ta
 
 			Real const del_x = (state(i + 1, j, k, n) - state(i - 1, j, k, n)) / (2.0 * dx[0]);
 			Real const del_y = (state(i, j + 1, k, n) - state(i, j - 1, k, n)) / (2.0 * dx[1]);
-			Real const gradient_indicator = std::sqrt(del_x * del_x + del_y * del_y) / rho;
+			Real gradient_indicator = NAN;
+			if (rho > 0) {
+				gradient_indicator = std::sqrt(del_x * del_x + del_y * del_y) / rho;
+			} else {
+				gradient_indicator = 1.0e100;
+			}
 
 			if (gradient_indicator > eta_threshold && rho >= rho_min) {
 				tag(i, j, k) = amrex::TagBox::SET;
