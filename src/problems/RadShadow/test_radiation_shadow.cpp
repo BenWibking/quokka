@@ -27,7 +27,7 @@ constexpr double T_hohlraum = 1740.; // K
 constexpr double T_initial = 290.;   // K
 
 constexpr double a_rad = C::a_rad; // erg cm^-3 K^-4
-constexpr double c = C::c_light;  // cm s^-1
+constexpr double c = C::c_light;   // cm s^-1
 
 template <> struct quokka::EOS_Traits<ShadowProblem> {
 	static constexpr double mean_molecular_weight = 10. * C::m_u;

@@ -38,10 +38,10 @@ constexpr bool simulate_full_box = true;
 
 constexpr double a_rad = C::a_rad;
 constexpr double c = C::c_light;
-constexpr double a0 = 2.0e5;	     // ('reference' sound speed) [cm s^-1]
-constexpr double chat = 860. * a0;   // cm s^-1
-constexpr double k_B = C::k_B;	     // erg K^-1
-constexpr double m_H = C::m_u;	     // atomic mass unit
+constexpr double a0 = 2.0e5;	   // ('reference' sound speed) [cm s^-1]
+constexpr double chat = 860. * a0; // cm s^-1
+constexpr double k_B = C::k_B;	   // erg K^-1
+constexpr double m_H = C::m_u;	   // atomic mass unit
 constexpr double gamma_gas = 5. / 3.;
 
 template <> struct quokka::EOS_Traits<ShellProblem> {

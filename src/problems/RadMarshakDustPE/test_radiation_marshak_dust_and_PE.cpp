@@ -24,7 +24,7 @@ constexpr bool dust_on = 1;
 constexpr bool PE_on = 1;
 constexpr double gas_dust_coupling_threshold_ = 1.0e-4;
 
-constexpr double c = 1.0;    // speed of light
+constexpr double c = 1.0; // speed of light
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight

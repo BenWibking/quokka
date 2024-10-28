@@ -19,7 +19,7 @@ struct MarshakProblem {
 AMREX_GPU_MANAGED double kappa1 = NAN; // dust opacity at IR
 AMREX_GPU_MANAGED double kappa2 = NAN; // dust opacity at FUV
 
-constexpr double c = 1.0;    // speed of light
+constexpr double c = 1.0; // speed of light
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight

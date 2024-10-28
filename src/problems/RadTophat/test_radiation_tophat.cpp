@@ -32,7 +32,7 @@ constexpr double T_initial = 50. / kelvin_to_eV;	 // K [== 50 eV]
 constexpr double c_v = (1.0e15 * 1.0e-6 * kelvin_to_eV); // erg g^-1 K^-1
 
 constexpr double a_rad = C::a_rad; // erg cm^-3 K^-4
-constexpr double c = C::c_light;  // cm s^-1
+constexpr double c = C::c_light;   // cm s^-1
 
 template <> struct quokka::EOS_Traits<TophatProblem> {
 	static constexpr double mean_molecular_weight = C::m_u;
