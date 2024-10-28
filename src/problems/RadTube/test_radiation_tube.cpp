@@ -56,10 +56,10 @@ template <> struct Physics_Traits<TubeProblem> {
 	// number of radiation groups
 	static constexpr int nGroups = 2;
 	static constexpr UnitSystem unit_system = UnitSystem::CGS;
-	static constexpr double c_hat = 10.0 * a0;
 };
 
 template <> struct RadSystem_Traits<TubeProblem> {
+	static constexpr double c_hat_over_c = 10.0 * a0 / C::c_light;
 	static constexpr double Erad_floor = 0.;
 	static constexpr double energy_unit = C::k_B;
 	static constexpr amrex::GpuArray<double, Physics_Traits<TubeProblem>::nGroups + 1> radBoundaries{0.01 * T0, 3.3 * T0, 1000. * T0}; // Kelvin

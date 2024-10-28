@@ -72,7 +72,7 @@ enum class OpacityModel {
 // this struct is specialized by the user application code
 //
 template <typename problem_t> struct RadSystem_Traits {
-	static constexpr double c_hat = c_light_cgs_;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = 0.;
 	static constexpr double energy_unit = C::ev2erg;
 	static constexpr amrex::GpuArray<double, Physics_Traits<problem_t>::nGroups + 1> radBoundaries = {0., inf};
@@ -201,7 +201,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			static_assert(false, "Invalid unit system");
 		}
 	}();
-	static constexpr double c_hat_ = Physics_Traits<problem_t>::c_hat;
+	static constexpr double c_hat_ = c_light_ * RadSystem_Traits<problem_t>::c_hat_over_c;
 
 	static constexpr double radiation_constant_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {

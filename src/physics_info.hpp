@@ -22,7 +22,6 @@ template <typename problem_t> struct Physics_Traits {
 	static constexpr double boltzmann_constant = C::k_B;	    // Hydro, EOS
 	static constexpr double gravitational_constant = C::Gconst; // gravity
 	static constexpr double c_light = C::c_light; // radiation
-	static constexpr double c_hat = C::c_light; // radiation
 	static constexpr double radiation_constant = C::a_rad; // radiation
 	static constexpr double unit_length = 1.0;
 	static constexpr double unit_mass = 1.0;

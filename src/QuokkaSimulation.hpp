@@ -338,7 +338,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 		simulationMetadata_["G"] = Physics_Traits<problem_t>::gravitational_constant;
 		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			simulationMetadata_["c"] = Physics_Traits<problem_t>::c_light;
-			simulationMetadata_["c_hat"] = Physics_Traits<problem_t>::c_hat;
+			simulationMetadata_["c_hat"] = Physics_Traits<problem_t>::c_light * RadSystem_Traits<problem_t>::c_hat_over_c;
 			simulationMetadata_["a_rad"] = Physics_Traits<problem_t>::radiation_constant;
 		}
 	} else {
