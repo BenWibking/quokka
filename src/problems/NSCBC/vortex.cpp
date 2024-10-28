@@ -83,7 +83,7 @@ template <> void QuokkaSimulation<Vortex>::setInitialConditionsOnGrid(quokka::gr
 	const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_hi = grid_elem.prob_hi_;
 
 	constexpr Real gamma = quokka::EOS_Traits<Vortex>::gamma;
-	constexpr Real R = quokka::EOS_Traits<Vortex>::boltzmann_constant / quokka::EOS_Traits<Vortex>::mean_molecular_weight;
+	constexpr Real R = C::k_B / quokka::EOS_Traits<Vortex>::mean_molecular_weight;
 	const Real c = std::sqrt(gamma * R * T_ref);
 
 	const Real G = ::G_vortex;

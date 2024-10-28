@@ -226,8 +226,7 @@ auto problem_main() -> int
 	// Print radiation epsilon ("stiffness parameter" from Su & Olson).
 	// (if epsilon is smaller than tolerance, there can be unphysical radiation shocks.)
 	const auto dt_CFL = CFL_number * std::min(Lx / nx, Ly / ny) / c;
-	const auto c_v = quokka::EOS_Traits<ShadowProblem>::boltzmann_constant /
-			 (quokka::EOS_Traits<ShadowProblem>::mean_molecular_weight * (quokka::EOS_Traits<ShadowProblem>::gamma - 1.0));
+	const auto c_v = C::k_B / (quokka::EOS_Traits<ShadowProblem>::mean_molecular_weight * (quokka::EOS_Traits<ShadowProblem>::gamma - 1.0));
 	const auto epsilon = 4.0 * a_rad * (T_initial * T_initial * T_initial) * sigma0 * (c * dt_CFL) / c_v;
 	amrex::Print() << "radiation epsilon (stiffness parameter) = " << epsilon << "\n";
 
