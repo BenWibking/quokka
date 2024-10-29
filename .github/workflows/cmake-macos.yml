@@ -61,7 +61,7 @@ jobs:
       working-directory: ${{runner.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE --parallel 2
+      run: cmake --build . --config $BUILD_TYPE --parallel 3
 
     - name: Create test output directory
       run: cmake -E make_directory $GITHUB_WORKSPACE/tests
@@ -71,7 +71,7 @@ jobs:
       shell: bash
       # Execute tests defined by the CMake configuration.  
       # See https://cmake.org/cmake/help/latest/manual/ctest.1.html for more detail
-      run: ctest --output-on-failure -C $BUILD_TYPE -j2
+      run: ctest --output-on-failure -C $BUILD_TYPE -j3
 
     - name: Upload test output
       if: always()
