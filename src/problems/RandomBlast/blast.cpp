@@ -28,6 +28,7 @@
 #include "fundamental_constants.H"
 #include "hydro/hydro_system.hpp"
 #include "math/quadrature.hpp"
+#include "physics_info.hpp"
 
 using amrex::Real;
 
@@ -287,6 +288,9 @@ template <> void QuokkaSimulation<RandomBlast>::ErrorEst(int lev, amrex::TagBoxA
 
 auto problem_main() -> int
 {
+	// This problem is only implemented in CGS units because the Grackle cooling tables are in CGS units.
+	static_assert(Physics_Traits<RandomBlast>::unit_system == UnitSystem::CGS);
+
 	// read parameters
 	amrex::ParmParse const pp;
 
