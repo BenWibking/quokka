@@ -46,7 +46,7 @@ template <> struct Physics_Traits<CollapseProblem> {
 	static constexpr int nGroups = 1; // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = C::k_B;
-	static constexpr double gravity_constant = 1.0;
+	static constexpr double gravitational_constant = 1.0;
 };
 
 template <> void QuokkaSimulation<CollapseProblem>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
