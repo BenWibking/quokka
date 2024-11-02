@@ -211,7 +211,7 @@ auto problem_main() -> int
 	sim.initDt_ = the_dt;
 	sim.maxDt_ = the_dt;
 	sim.maxTimesteps_ = max_timesteps;
-	sim.plotfileInterval_ = -1;
+	sim.plotfileInterval_ = 10000000;
 
 	// initialize
 	sim.setInitialConditions();

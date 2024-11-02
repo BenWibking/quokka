@@ -24,5 +24,3 @@ radiation.dust_gas_interaction_coeff = 1e-20
 do_reflux = 0
 do_subcycle = 0
 suppress_output = 1
-
-plotfile_interval = 10000000
