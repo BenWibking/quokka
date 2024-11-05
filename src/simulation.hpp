@@ -2456,7 +2456,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::WriteProjectionPlot
 		if (dir_str == "z") {
 			return amrex::Direction::z;
 		}
-		
+
 		amrex::Error("invalid direction for projection!");
 		return amrex::Direction::x;
 	};
