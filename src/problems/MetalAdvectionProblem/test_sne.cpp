@@ -265,8 +265,8 @@ template <> void QuokkaSimulation<NewProblem>::computeAfterLevelAdvance(int lev,
 }
 
 template <>
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto
-HydroSystem<NewProblem>::GetGradFixedPotential(amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> posvec) -> amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto HydroSystem<NewProblem>::GetGradFixedPotential(amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> posvec)
+    -> amrex::GpuArray<amrex::Real, AMREX_SPACEDIM>
 {
 
 	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> grad_potential;
