@@ -49,22 +49,27 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 	amrex::MultiFab mf_all(ba, dm, static_cast<int>(proj.size()), 0);
 	amrex::Vector<std::string> varnames;
 
+	// copy all projections into a single Multifab
 	auto iter = proj.begin();
 	for (int icomp = 0; icomp < static_cast<int>(proj.size()); ++icomp) {
 		const std::string &varname = iter->first;
 		const amrex::BaseFab<amrex::Real> &baseFab = iter->second;
+		const amrex::BoxArray ba_comp(baseFab.box());
+		const amrex::DistributionMapping dm_comp(amrex::Vector<int>{0});
 
-		const amrex::BoxArray ba(baseFab.box());
-		const amrex::DistributionMapping dm(amrex::Vector<int>{0});
-		amrex::MultiFab mf(ba, dm, 1, 0, amrex::MFInfo().SetAlloc(false));
+		amrex::MultiFab mf_comp(ba_comp, dm_comp, 1, 0, amrex::MFInfo().SetAlloc(false));
 		if (amrex::ParallelDescriptor::IOProcessor()) {
-			mf.setFab(0, amrex::FArrayBox(baseFab.array()));
+			// set MultiFab to point to existing BaseFab<Real> data
+			mf_comp.setFab(0, amrex::FArrayBox(baseFab.array()));
 		}
-		amrex::MultiFab::Copy(mf_all, mf, 0, icomp, 1, 0);
+
+		// copy mf_comp into mf_all
+		amrex::MultiFab::Copy(mf_all, mf_comp, 0, icomp, 1, 0);
 		varnames.push_back(varname);
 		++iter;
 	}
 
+	// write mf_all to disk
 	const std::string basename = "proj_" + detail::direction_to_string(dir) + "_plt";
 	const std::string filename = amrex::Concatenate(basename, istep, 5);
 	amrex::Print() << "Writing projection " << filename << "\n";
