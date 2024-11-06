@@ -51,6 +51,7 @@ namespace filesystem = experimental::filesystem;
 #include "AMReX_IntVect.H"
 #include "AMReX_Interpolater.H"
 #include "AMReX_MultiFabUtil.H"
+#include "AMReX_Orientation.H"
 #include "AMReX_ParallelDescriptor.H"
 #include "AMReX_REAL.H"
 #include "AMReX_SPACE.H"
@@ -63,7 +64,6 @@ namespace filesystem = experimental::filesystem;
 #include <AMReX_PlotFileUtil.H>
 #include <AMReX_Print.H>
 #include <AMReX_Utility.H>
-#include "AMReX_Orientation.H"
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
