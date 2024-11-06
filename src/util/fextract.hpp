@@ -9,7 +9,7 @@
 #include <AMReX_PlotFileUtil.H>
 #include <AMReX_Print.H>
 
-auto fextract(amrex::MultiFab &mf, amrex::Geometry &geom, int idir, amrex::Real slice_coord,
-	      bool center = false) -> std::tuple<amrex::Vector<amrex::Real>, amrex::Vector<amrex::Gpu::HostVector<amrex::Real>>>;
+auto fextract(amrex::MultiFab &mf, amrex::Geometry &geom, int idir, amrex::Real slice_coord, bool center = false)
+    -> std::tuple<amrex::Vector<amrex::Real>, amrex::Vector<amrex::Gpu::HostVector<amrex::Real>>>;
 
 #endif // FEXTRACT_HPP_

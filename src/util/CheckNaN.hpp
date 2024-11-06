@@ -23,8 +23,8 @@ AMREX_GPU_HOST_DEVICE auto CheckSymmetryArray(amrex::Array4<const amrex::Real> c
 
 template <typename T>
 AMREX_GPU_HOST_DEVICE auto CheckSymmetryFluxes(amrex::Array4<const amrex::Real> const & /*arr1*/, amrex::Array4<const amrex::Real> const & /*arr2*/,
-					       amrex::Box const & /*indexRange*/, const int /*ncomp*/,
-					       amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> /*dx*/) -> bool
+					       amrex::Box const & /*indexRange*/, const int /*ncomp*/, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> /*dx*/)
+    -> bool
 {
 	return true; // problem-specific implementation for test problems
 }

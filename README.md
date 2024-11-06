@@ -1,6 +1,8 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=BenWibking_TwoMomentRad&metric=alert_status&token=5049c56ffe08dcc83afd5ca4c8e0d951a2836652)](https://sonarcloud.io/dashboard?id=BenWibking_TwoMomentRad)
 [![Bugs](https://sonarcloud.io/api/project_badges/measure?project=BenWibking_TwoMomentRad&metric=bugs&token=5049c56ffe08dcc83afd5ca4c8e0d951a2836652)](https://sonarcloud.io/dashboard?id=BenWibking_TwoMomentRad)
 [![Lines of Code](https://sonarcloud.io/api/project_badges/measure?project=BenWibking_TwoMomentRad&metric=ncloc&token=5049c56ffe08dcc83afd5ca4c8e0d951a2836652)](https://sonarcloud.io/dashboard?id=BenWibking_TwoMomentRad)
+[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/9489/badge)](https://www.bestpractices.dev/projects/9489)
+[![OpenSSF Scorecard](https://api.scorecard.dev/projects/github.com/quokka-astro/quokka/badge)](https://scorecard.dev/viewer/?uri=github.com/quokka-astro/quokka)
 [![AMReX](https://amrex-codes.github.io/badges/powered%20by-AMReX-red.svg)](https://amrex-codes.github.io)
 [![yt-project](https://img.shields.io/static/v1?label="works%20with"&message="yt"&color="blueviolet")](https://yt-project.org)
 
@@ -28,12 +30,11 @@ Quokka also features advanced Adaptive Quokka Refinement:tm: technology:
 ## Dependencies
 * C++ compiler (with C++17 support)
 * CMake 3.16+
+* Python 3.8+
 * MPI library with GPU-aware support (OpenMPI, MPICH, or Cray MPI)
 * HDF5 1.10+ (serial version)
 * CUDA 11.7+ (optional, for NVIDIA GPUs)
 * ROCm 5.2.0+ (optional, for AMD GPUs)
-* Ninja (optional, for faster builds)
-* Python 3.7+ (optional)
 * ADIOS2 2.9+ with GPU-aware support (optional, for writing terabyte-sized or larger outputs)
 
 ## Problems?

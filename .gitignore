@@ -17,6 +17,7 @@ sims/
 __pycache__
 *.code-workspace
 *.sarif
+Backtrace.*
 
 *.aux
 *.dbl

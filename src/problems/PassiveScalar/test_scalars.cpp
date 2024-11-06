@@ -26,7 +26,6 @@ struct ScalarProblem {
 template <> struct quokka::EOS_Traits<ScalarProblem> {
 	static constexpr double gamma = 1.4;
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> struct Physics_Traits<ScalarProblem> {
@@ -38,6 +37,7 @@ template <> struct Physics_Traits<ScalarProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups; has to be defined even though radiation is disabled
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 constexpr double v_contact = 2.0; // contact wave velocity

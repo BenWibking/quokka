@@ -1,6 +1,6 @@
 // devcontainer.json
     {
-      "name": "quokka-dev",
+      "name": "Quokka CUDA Dev Container",
       // (NOTE: using the cloud image is temporarily disabled, since it doesn't exist yet)
       // "image": "ghcr.io/quokka-astro/quokka:development",
       "build": {
@@ -18,12 +18,8 @@
             "-ms-vscode.cpptools",
             "llvm-vs-code-extensions.vscode-clangd",
             "github.vscode-pull-request-github",
-            "ms-python.python",
-            "ms-toolsai.jupyter",
             "ms-vscode.live-server",
-            "ms-azuretools.vscode-docker",
-            "swyddfa.esbonio",
-            "tomoki1207.pdf" // this extension does not work on codespaces
+            "ms-azuretools.vscode-docker"
           ]
         }
       },

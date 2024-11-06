@@ -26,19 +26,16 @@ constexpr double rho_clump = 1.0;    // g cm^-3 (matter density)
 constexpr double T_hohlraum = 1740.; // K
 constexpr double T_initial = 290.;   // K
 
-constexpr double a_rad = 7.5646e-15; // erg cm^-3 K^-4
-constexpr double c = 2.99792458e10;  // cm s^-1
+constexpr double a_rad = C::a_rad; // erg cm^-3 K^-4
+constexpr double c = C::c_light;   // cm s^-1
 
 template <> struct quokka::EOS_Traits<ShadowProblem> {
 	static constexpr double mean_molecular_weight = 10. * C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<ShadowProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = c;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -50,6 +47,7 @@ template <> struct Physics_Traits<ShadowProblem> {
 	static constexpr bool is_radiation_enabled = true;
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ShadowProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real
@@ -228,8 +226,7 @@ auto problem_main() -> int
 	// Print radiation epsilon ("stiffness parameter" from Su & Olson).
 	// (if epsilon is smaller than tolerance, there can be unphysical radiation shocks.)
 	const auto dt_CFL = CFL_number * std::min(Lx / nx, Ly / ny) / c;
-	const auto c_v = quokka::EOS_Traits<ShadowProblem>::boltzmann_constant /
-			 (quokka::EOS_Traits<ShadowProblem>::mean_molecular_weight * (quokka::EOS_Traits<ShadowProblem>::gamma - 1.0));
+	const auto c_v = C::k_B / (quokka::EOS_Traits<ShadowProblem>::mean_molecular_weight * (quokka::EOS_Traits<ShadowProblem>::gamma - 1.0));
 	const auto epsilon = 4.0 * a_rad * (T_initial * T_initial * T_initial) * sigma0 * (c * dt_CFL) / c_v;
 	amrex::Print() << "radiation epsilon (stiffness parameter) = " << epsilon << "\n";
 

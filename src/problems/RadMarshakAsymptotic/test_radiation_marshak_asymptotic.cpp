@@ -29,14 +29,11 @@ constexpr double Erad_floor_ = a_rad * T_initial * T_initial * T_initial * T_ini
 
 template <> struct quokka::EOS_Traits<SuOlsonProblemCgs> {
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<SuOlsonProblemCgs> {
-	static constexpr double c_light = c_light_cgs_;
-	static constexpr double c_hat = c_light_cgs_;
-	static constexpr double radiation_constant = radiation_constant_cgs_;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = Erad_floor_;
 	static constexpr int beta_order = 0;
 };
@@ -50,6 +47,7 @@ template <> struct Physics_Traits<SuOlsonProblemCgs> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<SuOlsonProblemCgs>::ComputePlanckOpacity(const double rho, const double Tgas) -> amrex::Real
@@ -205,14 +203,6 @@ auto problem_main() -> int
 	const double max_time = 10.0e-9;   // s
 	// const int nx = 60; // [18 == matches resolution of McClarren & Lowrie (2008)]
 	// const double Lx = 0.66; // cm
-
-	// Problem initialization
-	std::cout << "radiation constant (code units) = " << RadSystem_Traits<SuOlsonProblemCgs>::radiation_constant << "\n";
-	std::cout << "c_light (code units) = " << RadSystem_Traits<SuOlsonProblemCgs>::c_light << "\n";
-	std::cout << "rho * c_v = " << rho0 * c_v << "\n";
-	std::cout << "initial_dt = " << initial_dt << "\n";
-	std::cout << "max_dt = " << max_dt << "\n";
-	std::cout << "max_time = " << max_time << std::endl;
 
 	constexpr int nvars = RadSystem<SuOlsonProblemCgs>::nvar_;
 	amrex::Vector<amrex::BCRec> BCs_cc(nvars);

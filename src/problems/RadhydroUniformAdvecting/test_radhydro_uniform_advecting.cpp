@@ -32,7 +32,7 @@ constexpr double c = 1.0e8;
 constexpr int beta_order_ = 2; // order of beta in the radiation four-force
 constexpr double v0 = 1e-2 * c;
 constexpr double kappa0 = 1.0e5;
-constexpr double chat = 1.0e8;
+constexpr double chat_over_c = 1.0;
 
 constexpr double T0 = 1.0;   // temperature
 constexpr double rho0 = 1.0; // matter density
@@ -52,14 +52,11 @@ constexpr double Erad_beta2 = (1. + 4. / 3. * (v0 * v0) / (c * c)) * Erad0;
 
 template <> struct quokka::EOS_Traits<PulseProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat_over_c;
 	static constexpr double Erad_floor = 0.0;
 	static constexpr int beta_order = beta_order_;
 };
@@ -73,6 +70,11 @@ template <> struct Physics_Traits<PulseProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = k_B;
+	static constexpr double c_light = c;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<PulseProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real

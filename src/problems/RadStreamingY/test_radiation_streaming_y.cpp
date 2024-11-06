@@ -22,13 +22,12 @@ constexpr int direction = 1;
 constexpr double initial_Erad = 1.0e-5;
 constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
-constexpr double chat = c;	   // reduced speed of light
+constexpr double chat = 0.3;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-10; // opacity
 constexpr double rho = 1.0;
 
 template <> struct quokka::EOS_Traits<StreamingProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
-	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -41,12 +40,15 @@ template <> struct Physics_Traits<StreamingProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = 1.0;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = 1.0;
+	static constexpr double radiation_constant = 1.0;
 };
 
 template <> struct RadSystem_Traits<StreamingProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = 1.0;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = initial_Erad;
 	static constexpr int beta_order = 0;
 };

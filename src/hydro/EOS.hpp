@@ -20,7 +20,7 @@
 
 #include "eos.H"
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 #include "actual_eos_data.H"
 #endif
 
@@ -38,6 +38,9 @@ template <typename problem_t> struct EOS_Traits {
 
 template <typename problem_t> class EOS
 {
+      private:
+	static constexpr amrex::Real gamma_ = EOS_Traits<problem_t>::gamma;
+	static constexpr amrex::Real mean_molecular_weight_ = EOS_Traits<problem_t>::mean_molecular_weight;
 
       public:
 	static constexpr int nmscalars_ = Physics_Traits<problem_t>::numMassScalars;
@@ -48,12 +51,12 @@ template <typename problem_t> class EOS
 	ComputeEintFromTgas(amrex::Real rho, amrex::Real Tgas, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {}) -> amrex::Real;
 
 	[[nodiscard]] AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE static auto
-	ComputeEintFromPres(amrex::Real rho, amrex::Real Pressure,
-			    std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {}) -> amrex::Real;
+	ComputeEintFromPres(amrex::Real rho, amrex::Real Pressure, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {})
+	    -> amrex::Real;
 
 	[[nodiscard]] AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE static auto
-	ComputeEintTempDerivative(amrex::Real rho, amrex::Real Tgas,
-				  std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {}) -> amrex::Real;
+	ComputeEintTempDerivative(amrex::Real rho, amrex::Real Tgas, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {})
+	    -> amrex::Real;
 
 	[[nodiscard]] AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE static auto
 	ComputeOtherDerivatives(amrex::Real rho, amrex::Real P, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {});
@@ -62,24 +65,32 @@ template <typename problem_t> class EOS
 	ComputePressure(amrex::Real rho, amrex::Real Eint, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {}) -> amrex::Real;
 
 	[[nodiscard]] AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE static auto
-	ComputeSoundSpeed(amrex::Real rho, amrex::Real Pressure,
-			  std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {}) -> amrex::Real;
+	ComputeSoundSpeed(amrex::Real rho, amrex::Real Pressure, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars = {})
+	    -> amrex::Real;
 
-      private:
-	static constexpr amrex::Real gamma_ = EOS_Traits<problem_t>::gamma;
-	static constexpr amrex::Real boltzmann_constant_ = EOS_Traits<problem_t>::boltzmann_constant;
-	static constexpr amrex::Real mean_molecular_weight_ = EOS_Traits<problem_t>::mean_molecular_weight;
+	static constexpr amrex::Real boltzmann_constant_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::k_B;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
+			return Physics_Traits<problem_t>::boltzmann_constant;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			// k_B / k_B_bar = u_l^2 * u_m / u_t^2 / u_T
+			return C::k_B /
+			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
+				(Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
+		}
+	}();
 };
 
 template <typename problem_t>
-AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto
-EOS<problem_t>::ComputeTgasFromEint(amrex::Real rho, amrex::Real Eint,
-				    std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars) -> amrex::Real
+AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputeTgasFromEint(amrex::Real rho, amrex::Real Eint,
+										  std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars)
+    -> amrex::Real
 {
 	// return temperature for an ideal gas given density and internal energy
 	amrex::Real Tgas = NAN;
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	chemstate.e = Eint / rho;
@@ -114,14 +125,14 @@ EOS<problem_t>::ComputeTgasFromEint(amrex::Real rho, amrex::Real Eint,
 }
 
 template <typename problem_t>
-AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto
-EOS<problem_t>::ComputeEintFromTgas(amrex::Real rho, amrex::Real Tgas,
-				    std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars) -> amrex::Real
+AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputeEintFromTgas(amrex::Real rho, amrex::Real Tgas,
+										  std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars)
+    -> amrex::Real
 {
 	// return internal energy density given density and temperature
 	amrex::Real Eint = NAN;
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	// Define and initialize Tgas here
@@ -157,14 +168,14 @@ EOS<problem_t>::ComputeEintFromTgas(amrex::Real rho, amrex::Real Tgas,
 }
 
 template <typename problem_t>
-AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto
-EOS<problem_t>::ComputeEintFromPres(amrex::Real rho, amrex::Real Pressure,
-				    std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars) -> amrex::Real
+AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputeEintFromPres(amrex::Real rho, amrex::Real Pressure,
+										  std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars)
+    -> amrex::Real
 {
 	// return internal energy density given density and pressure
 	amrex::Real Eint = NAN;
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	chemstate.p = Pressure;
@@ -205,7 +216,7 @@ EOS<problem_t>::ComputeEintTempDerivative(const amrex::Real rho, const amrex::Re
 	// compute derivative of internal energy w/r/t temperature, given density and temperature
 	amrex::Real dEint_dT = NAN;
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	// we don't need Tgas to find chemstate.dedT, but we still need to initialize chemstate.T because we are using the 'rt' EOS mode
@@ -254,7 +265,7 @@ EOS<problem_t>::ComputeOtherDerivatives(const amrex::Real rho, const amrex::Real
 	// fundamental derivative
 	amrex::Real G = NAN;
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	chemstate.p = P;
@@ -297,12 +308,13 @@ EOS<problem_t>::ComputeOtherDerivatives(const amrex::Real rho, const amrex::Real
 }
 
 template <typename problem_t>
-AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto
-EOS<problem_t>::ComputePressure(amrex::Real rho, amrex::Real Eint, std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars) -> amrex::Real
+AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputePressure(amrex::Real rho, amrex::Real Eint,
+									      std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars)
+    -> amrex::Real
 {
 	// return pressure for an ideal gas
 	amrex::Real P = NAN;
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	chemstate.e = Eint / rho;
@@ -341,14 +353,14 @@ EOS<problem_t>::ComputePressure(amrex::Real rho, amrex::Real Eint, std::optional
 }
 
 template <typename problem_t>
-AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto
-EOS<problem_t>::ComputeSoundSpeed(amrex::Real rho, amrex::Real Pressure,
-				  std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars) -> amrex::Real
+AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputeSoundSpeed(amrex::Real rho, amrex::Real Pressure,
+										std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const &massScalars)
+    -> amrex::Real
 {
 	// return sound speed for an ideal gas
 	amrex::Real cs = NAN;
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
 	chemstate.p = Pressure;

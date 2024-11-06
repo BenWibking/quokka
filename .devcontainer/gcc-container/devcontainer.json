@@ -1,0 +1,34 @@
+// devcontainer.json
+    {
+      "name": "Quokka GCC Dev Container",
+      // (NOTE: using the cloud image is temporarily disabled, since it doesn't exist yet)
+      // "image": "ghcr.io/quokka-astro/quokka:development",
+      "build": {
+        // Path is relative to the devcontainer.json file.
+        "dockerfile": "Dockerfile"
+      },
+      "hostRequirements": {
+        "cpus": 4
+      },
+      "customizations": {
+        "vscode": {
+          "settings": {},
+          "extensions": [
+            // disabled, since it interferes with clangd
+            "-ms-vscode.cpptools",
+            "llvm-vs-code-extensions.vscode-clangd",
+            "github.vscode-pull-request-github",
+            "ms-python.python",
+            "ms-toolsai.jupyter",
+            "ms-vscode.live-server",
+            "ms-azuretools.vscode-docker",
+            "tomoki1207.pdf" // this extension does not work on codespaces
+          ]
+        }
+      },
+      "remoteUser": "ubuntu",
+      // we need to manually checkout the submodules,
+      // but VSCode may try to configure CMake before they are fully checked-out.
+      // workaround TBD
+      "postCreateCommand": "git submodule update --init"
+    }

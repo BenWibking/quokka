@@ -38,7 +38,6 @@ template <> struct quokka::EOS_Traits<StarCluster> {
 	static constexpr double gamma = 1.0;
 	static constexpr double cs_isothermal = 1.0; // dimensionless
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> struct HydroSystem_Traits<StarCluster> {
@@ -54,6 +53,9 @@ template <> struct Physics_Traits<StarCluster> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = C::k_B;
+	static constexpr amrex::Real gravitational_constant = 1.0;
 };
 
 template <> struct SimulationData<StarCluster> {

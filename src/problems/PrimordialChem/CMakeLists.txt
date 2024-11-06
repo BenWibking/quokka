@@ -7,8 +7,8 @@ include_directories(BEFORE ${primordial_chem_dirs} "${CMAKE_CURRENT_BINARY_DIR}/
 
 add_executable(test_primordial_chem test_primordial_chem.cpp "${QuokkaSourcesNoEOS}" ../../chemistry/Chemistry.cpp ${primordial_chem_sources})
 
-# this will add #define PRIMORDIAL_CHEM
-target_compile_definitions(test_primordial_chem PUBLIC PRIMORDIAL_CHEM) 
+# this will add #define CHEMISTRY
+target_compile_definitions(test_primordial_chem PUBLIC CHEMISTRY) 
 
 if(AMReX_GPU_BACKEND MATCHES "CUDA")
     setup_target_for_cuda_compilation(test_primordial_chem)

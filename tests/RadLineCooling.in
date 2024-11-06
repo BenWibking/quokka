@@ -1,0 +1,26 @@
+# *****************************************************************
+# Problem size and geometry
+# *****************************************************************
+geometry.prob_lo     =  0.0  0.0  0.0 
+geometry.prob_hi     =  64.0  1.0  1.0
+geometry.is_periodic =  1    1    1
+
+# *****************************************************************
+# VERBOSITY
+# *****************************************************************
+amr.v              = 0       # verbosity in Amr
+
+# *****************************************************************
+# Resolution and refinement
+# *****************************************************************
+amr.n_cell          = 8 4 4
+amr.max_level       = 0     # number of levels = max_level + 1
+amr.blocking_factor = 4     # grid size must be divisible by this
+amr.max_grid_size   = 64
+
+radiation.print_iteration_counts = 1
+radiation.dust_gas_interaction_coeff = 1e-20
+
+do_reflux = 0
+do_subcycle = 0
+suppress_output = 1

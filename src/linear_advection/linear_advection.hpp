@@ -72,8 +72,8 @@ void LinearAdvectionSystem<problem_t>::ConservedToPrimitive(amrex::MultiFab cons
 }
 
 template <typename problem_t>
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto LinearAdvectionSystem<problem_t>::isStateValid(amrex::Array4<const amrex::Real> const &cons, int i, int j,
-											int k) -> bool
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto LinearAdvectionSystem<problem_t>::isStateValid(amrex::Array4<const amrex::Real> const &cons, int i, int j, int k)
+    -> bool
 {
 	// check if cons(i, j, k) is a valid state
 	const auto rho = cons(i, j, k, density_index);

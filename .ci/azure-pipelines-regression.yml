@@ -19,7 +19,7 @@ jobs:
     pool: avatar
     timeoutInMinutes: 300
     steps:
-    - script: ./extern/regression_testing/regtest.py regression/quokka-tests.ini
+    - script: ./extern/regression_testing/regtest.py --clean_testdir regression/quokka-tests.ini
       displayName: 'Run regression testing'
     - publish: /home/bwibking/regression-tests/web
       condition: succeededOrFailed()

@@ -10,7 +10,7 @@ if (AMReX_SPACEDIM EQUAL 3)
     include_directories(BEFORE ${primordial_chem_dirs} "${CMAKE_CURRENT_BINARY_DIR}/" "includes/extern_parameters.H" "includes/network_properties.H")
 
     add_executable(popiii popiii.cpp "${QuokkaSourcesNoEOS}" ../../turbulence/TurbDataReader.cpp ../../chemistry/Chemistry.cpp ${primordial_chem_sources})
-    target_compile_definitions(popiii PUBLIC PRIMORDIAL_CHEM) #this will add #define PRIMORDIAL_CHEM
+    target_compile_definitions(popiii PUBLIC CHEMISTRY) #this will add #define CHEMISTRY
 
     if(AMReX_GPU_BACKEND MATCHES "CUDA")
         setup_target_for_cuda_compilation(popiii)

@@ -36,24 +36,21 @@ struct ShellProblem {
 // if false, use octant symmetry
 constexpr bool simulate_full_box = true;
 
-constexpr double a_rad = 7.5646e-15; // erg cm^-3 K^-4
-constexpr double c = 2.99792458e10;  // cm s^-1
-constexpr double a0 = 2.0e5;	     // ('reference' sound speed) [cm s^-1]
-constexpr double chat = 860. * a0;   // cm s^-1
-constexpr double k_B = C::k_B;	     // erg K^-1
-constexpr double m_H = C::m_u;	     // atomic mass unit
+constexpr double a_rad = C::a_rad;
+constexpr double c = C::c_light;
+constexpr double a0 = 2.0e5;	   // ('reference' sound speed) [cm s^-1]
+constexpr double chat = 860. * a0; // cm s^-1
+constexpr double k_B = C::k_B;	   // erg K^-1
+constexpr double m_H = C::m_u;	   // atomic mass unit
 constexpr double gamma_gas = 5. / 3.;
 
 template <> struct quokka::EOS_Traits<ShellProblem> {
 	static constexpr double mean_molecular_weight = 2.2 * m_H;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = gamma_gas;
 };
 
 template <> struct RadSystem_Traits<ShellProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -71,6 +68,7 @@ template <> struct Physics_Traits<ShellProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 constexpr amrex::Real Msun = 2.0e33;	       // g

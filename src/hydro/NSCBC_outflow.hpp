@@ -206,8 +206,8 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto transverse_zdir_dQ_data(const amrex::In
 }
 
 template <typename problem_t, FluxDir DIR>
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto
-permute_vel(quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_> const &Q) -> quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto permute_vel(quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_> const &Q)
+    -> quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_>
 {
 	// with normal direction DIR, permutes the velocity components so that
 	//  u, v, w are the normal and transverse components, respectively.
@@ -232,8 +232,8 @@ permute_vel(quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_> const &
 }
 
 template <typename problem_t, FluxDir DIR>
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto
-unpermute_vel(quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_> const &Q) -> quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto unpermute_vel(quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_> const &Q)
+    -> quokka::valarray<amrex::Real, HydroSystem<problem_t>::nvar_>
 {
 	// with normal direction DIR, un-permutes the velocity components so that
 	//  u, v, w are the normal and transverse components *prior to calling permute_vel*.

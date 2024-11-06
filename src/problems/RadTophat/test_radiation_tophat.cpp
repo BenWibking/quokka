@@ -31,19 +31,16 @@ constexpr double T_hohlraum = 500. / kelvin_to_eV;	 // K [== 500 eV]
 constexpr double T_initial = 50. / kelvin_to_eV;	 // K [== 50 eV]
 constexpr double c_v = (1.0e15 * 1.0e-6 * kelvin_to_eV); // erg g^-1 K^-1
 
-constexpr double a_rad = 7.5646e-15; // erg cm^-3 K^-4
-constexpr double c = 2.99792458e10;  // cm s^-1
+constexpr double a_rad = C::a_rad; // erg cm^-3 K^-4
+constexpr double c = C::c_light;   // cm s^-1
 
 template <> struct quokka::EOS_Traits<TophatProblem> {
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<TophatProblem> {
-	static constexpr double c_light = c_light_cgs_;
-	static constexpr double c_hat = c_light_cgs_;
-	static constexpr double radiation_constant = radiation_constant_cgs_;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 0;
 };
@@ -57,6 +54,7 @@ template <> struct Physics_Traits<TophatProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto RadSystem<TophatProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real

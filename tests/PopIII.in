@@ -53,13 +53,14 @@ derived_vars = temperature velx pressure sound_speed
 amrex.throw_exception = 0
 amrex.signal_handling = 1
 
-primordial_chem.enabled = 1
+chemistry.enabled = 1
+chemistry.max_density_allowed = 3e-6
+chemistry.min_density_allowed = 5e-21
+
 primordial_chem.temperature = 0.26415744E+003
 
 primordial_chem.small_temp = 1.e1
 primordial_chem.small_dens = 1.e-60
-primordial_chem.max_density_allowed = 3e-6
-primordial_chem.min_density_allowed = 5e-21
 #format in krome fort22_wD.dat file: E H- D- H HE H2 HD D H+ HE+ H2+ D+ HD+ HE++
 #format in quokka: E H+ H H- D+ D H2+ D- H2 HD+ HD HE++ HE+ HE
 primordial_chem.primary_species_1 = 0.88499253E-006

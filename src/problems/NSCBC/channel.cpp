@@ -51,7 +51,6 @@ struct Channel {
 template <> struct quokka::EOS_Traits<Channel> {
 	static constexpr double gamma = 1.1;
 	static constexpr double mean_molecular_weight = 28.96 * C::m_u; // air
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> struct Physics_Traits<Channel> {
@@ -61,6 +60,7 @@ template <> struct Physics_Traits<Channel> {
 	static constexpr int numPassiveScalars = numMassScalars + 1; // number of passive scalars
 	static constexpr bool is_radiation_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 // global variables needed for Dirichlet boundary condition and initial conditions

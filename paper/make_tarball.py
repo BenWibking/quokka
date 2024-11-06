@@ -66,4 +66,4 @@ if __name__ == '__main__':
             for this_file in files:
                 myzip.write(this_file)
     else:
-        Exception('unrecognized output suffix')
+        raise Exception('unrecognized output suffix')

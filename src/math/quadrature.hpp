@@ -22,8 +22,8 @@ AMREX_FORCE_INLINE AMREX_GPU_DEVICE auto kernel_wendland_c2(const amrex::Real r)
 }
 
 template <typename F>
-AMREX_FORCE_INLINE AMREX_GPU_DEVICE auto quad_3d(F &&f, amrex::Real x0, amrex::Real x1, amrex::Real y0, amrex::Real y1, amrex::Real z0,
-						 amrex::Real z1) -> amrex::Real
+AMREX_FORCE_INLINE AMREX_GPU_DEVICE auto quad_3d(F &&f, amrex::Real x0, amrex::Real x1, amrex::Real y0, amrex::Real y1, amrex::Real z0, amrex::Real z1)
+    -> amrex::Real
 {
 	// integrate F over the rectangular domain [x0, y0, z0] -> [x1, y1, z1].
 	auto integrand = [=] AMREX_GPU_DEVICE(amrex::Real z) {

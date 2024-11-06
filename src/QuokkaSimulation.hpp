@@ -123,13 +123,15 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	static constexpr int nstartHyperbolic_ = RadSystem<problem_t>::nstartHyperbolic_;
 
 	amrex::Real radiationCflNumber_ = 0.3;
-	int maxSubsteps_ = 10; // maximum number of radiation subcycles per hydro step
+	int maxSubsteps_ = 10;				// maximum number of radiation subcycles per hydro step
+	amrex::Real dustGasInteractionCoeff_ = 2.5e-34; // erg cm^3 s^−1 K^−3/2
 
 	bool computeReferenceSolution_ = false;
 	amrex::Real errorNorm_ = NAN;
 	amrex::Real pressureFloor_ = 0.;
 
 	bool use_wavespeed_correction_ = false;
+	bool print_rad_counter_ = false;
 
 	int lowLevelDebuggingOutput_ = 0;	// 0 == do nothing; 1 == output intermediate multifabs used in hydro each timestep (ONLY USE FOR DEBUGGING)
 	int integratorOrder_ = 2;		// 1 == forward Euler; 2 == RK2-SSP (default)
@@ -219,8 +221,8 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void addFluxArrays(std::array<amrex::MultiFab, AMREX_SPACEDIM> &dstfluxes, std::array<amrex::MultiFab, AMREX_SPACEDIM> &srcfluxes, int srccomp,
 			   int dstcomp);
 
-	auto expandFluxArrays(std::array<amrex::FArrayBox, AMREX_SPACEDIM> &fluxes, int nstartNew,
-			      int ncompNew) -> std::array<amrex::FArrayBox, AMREX_SPACEDIM>;
+	auto expandFluxArrays(std::array<amrex::FArrayBox, AMREX_SPACEDIM> &fluxes, int nstartNew, int ncompNew)
+	    -> std::array<amrex::FArrayBox, AMREX_SPACEDIM>;
 
 	void printCoordinates(int lev, const amrex::IntVect &cell_idx);
 
@@ -250,17 +252,17 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	void operatorSplitSourceTerms(amrex::Array4<amrex::Real> const &stateNew, const amrex::Box &indexRange, amrex::Real time, double dt, int stage,
 				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo,
-				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi);
+				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, int *p_iteration_counter, int *p_iteration_failure_counter);
 
 	auto computeRadiationFluxes(amrex::Array4<const amrex::Real> const &consVar, const amrex::Box &indexRange, int nvars,
 				    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx)
 	    -> std::tuple<std::array<amrex::FArrayBox, AMREX_SPACEDIM>, std::array<amrex::FArrayBox, AMREX_SPACEDIM>>;
 
-	auto computeHydroFluxes(amrex::MultiFab const &consVar, int nvars,
-				int lev) -> std::pair<std::array<amrex::MultiFab, AMREX_SPACEDIM>, std::array<amrex::MultiFab, AMREX_SPACEDIM>>;
+	auto computeHydroFluxes(amrex::MultiFab const &consVar, int nvars, int lev)
+	    -> std::pair<std::array<amrex::MultiFab, AMREX_SPACEDIM>, std::array<amrex::MultiFab, AMREX_SPACEDIM>>;
 
-	auto computeFOHydroFluxes(amrex::MultiFab const &consVar, int nvars,
-				  int lev) -> std::pair<std::array<amrex::MultiFab, AMREX_SPACEDIM>, std::array<amrex::MultiFab, AMREX_SPACEDIM>>;
+	auto computeFOHydroFluxes(amrex::MultiFab const &consVar, int nvars, int lev)
+	    -> std::pair<std::array<amrex::MultiFab, AMREX_SPACEDIM>, std::array<amrex::MultiFab, AMREX_SPACEDIM>>;
 
 	template <FluxDir DIR>
 	void fluxFunction(amrex::Array4<const amrex::Real> const &consState, amrex::FArrayBox &x1Flux, amrex::FArrayBox &x1FluxDiffusive,
@@ -319,6 +321,53 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentN
 	}
 }
 
+// initialize metadata
+template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulationMetadata()
+{
+	if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
+		// if unit system is CONSTANTS, the units are not well defined unless all four constants, G, k_B, c, and a_rad, are defined. However, in a hydro
+		// simulation, only k_B is defined. In a radiation-hydrodynamics simulation, only k_B, c, and a_rad are defined. Besides, CONSTANTS is only used
+		// for testing purposes, so we don't care about the units in that case.
+		simulationMetadata_["unit_length"] = NAN;
+		simulationMetadata_["unit_mass"] = NAN;
+		simulationMetadata_["unit_time"] = NAN;
+		simulationMetadata_["unit_temperature"] = NAN;
+
+		// constants
+		simulationMetadata_["k_B"] = Physics_Traits<problem_t>::boltzmann_constant;
+		simulationMetadata_["G"] = Physics_Traits<problem_t>::gravitational_constant;
+		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
+			simulationMetadata_["c"] = Physics_Traits<problem_t>::c_light;
+			simulationMetadata_["c_hat"] = Physics_Traits<problem_t>::c_light * RadSystem_Traits<problem_t>::c_hat_over_c;
+			simulationMetadata_["a_rad"] = Physics_Traits<problem_t>::radiation_constant;
+		}
+	} else {
+		// units
+		simulationMetadata_["unit_length"] = unit_length;
+		simulationMetadata_["unit_mass"] = unit_mass;
+		simulationMetadata_["unit_time"] = unit_time;
+		simulationMetadata_["unit_temperature"] = unit_temperature;
+
+		// constants
+		double k_B = NAN;
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			k_B = C::k_B;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			// Have to do a conversion because EOS class is not accessible here
+			k_B = C::k_B /
+			      (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_mass /
+			       (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time) / Physics_Traits<problem_t>::unit_temperature);
+		}
+		simulationMetadata_["k_B"] = k_B;
+		simulationMetadata_["G"] = Gconst_;
+		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
+			simulationMetadata_["c"] = RadSystem<problem_t>::c_light_;
+			simulationMetadata_["c_hat"] = RadSystem<problem_t>::c_hat_;
+			simulationMetadata_["a_rad"] = RadSystem<problem_t>::radiation_constant_;
+		}
+	}
+}
+
 template <typename problem_t> auto QuokkaSimulation<problem_t>::getScalarVariableNames() -> std::vector<std::string>
 {
 	// return vector of names for the passive scalars
@@ -372,10 +421,10 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::readParmParse()
 		}
 	}
 
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	// set chemistry runtime parameters
 	{
-		amrex::ParmParse hpp("primordial_chem");
+		amrex::ParmParse hpp("chemistry");
 		hpp.query("enabled", enableChemistry_);
 		hpp.query("max_density_allowed", max_density_allowed); // chemistry is not accurate for densities > 3e-6
 		hpp.query("min_density_allowed", min_density_allowed); // don't do chemistry in cells with densities below the minimum density specified
@@ -387,6 +436,8 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::readParmParse()
 		amrex::ParmParse rpp("radiation");
 		rpp.query("reconstruction_order", radiationReconstructionOrder_);
 		rpp.query("cfl", radiationCflNumber_);
+		rpp.query("dust_gas_interaction_coeff", dustGasInteractionCoeff_);
+		rpp.query("print_iteration_counts", print_rad_counter_);
 	}
 }
 
@@ -530,7 +581,7 @@ auto QuokkaSimulation<problem_t>::addStrangSplitSourcesWithBuiltin(amrex::MultiF
 
 	// start by assuming chemistry burn is successful.
 	bool burn_success = true; // NOLINT
-#ifdef PRIMORDIAL_CHEM
+#ifdef CHEMISTRY
 	if (enableChemistry_ == 1) {
 		// compute chemistry
 		burn_success = quokka::chemistry::computeChemistry<problem_t>(state, dt, max_density_allowed, min_density_allowed);
@@ -1377,8 +1428,8 @@ void QuokkaSimulation<problem_t>::addFluxArrays(std::array<amrex::MultiFab, AMRE
 }
 
 template <typename problem_t>
-auto QuokkaSimulation<problem_t>::expandFluxArrays(std::array<amrex::FArrayBox, AMREX_SPACEDIM> &fluxes, const int nstartNew,
-						   const int ncompNew) -> std::array<amrex::FArrayBox, AMREX_SPACEDIM>
+auto QuokkaSimulation<problem_t>::expandFluxArrays(std::array<amrex::FArrayBox, AMREX_SPACEDIM> &fluxes, const int nstartNew, const int ncompNew)
+    -> std::array<amrex::FArrayBox, AMREX_SPACEDIM>
 {
 	BL_PROFILE("QuokkaSimulation::expandFluxArrays()");
 
@@ -1613,8 +1664,16 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		// new radiation state is stored in state_new_cc_
 		// new hydro state is stored in state_new_cc_ (always the case during radiation update)
 
+		// failure counter for: matter-radiation coupling, dust temperature, outer iteration
+		amrex::Gpu::Buffer<int> iteration_failure_counter({0, 0, 0});
+		// iteration counter for: radiation update, Newton-Raphson iterations, max Newton-Raphson iterations, decoupled gas-dust update
+		amrex::Gpu::Buffer<int> iteration_counter({0, 0, 0, 0});
+		int *p_iteration_failure_counter = iteration_failure_counter.data();
+		int *p_iteration_counter = iteration_counter.data();
+
 		if constexpr (IMEX_a22 > 0.0) {
 			// matter-radiation exchange source terms of stage 1
+
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
 				const amrex::Box &indexRange = iter.validbox();
 				auto const &stateNew = state_new_cc_[lev].array(iter);
@@ -1623,7 +1682,8 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				// update state_new_cc_[lev] in place (updates both radiation and hydro vars)
 				// Note that only a fraction (IMEX_a32) of the matter-radiation exchange source terms are added to hydro. This ensures that the
 				// hydro properties get to t + IMEX_a32 dt in terms of matter-radiation exchange.
-				operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi);
+				operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi, p_iteration_counter,
+							 p_iteration_failure_counter);
 			}
 		}
 
@@ -1640,7 +1700,62 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			auto const &prob_lo = geom[lev].ProbLoArray();
 			auto const &prob_hi = geom[lev].ProbHiArray();
 			// update state_new_cc_[lev] in place (updates both radiation and hydro vars)
-			operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 2, dx, prob_lo, prob_hi);
+			operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 2, dx, prob_lo, prob_hi, p_iteration_counter,
+						 p_iteration_failure_counter);
+		}
+
+		if (print_rad_counter_) {
+			auto h_iteration_counter = iteration_counter.copyToHost();
+			long global_solver_count = h_iteration_counter[0];	      // number of Newton-Raphson solvings
+			long global_iteration_sum = h_iteration_counter[1];	      // sum of Newton-Raphson iterations
+			int global_iteration_max = h_iteration_counter[2];	      // max number of Newton-Raphson iterations
+			long global_decoupled_iteration_sum = h_iteration_counter[3]; // sum of decoupled gas-dust Newton-Raphson iterations
+
+			amrex::ParallelDescriptor::ReduceLongSum(global_solver_count);
+			amrex::ParallelDescriptor::ReduceLongSum(global_iteration_sum);
+			amrex::ParallelDescriptor::ReduceIntMax(global_iteration_max);
+			amrex::ParallelDescriptor::ReduceLongSum(global_decoupled_iteration_sum);
+
+			if (amrex::ParallelDescriptor::IOProcessor()) {
+				const auto n_cells = CountCells(lev);
+				amrex::Print() << "time_subcycle = " << time_subcycle << ", total number of cells updated is " << n_cells << "\n";
+				if (n_cells > 0 && global_solver_count > 0) {
+					const double global_iteration_mean =
+					    static_cast<double>(global_iteration_sum) / static_cast<double>(global_solver_count);
+					const double global_solving_mean =
+					    static_cast<double>(global_solver_count) / static_cast<double>(n_cells) / 2.0; // 2 stages
+					const double global_decoupled_iteration_mean =
+					    static_cast<double>(global_decoupled_iteration_sum) / static_cast<double>(global_solver_count);
+					amrex::Print() << "The average number of Newton-Raphson solvings per IMEX stage is " << global_solving_mean
+						       << ", (mean, max) number of Newton-Raphson iterations are " << global_iteration_mean << ", "
+						       << global_iteration_max << ".\n";
+					if constexpr (ISM_Traits<problem_t>::enable_dust_gas_thermal_coupling_model) {
+						amrex::Print() << "The fraction of gas-dust interactions that are decoupled is "
+							       << global_decoupled_iteration_mean << "\n";
+					}
+				}
+			}
+		}
+
+		auto h_iteration_failure_counter = iteration_failure_counter.copyToHost();
+		long nf_coupling = h_iteration_failure_counter[0]; // number of matter-radiation coupling failures
+		long nf_dust = h_iteration_failure_counter[1];	   // number of dust temperature failures
+		long nf_outer = h_iteration_failure_counter[2];	   // number of outer iterations failures
+
+		amrex::ParallelDescriptor::ReduceLongSum(nf_coupling);
+		amrex::ParallelDescriptor::ReduceLongSum(nf_dust);
+		amrex::ParallelDescriptor::ReduceLongSum(nf_outer);
+
+		// Note that the nf_dust has to abort BEFORE nf_coupling, because the dust temperature is used in the matter-radiation coupling and if dust
+		// temperature is negative, the matter-radiation coupling will fail to converge.
+		if (nf_dust > 0) {
+			amrex::Abort("Newton-Raphson iteration for dust temperature failed to converge or dust temperature is negative!");
+		}
+		if (nf_coupling > 0) {
+			amrex::Abort("Newton-Raphson iteration for matter-radiation coupling failed to converge!");
+		}
+		if (nf_outer > 0) {
+			amrex::Abort("Outer iteration for matter-radiation coupling failed to converge!");
 		}
 
 		// new hydro+radiation state is stored in state_new_cc_
@@ -1792,7 +1907,8 @@ template <typename problem_t>
 void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::Real> const &stateNew, const amrex::Box &indexRange, const amrex::Real time,
 							   const double dt, const int stage, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
 							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo,
-							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi)
+							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, int *p_iteration_counter,
+							   int *p_iteration_failure_counter)
 {
 	amrex::FArrayBox radEnergySource(indexRange, Physics_Traits<problem_t>::nGroups,
 					 amrex::The_Async_Arena()); // cell-centered scalar
@@ -1803,7 +1919,13 @@ void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::
 	RadSystem<problem_t>::SetRadEnergySource(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
 
 	// cell-centered source terms
-	RadSystem<problem_t>::AddSourceTerms(stateNew, radEnergySource.const_array(), indexRange, dt, stage);
+	if constexpr (Physics_Traits<problem_t>::nGroups <= 1) {
+		RadSystem<problem_t>::AddSourceTermsSingleGroup(stateNew, radEnergySource.const_array(), indexRange, dt, stage, dustGasInteractionCoeff_,
+								p_iteration_counter, p_iteration_failure_counter);
+	} else {
+		RadSystem<problem_t>::AddSourceTermsMultiGroup(stateNew, radEnergySource.const_array(), indexRange, dt, stage, dustGasInteractionCoeff_,
+							       p_iteration_counter, p_iteration_failure_counter);
+	}
 }
 
 template <typename problem_t>

@@ -88,7 +88,7 @@ namespace filesystem = experimental::filesystem;
 #include "physics_info.hpp"
 
 #ifdef QUOKKA_USE_OPENPMD
-#include "openPMD.hpp"
+#include "io/openPMD.hpp"
 #endif
 
 #define USE_YAFLUXREGISTER
@@ -335,6 +335,9 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	void kickParticlesAllLevels(amrex::Real dt);
 	void driftParticlesAllLevels(amrex::Real dt);
 
+	// simulation metadata
+	void initializeSimulationMetadata();
+
 #ifdef AMREX_USE_ASCENT
 	void AscentCustomActions(conduit::Node const &blueprintMesh);
 	void RenderAscent();
@@ -389,7 +392,56 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	amrex::Vector<amrex::Long> cellUpdatesEachLevel_;
 
 	// gravity
-	amrex::Real Gconst_ = C::Gconst; // gravitational constant G
+	static constexpr amrex::Real Gconst_ = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return C::Gconst; // gravitational constant G, CGS units
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CONSTANTS) {
+			return Physics_Traits<problem_t>::gravitational_constant; // gravitational constant G, user defined
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			// G / G_bar = u_l^3 / u_m / u_t^2
+			return C::Gconst /
+			       (Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length * Physics_Traits<problem_t>::unit_length /
+				Physics_Traits<problem_t>::unit_mass / (Physics_Traits<problem_t>::unit_time * Physics_Traits<problem_t>::unit_time));
+		}
+	}();
+
+	// unit length, mass, time, temperature
+	static constexpr amrex::Real unit_length = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			return Physics_Traits<problem_t>::unit_length;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return 1.0;
+		} else {
+			return NAN;
+		}
+	}();
+	static constexpr amrex::Real unit_mass = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			return Physics_Traits<problem_t>::unit_mass;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return 1.0;
+		} else {
+			return NAN;
+		}
+	}();
+	static constexpr amrex::Real unit_time = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			return Physics_Traits<problem_t>::unit_time;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return 1.0;
+		} else {
+			return NAN;
+		}
+	}();
+	static constexpr amrex::Real unit_temperature = []() constexpr {
+		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CUSTOM) {
+			return Physics_Traits<problem_t>::unit_temperature;
+		} else if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
+			return 1.0;
+		} else {
+			return NAN;
+		}
+	}();
 
 	// tracer particles
 #ifdef AMREX_PARTICLES
@@ -473,6 +525,10 @@ template <typename problem_t> void AMRSimulation<problem_t>::initialize()
 				       << std::endl; // NOLINT(performance-avoid-endl)
 			amrex::Abort("Grids not properly nested!");
 		}
+	}
+
+	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
+		initializeSimulationMetadata();
 	}
 
 #ifdef AMREX_USE_ASCENT
@@ -626,12 +682,6 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	if (nargs == 3) {
 		maxWalltime_ = 3600 * hours + 60 * minutes + seconds;
 		amrex::Print() << fmt::format("Setting walltime limit to {} hours, {} minutes, {} seconds.\n", hours, minutes, seconds);
-	}
-
-	// set gravity runtime parameters
-	{
-		const amrex::ParmParse hpp("gravity");
-		hpp.query("Gconst", Gconst_);
 	}
 }
 

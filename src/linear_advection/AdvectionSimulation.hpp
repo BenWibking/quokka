@@ -380,8 +380,8 @@ template <typename problem_t> void AdvectionSimulation<problem_t>::advanceSingle
 }
 
 template <typename problem_t>
-auto AdvectionSimulation<problem_t>::computeFluxes(amrex::MultiFab const &consVar, const int nvars,
-						   const int lev) -> std::array<amrex::MultiFab, AMREX_SPACEDIM>
+auto AdvectionSimulation<problem_t>::computeFluxes(amrex::MultiFab const &consVar, const int nvars, const int lev)
+    -> std::array<amrex::MultiFab, AMREX_SPACEDIM>
 {
 	auto ba = grids[lev];
 	auto dm = dmap[lev];

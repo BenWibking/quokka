@@ -100,7 +100,6 @@ constexpr double Erad_floor_ = a_rad * T_initial * T_initial * T_initial * T_ini
 
 template <> struct quokka::EOS_Traits<SuOlsonProblemCgs> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -113,12 +112,11 @@ template <> struct Physics_Traits<SuOlsonProblemCgs> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<SuOlsonProblemCgs> {
-	static constexpr double c_light = c_light_cgs_;
-	static constexpr double c_hat = c_light_cgs_;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = Erad_floor_;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = C::hplanck; // set boundary unit to Hz
@@ -199,7 +197,7 @@ AMRSimulation<SuOlsonProblemCgs>::setCustomBoundaryConditions(const amrex::IntVe
 			T_H = T_R;
 		}
 
-		auto Erad_g = RadSystem<SuOlsonProblemCgs>::ComputeThermalRadiation(T_H, radBoundaries_g);
+		auto Erad_g = RadSystem<SuOlsonProblemCgs>::ComputeThermalRadiationMultiGroup(T_H, radBoundaries_g);
 		const double Egas = quokka::EOS<SuOlsonProblemCgs>::ComputeEintFromTgas(rho0, T_initial);
 
 		for (int g = 0; g < Physics_Traits<SuOlsonProblemCgs>::nGroups; ++g) {
@@ -230,7 +228,7 @@ template <> void QuokkaSimulation<SuOlsonProblemCgs>::setInitialConditionsOnGrid
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
 		const double Egas = quokka::EOS<SuOlsonProblemCgs>::ComputeEintFromTgas(rho0, T_initial);
 		// const double Erad = a_rad * std::pow(T_initial, 4);
-		auto Erad_g = RadSystem<SuOlsonProblemCgs>::ComputeThermalRadiation(T_initial, radBoundaries_g);
+		auto Erad_g = RadSystem<SuOlsonProblemCgs>::ComputeThermalRadiationMultiGroup(T_initial, radBoundaries_g);
 
 		for (int g = 0; g < Physics_Traits<SuOlsonProblemCgs>::nGroups; ++g) {
 			state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_g[g];

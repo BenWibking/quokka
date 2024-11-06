@@ -38,7 +38,6 @@ struct QuirkProblem {
 template <> struct quokka::EOS_Traits<QuirkProblem> {
 	static constexpr double gamma = 5. / 3.;
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> struct HydroSystem_Traits<QuirkProblem> {
@@ -54,6 +53,7 @@ template <> struct Physics_Traits<QuirkProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 constexpr Real dl = 3.692;

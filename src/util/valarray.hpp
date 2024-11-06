@@ -86,6 +86,26 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto operator+(quokka::valarray<T, d> c
 	return sum;
 }
 
+// array + scalar
+template <typename T, int d> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto operator+(quokka::valarray<T, d> const &v, T const &scalar) -> quokka::valarray<T, d>
+{
+	quokka::valarray<T, d> scalarsum;
+	for (size_t i = 0; i < v.size(); ++i) {
+		scalarsum[i] = v[i] + scalar;
+	}
+	return scalarsum;
+}
+
+// scalar + array
+template <typename T, int d> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto operator+(T const &scalar, quokka::valarray<T, d> const &v) -> quokka::valarray<T, d>
+{
+	quokka::valarray<T, d> scalarsum;
+	for (size_t i = 0; i < v.size(); ++i) {
+		scalarsum[i] = scalar + v[i];
+	}
+	return scalarsum;
+}
+
 // array - array
 template <typename T, int d>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto operator-(quokka::valarray<T, d> const &a, quokka::valarray<T, d> const &b) -> quokka::valarray<T, d>
@@ -153,16 +173,6 @@ template <typename T, int d> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void opera
 	for (size_t i = 0; i < a.size(); ++i) {
 		a[i] += b[i];
 	}
-}
-
-// array + scalar
-template <typename T, int d> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto operator+(quokka::valarray<T, d> const &v, T const &scalar) -> quokka::valarray<T, d>
-{
-	quokka::valarray<T, d> scalarsum;
-	for (size_t i = 0; i < v.size(); ++i) {
-		scalarsum[i] = v[i] + scalar;
-	}
-	return scalarsum;
 }
 
 // array / scalar

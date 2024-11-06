@@ -48,6 +48,7 @@ template <> struct Physics_Traits<PopIII> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct SimulationData<PopIII> {

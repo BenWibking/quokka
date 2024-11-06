@@ -9,18 +9,11 @@
 #include "AMReX_BC_TYPES.H"
 
 #include "AMReX_BLassert.H"
-#include "math/interpolate.hpp"
 #include "radiation/radiation_system.hpp"
-#include "util/ArrayUtil.hpp"
 #include "util/fextract.hpp"
 
-// #include "AMReX_BC_TYPES.H"
-#include "AMReX_IntVect.H"
 #include "AMReX_Print.H"
-// #include "QuokkaSimulation.hpp"
-// #include "util/fextract.hpp"
 #include "physics_info.hpp"
-// #include "radiation/radiation_system.hpp"
 #include "test_radhydro_bb.hpp"
 
 static constexpr bool export_csv = true;
@@ -102,13 +95,10 @@ constexpr double T_equilibrium = 0.768032502191;
 // constexpr double max_time = 1000.0 / (c * rho0 * kappa0); // dt >> 1 / (c * chi)
 constexpr double max_time = 10.0 / (1e-2 * c);
 
-constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
-constexpr double Erad_beta2 = (1. + 4. / 3. * (v0 * v0) / (c * c)) * Erad0;
 constexpr double erad_floor = a_rad * 1e-30;
 
 template <> struct quokka::EOS_Traits<PulseProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -121,12 +111,15 @@ template <> struct Physics_Traits<PulseProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = k_B;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 	static constexpr double energy_unit = nu_unit;

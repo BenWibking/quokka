@@ -35,7 +35,6 @@ template <> struct quokka::EOS_Traits<BinaryOrbit> {
 	static constexpr double gamma = 1.0;	       // isothermal
 	static constexpr double cs_isothermal = 1.3e7; // cm s^{-1}
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 template <> struct HydroSystem_Traits<BinaryOrbit> {
@@ -49,6 +48,7 @@ template <> struct Physics_Traits<BinaryOrbit> {
 	static constexpr int numMassScalars = 0;		     // number of mass scalars
 	static constexpr int numPassiveScalars = numMassScalars + 0; // number of passive scalars
 	static constexpr int nGroups = 1;			     // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct SimulationData<BinaryOrbit> {

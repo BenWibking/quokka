@@ -21,8 +21,7 @@ constexpr double T1 = 2.0e7; // K (temperature)
 constexpr double rho0 = 1.2; // g cm^-3 (matter density)
 constexpr double a_rad = C::a_rad;
 constexpr double c = C::c_light; // speed of light (cgs)
-constexpr double chat = c;
-constexpr double width = 24.0; // cm, width of the pulse
+constexpr double width = 24.0;	 // cm, width of the pulse
 constexpr double erad_floor = a_rad * T0 * T0 * T0 * T0 * 1.0e-10;
 constexpr double mu = 2.33 * C::m_u;
 constexpr double k_B = C::k_B;
@@ -35,26 +34,20 @@ AMREX_GPU_MANAGED double v0_adv = 3.0e7; // NOLINT
 
 template <> struct quokka::EOS_Traits<PulseProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 template <> struct quokka::EOS_Traits<AdvPulseProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
 template <> struct RadSystem_Traits<AdvPulseProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
@@ -68,6 +61,7 @@ template <> struct Physics_Traits<PulseProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 template <> struct Physics_Traits<AdvPulseProblem> {
 	// cell-centred
@@ -78,6 +72,7 @@ template <> struct Physics_Traits<AdvPulseProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 AMREX_GPU_HOST_DEVICE

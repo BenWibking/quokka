@@ -12,8 +12,8 @@
 
 using namespace amrex; // NOLINT
 
-auto fextract(MultiFab &mf, Geometry &geom, const int idir, const Real slice_coord,
-	      const bool center = false) -> std::tuple<Vector<Real>, Vector<Gpu::HostVector<Real>>>
+auto fextract(MultiFab &mf, Geometry &geom, const int idir, const Real slice_coord, const bool center = false)
+    -> std::tuple<Vector<Real>, Vector<Gpu::HostVector<Real>>>
 {
 	AMREX_D_TERM(Real xcoord = slice_coord;, Real ycoord = slice_coord;, Real zcoord = slice_coord;)
 

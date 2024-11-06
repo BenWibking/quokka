@@ -55,16 +55,13 @@ constexpr double shock_position = 0.01305; // 0.0132; // cm (shock position drif
 constexpr double Lx = 0.01575; // cm
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
 
 template <> struct quokka::EOS_Traits<ShockProblem> {
 	static constexpr double mean_molecular_weight = C::m_p + C::m_e;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = gamma_gas;
 };
 
@@ -77,6 +74,12 @@ template <> struct Physics_Traits<ShockProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	// A custom unit system is used here to replicate the CGS units, for testing units conversion
+	static constexpr UnitSystem unit_system = UnitSystem::CUSTOM;
+	static constexpr double unit_length = 1.0;	// cm
+	static constexpr double unit_mass = 1.0;	// g
+	static constexpr double unit_time = 1.0;	// s
+	static constexpr double unit_temperature = 1.0; // K
 };
 
 template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<ShockProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real

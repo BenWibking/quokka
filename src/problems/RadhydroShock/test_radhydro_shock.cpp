@@ -43,6 +43,8 @@ constexpr double v1 = (Mach0 * c_s0) * (rho0 / rho1);
 
 constexpr double chat = 10.0 * (v0 + c_s0); // reduced speed of light
 
+constexpr double Ggrav = 1.0; // dimensionless gravitational constant; arbitrary
+
 constexpr double Erad0 = a_rad * (T0 * T0 * T0 * T0);
 constexpr double Egas0 = rho0 * c_v * T0;
 constexpr double Erad1 = a_rad * (T1 * T1 * T1 * T1);
@@ -54,16 +56,13 @@ constexpr double shock_position = 0.0130; // 0.0132; // cm
 // we initialize slightly to the left...)
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
 
 template <> struct quokka::EOS_Traits<ShockProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = gamma_gas;
 };
 
@@ -76,6 +75,11 @@ template <> struct Physics_Traits<ShockProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = k_B;
+	static constexpr double gravitational_constant = Ggrav;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<ShockProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real

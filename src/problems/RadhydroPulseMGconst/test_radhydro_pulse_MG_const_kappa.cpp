@@ -17,7 +17,6 @@ struct SGProblem {
 struct MGproblem {
 };
 
-constexpr int isconst = 0;
 // constexpr int n_groups_ = 1;
 // constexpr amrex::GpuArray<double, n_groups_ + 1> rad_boundaries_{0., inf};
 // constexpr int n_groups_ = 2;
@@ -68,10 +67,6 @@ constexpr int64_t max_timesteps = 1e2; // for fast testing
 // constexpr double v0 = 1.0e8;    // advecting pulse
 // constexpr double max_time = 1.2e-4; // max_time = 2.0 * width / v1;
 
-constexpr double T_ref = T0;
-constexpr double nu_ref = 1.0e18; // Hz
-constexpr double coeff_ = h_planck * nu_ref / (k_B * T_ref);
-
 AMREX_GPU_HOST_DEVICE
 auto compute_initial_Tgas(const double x) -> double
 {
@@ -90,7 +85,6 @@ auto compute_exact_rho(const double x) -> double
 
 template <> struct quokka::EOS_Traits<SGProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -103,12 +97,11 @@ template <> struct Physics_Traits<SGProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<SGProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 1;
 };
@@ -155,7 +148,6 @@ template <> void QuokkaSimulation<SGProblem>::setInitialConditionsOnGrid(quokka:
 
 template <> struct quokka::EOS_Traits<MGproblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -168,12 +160,11 @@ template <> struct Physics_Traits<MGproblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<MGproblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr double energy_unit = h_planck;
 	static constexpr amrex::GpuArray<double, n_groups_ + 1> radBoundaries = rad_boundaries_;
@@ -218,7 +209,7 @@ template <> void QuokkaSimulation<MGproblem>::setInitialConditionsOnGrid(quokka:
 		const double rho = compute_exact_rho(x - x0);
 		const double Egas = quokka::EOS<MGproblem>::ComputeEintFromTgas(rho, Trad);
 
-		auto Erad_g = RadSystem<MGproblem>::ComputeThermalRadiation(Trad, radBoundaries_g);
+		auto Erad_g = RadSystem<MGproblem>::ComputeThermalRadiationMultiGroup(Trad, radBoundaries_g);
 
 		for (int g = 0; g < Physics_Traits<MGproblem>::nGroups; ++g) {
 			state_cc(i, j, k, RadSystem<MGproblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_g[g];

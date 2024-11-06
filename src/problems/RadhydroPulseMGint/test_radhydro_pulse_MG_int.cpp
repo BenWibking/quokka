@@ -92,12 +92,10 @@ constexpr double coeff_ = h_planck * nu_ref / (k_B * T_ref); // = 4.799243073 = 
 
 template <> struct quokka::EOS_Traits<MGProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 template <> struct quokka::EOS_Traits<ExactProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -110,6 +108,7 @@ template <> struct Physics_Traits<MGProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 template <> struct Physics_Traits<ExactProblem> {
 	// cell-centred
@@ -120,12 +119,11 @@ template <> struct Physics_Traits<ExactProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<MGProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr bool compute_v_over_c_terms = true;
 	static constexpr double energy_unit = h_planck;
@@ -134,9 +132,7 @@ template <> struct RadSystem_Traits<MGProblem> {
 	static constexpr OpacityModel opacity_model = opacity_model_;
 };
 template <> struct RadSystem_Traits<ExactProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = chat;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr bool compute_v_over_c_terms = true;
 	static constexpr int beta_order = 1;
@@ -170,8 +166,8 @@ auto compute_kappa(const double nu, const double Tgas) -> double
 
 template <>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto
-RadSystem<MGProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, nGroups_ + 1> const rad_boundaries, const double rho,
-							   const double Tgas) -> amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2>
+RadSystem<MGProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, nGroups_ + 1> const rad_boundaries, const double rho, const double Tgas)
+    -> amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2>
 {
 	amrex::GpuArray<double, nGroups_ + 1> exponents{};
 	amrex::GpuArray<double, nGroups_ + 1> kappa_lower{};
@@ -236,7 +232,7 @@ template <> void QuokkaSimulation<MGProblem>::setInitialConditionsOnGrid(quokka:
 		const double Egas = quokka::EOS<MGProblem>::ComputeEintFromTgas(rho, Trad);
 		const double v0 = v0_adv;
 
-		auto Erad_g = RadSystem<MGProblem>::ComputeThermalRadiation(Trad, radBoundaries_g);
+		auto Erad_g = RadSystem<MGProblem>::ComputeThermalRadiationMultiGroup(Trad, radBoundaries_g);
 		auto Frad_g = RadSystem<MGProblem>::ComputeFluxInDiffusionLimit(radBoundaries_g, Trad, v0);
 
 		for (int g = 0; g < Physics_Traits<MGProblem>::nGroups; ++g) {

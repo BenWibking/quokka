@@ -47,7 +47,6 @@ constexpr double Lx = (a0 * a0) / g0;			 // cm
 
 template <> struct quokka::EOS_Traits<TubeProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = gamma_gas;
 	static constexpr double cs_isothermal = a0; // only used when gamma = 1
 };
@@ -62,12 +61,11 @@ template <> struct Physics_Traits<TubeProblem> {
 	static constexpr bool is_mhd_enabled = false;
 	// number of radiation groups
 	static constexpr int nGroups = 1;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<TubeProblem> {
-	static constexpr double c_light = c_light_cgs_;
-	static constexpr double c_hat = 10. * (Mach1 * a0);
-	static constexpr double radiation_constant = radiation_constant_cgs_;
+	static constexpr double c_hat_over_c = 10. * (Mach1 * a0) / C::c_light;
 	static constexpr double Erad_floor = 0.;
 	static constexpr double energy_unit = C::ev2erg;
 	static constexpr int beta_order = 1;

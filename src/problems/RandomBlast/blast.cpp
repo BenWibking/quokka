@@ -28,6 +28,7 @@
 #include "fundamental_constants.H"
 #include "hydro/hydro_system.hpp"
 #include "math/quadrature.hpp"
+#include "physics_info.hpp"
 
 using amrex::Real;
 
@@ -47,12 +48,12 @@ template <> struct Physics_Traits<RandomBlast> {
 	static constexpr int numMassScalars = 0;
 	static constexpr int numPassiveScalars = numMassScalars + 1;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct quokka::EOS_Traits<RandomBlast> {
 	static constexpr double gamma = 5. / 3.;
 	static constexpr double mean_molecular_weight = C::m_u;
-	static constexpr double boltzmann_constant = C::k_B;
 };
 
 constexpr Real Tgas0 = 1.0e4;								// K
@@ -287,6 +288,9 @@ template <> void QuokkaSimulation<RandomBlast>::ErrorEst(int lev, amrex::TagBoxA
 
 auto problem_main() -> int
 {
+	// This problem is only implemented in CGS units because the Grackle cooling tables are in CGS units.
+	static_assert(Physics_Traits<RandomBlast>::unit_system == UnitSystem::CGS);
+
 	// read parameters
 	amrex::ParmParse const pp;
 

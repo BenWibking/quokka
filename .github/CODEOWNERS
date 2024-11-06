@@ -1,0 +1,29 @@
+# Lines starting with '#' are comments.
+# Each line is a file pattern followed by one or more owners.
+# Email addresses or GitHub usernames can be used
+
+# These owners will be the default owners for everything in
+# the repo. Unless a later match takes precedence,
+# these global owners will be requested for
+# review when someone opens a pull request.
+*       @BenWibking @markkrumholz
+
+# Order is important; the last matching pattern takes the most
+# precedence. When someone opens a pull request that only
+# modifies any files listed below, only the user listed below
+# and not the global owner(s) will be requested for a review.
+
+# hydro
+src/hydro/ @BenWibking @markkrumholz
+
+# optically-thin radiative cooling (assuming ionization equilibrium)
+src/cooling/ @BenWibking @markkrumholz
+
+# particles -- CICParticles only
+src/particles/CICParticles.hpp @BenWibking @markkrumholz
+
+# chemistry (including chemical heating/cooling)
+src/chemistry/ @psharda @BenWibking @markkrumholz
+
+# radiation
+src/radiation/ @chongchonghe @BenWibking @markkrumholz

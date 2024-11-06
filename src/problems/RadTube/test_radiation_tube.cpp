@@ -42,7 +42,6 @@ constexpr double a0 = 4.0295519855200705e7; // cm s^-1
 
 template <> struct quokka::EOS_Traits<TubeProblem> {
 	static constexpr double mean_molecular_weight = mu;
-	static constexpr double boltzmann_constant = C::k_B;
 	static constexpr double gamma = gamma_gas;
 };
 
@@ -56,12 +55,11 @@ template <> struct Physics_Traits<TubeProblem> {
 	static constexpr bool is_mhd_enabled = false;
 	// number of radiation groups
 	static constexpr int nGroups = 2;
+	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
 template <> struct RadSystem_Traits<TubeProblem> {
-	static constexpr double c_light = c_light_cgs_;
-	static constexpr double c_hat = 10.0 * a0;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 10.0 * a0 / C::c_light;
 	static constexpr double Erad_floor = 0.;
 	static constexpr double energy_unit = C::k_B;
 	static constexpr amrex::GpuArray<double, Physics_Traits<TubeProblem>::nGroups + 1> radBoundaries{0.01 * T0, 3.3 * T0, 1000. * T0}; // Kelvin
@@ -85,17 +83,12 @@ RadSystem<TubeProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<dou
 	return exponents_and_values;
 }
 
-// declare global variables
-// initial conditions read from file
-amrex::Gpu::HostVector<double> x_arr;
-amrex::Gpu::HostVector<double> rho_arr;
-amrex::Gpu::HostVector<double> Pgas_arr;
-amrex::Gpu::HostVector<double> Erad_arr;
-
-amrex::Gpu::DeviceVector<double> x_arr_g;
-amrex::Gpu::DeviceVector<double> rho_arr_g;
-amrex::Gpu::DeviceVector<double> Pgas_arr_g;
-amrex::Gpu::DeviceVector<double> Erad_arr_g;
+template <> struct SimulationData<TubeProblem> {
+	amrex::Gpu::DeviceVector<double> x_arr_g;
+	amrex::Gpu::DeviceVector<double> rho_arr_g;
+	amrex::Gpu::DeviceVector<double> Pgas_arr_g;
+	amrex::Gpu::DeviceVector<double> Erad_arr_g;
+};
 
 template <> void QuokkaSimulation<TubeProblem>::preCalculateInitialConditions()
 {
@@ -105,6 +98,11 @@ template <> void QuokkaSimulation<TubeProblem>::preCalculateInitialConditions()
 	AMREX_ALWAYS_ASSERT(fstream.is_open());
 	std::string header;
 	std::getline(fstream, header);
+
+	std::vector<double> x_arr;
+	std::vector<double> rho_arr;
+	std::vector<double> Pgas_arr;
+	std::vector<double> Erad_arr;
 
 	for (std::string line; std::getline(fstream, line);) {
 		std::istringstream iss(line);
@@ -123,16 +121,16 @@ template <> void QuokkaSimulation<TubeProblem>::preCalculateInitialConditions()
 		Erad_arr.push_back(Erad);
 	}
 
-	x_arr_g.resize(x_arr.size());
-	rho_arr_g.resize(rho_arr.size());
-	Pgas_arr_g.resize(Pgas_arr.size());
-	Erad_arr_g.resize(Erad_arr.size());
+	userData_.x_arr_g.resize(x_arr.size());
+	userData_.rho_arr_g.resize(rho_arr.size());
+	userData_.Pgas_arr_g.resize(Pgas_arr.size());
+	userData_.Erad_arr_g.resize(Erad_arr.size());
 
 	// copy to device
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, x_arr.begin(), x_arr.end(), x_arr_g.begin());
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, rho_arr.begin(), rho_arr.end(), rho_arr_g.begin());
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, Pgas_arr.begin(), Pgas_arr.end(), Pgas_arr_g.begin());
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, Erad_arr.begin(), Erad_arr.end(), Erad_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, x_arr.begin(), x_arr.end(), userData_.x_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, rho_arr.begin(), rho_arr.end(), userData_.rho_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, Pgas_arr.begin(), Pgas_arr.end(), userData_.Pgas_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, Erad_arr.begin(), Erad_arr.end(), userData_.Erad_arr_g.begin());
 	amrex::Gpu::streamSynchronizeAll();
 }
 
@@ -144,11 +142,11 @@ template <> void QuokkaSimulation<TubeProblem>::setInitialConditionsOnGrid(quokk
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
 
-	auto const &x_ptr = x_arr_g.dataPtr();
-	auto const &rho_ptr = rho_arr_g.dataPtr();
-	auto const &Pgas_ptr = Pgas_arr_g.dataPtr();
-	auto const &Erad_ptr = Erad_arr_g.dataPtr();
-	int x_size = static_cast<int>(x_arr_g.size());
+	auto const &x_ptr = userData_.x_arr_g.dataPtr();
+	auto const &rho_ptr = userData_.rho_arr_g.dataPtr();
+	auto const &Pgas_ptr = userData_.Pgas_arr_g.dataPtr();
+	auto const &Erad_ptr = userData_.Erad_arr_g.dataPtr();
+	int x_size = static_cast<int>(userData_.x_arr_g.size());
 
 	const auto radBoundaries_g = RadSystem_Traits<TubeProblem>::radBoundaries;
 

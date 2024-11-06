@@ -42,11 +42,8 @@ constexpr double Q = (1.0 / (2.0 * x0));						// do NOT change this
 constexpr double S = Q * (a_rad * (T_hohlraum * T_hohlraum * T_hohlraum * T_hohlraum)); // erg cm^{-3}
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_light = c;
-	static constexpr double c_hat = c;
-	static constexpr double radiation_constant = a_rad;
+	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double mean_molecular_mass = 1.0;
-	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gamma = 5. / 3.;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 0;
@@ -54,7 +51,6 @@ template <> struct RadSystem_Traits<MarshakProblem> {
 
 template <> struct quokka::EOS_Traits<MarshakProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
-	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gamma = 5. / 3.;
 };
 
@@ -68,6 +64,11 @@ template <> struct Physics_Traits<MarshakProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = 1.0;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = 1.0;
+	static constexpr double radiation_constant = 1.0;
 };
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<MarshakProblem>::ComputePlanckOpacity(const double rho, const double /*Tgas*/) -> amrex::Real
@@ -82,17 +83,17 @@ template <> AMREX_GPU_HOST_DEVICE auto RadSystem<MarshakProblem>::ComputeFluxMea
 
 static constexpr int nmscalars_ = Physics_Traits<MarshakProblem>::numMassScalars;
 template <>
-AMREX_GPU_HOST_DEVICE auto
-quokka::EOS<MarshakProblem>::ComputeTgasFromEint(const double /*rho*/, const double Egas,
-						 std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const & /*massScalars*/) -> double
+AMREX_GPU_HOST_DEVICE auto quokka::EOS<MarshakProblem>::ComputeTgasFromEint(const double /*rho*/, const double Egas,
+									    std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const & /*massScalars*/)
+    -> double
 {
 	return std::pow(4.0 * Egas / alpha_SuOlson, 1. / 4.);
 }
 
 template <>
-AMREX_GPU_HOST_DEVICE auto
-quokka::EOS<MarshakProblem>::ComputeEintFromTgas(const double /*rho*/, const double Tgas,
-						 std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const & /*massScalars*/) -> double
+AMREX_GPU_HOST_DEVICE auto quokka::EOS<MarshakProblem>::ComputeEintFromTgas(const double /*rho*/, const double Tgas,
+									    std::optional<amrex::GpuArray<amrex::Real, nmscalars_>> const & /*massScalars*/)
+    -> double
 {
 	return (alpha_SuOlson / 4.0) * (Tgas * Tgas * Tgas * Tgas);
 }

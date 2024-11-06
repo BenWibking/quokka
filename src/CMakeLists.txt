@@ -69,8 +69,9 @@ endif(ENABLE_HWASAN)
 
 if(DISABLE_FMAD)
   message(STATUS "Fused multiply-add (FMAD) is disabled for device code.")
-  add_compile_options($<$<COMPILE_LANGUAGE:C>:-ffp-contract=off>)
-  add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-ffp-contract=off>)
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
+    message(FATAL_ERROR "Fused multiply-add cannot be disabled for NVHPC compilers. Reconfigure with -DDISABLE_FMAD=OFF.")
+  endif()
 
   set(AMReX_CUDA_FASTMATH OFF CACHE BOOL "" FORCE)
   if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")

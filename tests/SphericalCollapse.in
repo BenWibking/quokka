@@ -27,8 +27,6 @@ stop_time = 0.05
 
 derived_vars = gpot
 
-gravity.Gconst = 1.0    # gravitational constant
-
 do_reflux = 1
 do_subcycle = 0
 do_tracers = 0          # turn on tracer particles

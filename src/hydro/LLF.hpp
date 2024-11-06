@@ -13,8 +13,8 @@ namespace quokka::Riemann
 {
 // Local Lax-Friedrichs (LLF) / Rusanov solver
 template <typename problem_t, int N_scalars, int N_mscalars, int fluxdim>
-AMREX_FORCE_INLINE AMREX_GPU_DEVICE auto LLF(quokka::HydroState<N_scalars, N_mscalars> const &sL,
-					     quokka::HydroState<N_scalars, N_mscalars> const &sR) -> quokka::valarray<double, fluxdim>
+AMREX_FORCE_INLINE AMREX_GPU_DEVICE auto LLF(quokka::HydroState<N_scalars, N_mscalars> const &sL, quokka::HydroState<N_scalars, N_mscalars> const &sR)
+    -> quokka::valarray<double, fluxdim>
 {
 	// Toro (Eq. 10.56)
 	const amrex::Real Sp = std::max(std::abs(sL.u) + sL.cs, std::abs(sR.u) + sR.cs);
