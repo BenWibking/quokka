@@ -63,6 +63,7 @@ namespace filesystem = experimental::filesystem;
 #include <AMReX_PlotFileUtil.H>
 #include <AMReX_Print.H>
 #include <AMReX_Utility.H>
+#include "AMReX_Orientation.H"
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
@@ -2450,13 +2451,16 @@ template <typename problem_t> void AMRSimulation<problem_t>::WriteProjectionPlot
 		if (dir_str == "x") {
 			return amrex::Direction::x;
 		}
+#if AMREX_SPACEDIM >= 2
 		if (dir_str == "y") {
 			return amrex::Direction::y;
 		}
+#endif
+#if AMREX_SPACEDIM == 3
 		if (dir_str == "z") {
 			return amrex::Direction::z;
 		}
-
+#endif
 		amrex::Error("invalid direction for projection!");
 		return amrex::Direction::x;
 	};

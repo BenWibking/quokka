@@ -23,12 +23,16 @@ auto direction_to_string(const amrex::Direction dir) -> std::string
 	if (dir == amrex::Direction::x) {
 		return std::string("x");
 	}
+#if AMREX_SPACEDIM >= 2
 	if (dir == amrex::Direction::y) {
 		return std::string("y");
 	}
+#endif
+#if AMREX_SPACEDIM == 3
 	if (dir == amrex::Direction::z) {
 		return std::string("z");
 	}
+#endif
 
 	amrex::Error("invalid direction in quokka::diagnostics::direction_to_string!");
 	return std::string("");

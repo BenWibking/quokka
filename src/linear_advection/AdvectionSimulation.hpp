@@ -78,7 +78,7 @@ template <typename problem_t> class AdvectionSimulation : public AMRSimulation<p
 	// compute derived variables
 	void ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const override;
 	// compute projected vars
-	[[nodiscard]] auto ComputeProjections(int dir) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> override;
+	[[nodiscard]] auto ComputeProjections(const amrex::Direction dir) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> override;
 
 	// compute statistics
 	auto ComputeStatistics() -> std::map<std::string, amrex::Real> override;
@@ -173,7 +173,7 @@ template <typename problem_t> void AdvectionSimulation<problem_t>::ComputeDerive
 }
 
 template <typename problem_t>
-auto AdvectionSimulation<problem_t>::ComputeProjections(int /*dir*/) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>>
+auto AdvectionSimulation<problem_t>::ComputeProjections(const amrex::Direction /*dir*/) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>>
 {
 	// user should implement
 	return std::unordered_map<std::string, amrex::BaseFab<amrex::Real>>{};
