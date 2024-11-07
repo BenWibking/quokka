@@ -549,19 +549,19 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 		auto const &input_arr = baseFab.const_array();
 
 		if (dir == amrex::Direction::x) {
-			amrex::ParallelFor(
-			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(0, i, j); });
+			amrex::ParallelFor(mf_all,
+					   [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(0, i, j); });
 		}
 #if AMREX_SPACEDIM >= 2
 		else if (dir == amrex::Direction::y) {
-			amrex::ParallelFor(
-			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(i, 0, j); });
+			amrex::ParallelFor(mf_all,
+					   [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(i, 0, j); });
 		}
 #endif
 #if AMREX_SPACEDIM == 3
 		else if (dir == amrex::Direction::z) {
-			amrex::ParallelFor(
-			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(i, j, 0); });
+			amrex::ParallelFor(mf_all,
+					   [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(i, j, 0); });
 		}
 #endif
 
