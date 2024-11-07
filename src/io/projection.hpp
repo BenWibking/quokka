@@ -24,6 +24,8 @@ namespace detail
 {
 
 auto direction_to_string(const amrex::Direction dir) -> std::string;
+auto transform_box_to_2D(amrex::Direction const &dir, amrex::Box const &box) -> amrex::Box;
+auto transform_realbox_to_2D(amrex::Direction const &dir, amrex::RealBox const &box) -> amrex::RealBox;
 
 void printLowerDimIntVect(std::ostream &a_File, const amrex::IntVect &a_IntVect, int skipDim);
 void printLowerDimBox(std::ostream &a_File, const amrex::Box &a_box, int skipDim);

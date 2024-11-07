@@ -6,11 +6,14 @@
 //! \file projection.cpp
 ///  \brief AMReX I/O for 2D projections
 
+#include "AMReX_Array.H"
 #include "AMReX_DistributionMapping.H"
 #include "AMReX_FPC.H"
 #include "AMReX_Geometry.H"
+#include "AMReX_IntVect.H"
 #include "AMReX_Orientation.H"
 #include "AMReX_PlotFileUtil.H"
+#include "AMReX_REAL.H"
 
 #include "projection.hpp"
 
@@ -70,6 +73,8 @@ void Write2DMultiLevelPlotfile(const std::string &a_pltfile, int a_nlevels, cons
 			       const amrex::Vector<std::string> &a_varnames, const amrex::Vector<amrex::Geometry> &a_geoms, const amrex::Real &a_time,
 			       const amrex::Vector<int> &a_steps, const amrex::Vector<amrex::IntVect> &a_rref)
 {
+	// Write a 2D AMReX Plotfile with the contents of the vector of MultiFabs `a_slice'.
+
 	const std::string levelPrefix = "Level_";
 	const std::string mfPrefix = "Cell";
 	const std::string versionName = "HyperCLaw-V1.1";
@@ -448,6 +453,51 @@ void write_2D_header(std::ostream &os, const amrex::FArrayBox &f, int nvar)
 	}
 }
 
+auto transform_box_to_2D(amrex::Direction const &dir, amrex::Box const &box) -> amrex::Box
+{
+	// transform box dimensions (Nx, Ny, Nz) -> (Nx', Ny', 1) where *one* of Nx, Ny, Nz == 1.
+	// NOTE: smallBox is assumed to be {0, 0, 0}.
+	amrex::IntVect dim = box.bigEnd();
+	amrex::IntVect bigEnd;
+
+	if (dir == amrex::Direction::x) { // y-z plane
+		bigEnd = amrex::IntVect(amrex::Dim3{dim[1], dim[2], 1});
+	} else if (dir == amrex::Direction::y) { // x-z plane
+		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[2], 1});
+	} else if (dir == amrex::Direction::z) { // x-y plane
+		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[1], 1});
+	} else {
+		amrex::Abort("detail::transform_box_to_2D: invalid direction!");
+	}
+
+	return amrex::Box(amrex::IntVect(amrex::Dim3{0, 0, 0}), bigEnd);
+}
+
+auto transform_realbox_to_2D(amrex::Direction const &dir, amrex::RealBox const &box) -> amrex::RealBox
+{
+	// transform box dimensions (Nx, Ny, Nz) -> (Nx', Ny', 1) where *one* of Nx, Ny, Nz == 1.
+	// NOTE: smallBox is assumed to be {0, 0, 0}.
+	amrex::Real const *hi = box.hi();
+	amrex::Real const *lo = box.lo();
+	std::array<amrex::Real, 3> new_hi{};
+	std::array<amrex::Real, 3> new_lo{};
+
+	if (dir == amrex::Direction::x) { // y-z plane
+		new_lo = {lo[1], lo[2], lo[0]};
+		new_hi = {hi[1], hi[2], hi[0]};
+	} else if (dir == amrex::Direction::y) { // x-z plane
+		new_lo = {lo[0], lo[2], lo[1]};
+		new_hi = {hi[0], hi[2], hi[1]};
+	} else if (dir == amrex::Direction::z) { // x-y plane
+		new_lo = {lo[0], lo[1], lo[2]};
+		new_hi = {hi[0], hi[1], hi[2]};
+	} else {
+		amrex::Abort("detail::transform_box_to_2D: invalid direction!");
+	}
+
+	return amrex::RealBox(new_lo, new_hi);
+}
+
 } // namespace detail
 
 void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> const &proj, amrex::Real time, int istep)
@@ -483,14 +533,21 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 	// write mf_all to disk
 	const std::string basename = "proj_" + detail::direction_to_string(dir) + "_plt";
 	const std::string filename = amrex::Concatenate(basename, istep, 5);
+	const amrex::Vector<const amrex::MultiFab *> mfs = {&mf_all};
 	amrex::Print() << "Writing projection " << filename << "\n";
-	const amrex::Geometry mygeom(firstFab.box());
 
-	// old version:
-	// amrex::WriteSingleLevelPlotfile(filename, mf_all, varnames, mygeom, time, istep);
+	// NOTE: Write2DMultiLevelPlotfile assumes the slice lies in the x-y plane
+	//  (i.e. normal to the z axis) and the Geometry object corresponds to this.
+	//  For a z-projection, this works as expected. For an {x,y}-projection,
+	//  it is necessary to transform the geometry so that the data is stored in
+	//  the x-y plane.
+	amrex::Geometry geom3d{};
+	geom3d.Setup(); // read from ParmParse
+	const amrex::Box box2d = detail::transform_box_to_2D(dir, firstFab.box());
+	const amrex::RealBox domain2d = detail::transform_realbox_to_2D(dir, geom3d.ProbDomain());
+	const amrex::Geometry geom2d(box2d, &domain2d);
 
-	amrex::Vector<const amrex::MultiFab *> mfs = {&mf_all};
-	detail::Write2DMultiLevelPlotfile(filename, 1, mfs, varnames, {mygeom}, time, {istep}, {});
+	detail::Write2DMultiLevelPlotfile(filename, 1, mfs, varnames, {geom2d}, time, {istep}, {});
 }
 
 } // namespace quokka::diagnostics
