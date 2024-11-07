@@ -518,8 +518,8 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 	const amrex::Box box2d = detail::transform_box_to_2D(dir, firstFab.box());
 	const amrex::RealBox domain2d = detail::transform_realbox_to_2D(dir, geom3d.ProbDomain());
 	const amrex::Geometry geom2d(box2d, &domain2d);
-	//amrex::Print() << box2d << "\n";
-	//amrex::Print() << domain2d << "\n";
+	// amrex::Print() << box2d << "\n";
+	// amrex::Print() << domain2d << "\n";
 
 	// construct output multifab on rank 0
 	const amrex::BoxArray ba(box2d);
@@ -533,7 +533,7 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 		const std::string &varname = iter->first;
 		const amrex::BaseFab<amrex::Real> &baseFab = iter->second;
 		varnames.push_back(varname);
-		//amrex::Print() << "varname: " << varname << " icomp: " << icomp << "\n";
+		// amrex::Print() << "varname: " << varname << " icomp: " << icomp << "\n";
 
 		// copy mf_comp into mf_all
 		auto output_arr = mf_all.arrays();
