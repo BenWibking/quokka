@@ -542,17 +542,14 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 		auto output_arr = mf_all.arrays();
 		auto const &input_arr = mf_comp.const_arrays();
 		if (dir == amrex::Direction::x) {
-			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-				output_arr[bx](i, j, k, icomp) = input_arr[bx](0, i, j);
-			});
+			amrex::ParallelFor(
+			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr[bx](0, i, j); });
 		} else if (dir == amrex::Direction::y) {
-			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-				output_arr[bx](i, j, k, icomp) = input_arr[bx](i, 0, j);
-			});
+			amrex::ParallelFor(
+			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr[bx](i, 0, j); });
 		} else if (dir == amrex::Direction::z) {
-			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-				output_arr[bx](i, j, k, icomp) = input_arr[bx](i, j, 0);
-			});
+			amrex::ParallelFor(
+			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr[bx](i, j, 0); });
 		}
 
 		++iter;
