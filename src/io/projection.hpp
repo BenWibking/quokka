@@ -13,6 +13,7 @@
 // AMReX headers
 #include "AMReX_MultiFab.H"
 #include "AMReX_MultiFabUtil.H"
+#include "AMReX_VisMF.H"
 #include "AMReX_Orientation.H"
 #include <AMReX.H>
 
@@ -21,7 +22,30 @@ namespace quokka::diagnostics
 
 namespace detail
 {
+
 auto direction_to_string(const amrex::Direction dir) -> std::string;
+
+void printLowerDimIntVect(std::ostream &a_File, const amrex::IntVect &a_IntVect, int skipDim);
+void printLowerDimBox(std::ostream &a_File, const amrex::Box &a_box, int skipDim);
+
+void Write2DMultiLevelPlotfile(const std::string &a_pltfile, int a_nlevels, const amrex::Vector<const amrex::MultiFab *> &a_slice,
+			       const amrex::Vector<std::string> &a_varnames, const amrex::Vector<amrex::Geometry> &a_geoms, const amrex::Real &a_time,
+			       const amrex::Vector<int> &a_steps, const amrex::Vector<amrex::IntVect> &a_rref);
+
+void Write2DPlotfileHeader(std::ostream &HeaderFile, int nlevels, const amrex::Vector<amrex::BoxArray> &bArray, const amrex::Vector<std::string> &varnames,
+			   const amrex::Vector<amrex::Geometry> &geom, const amrex::Real &time, const amrex::Vector<int> &level_steps,
+			   const amrex::Vector<amrex::IntVect> &ref_ratio, const std::string &versionName, const std::string &levelPrefix,
+			   const std::string &mfPrefix);
+
+void VisMF2D(const amrex::MultiFab &a_mf, const std::string &a_mf_name);
+
+void Write2DMFHeader(const std::string &a_mf_name, amrex::VisMF::Header &hdr, int coordinatorProc, MPI_Comm comm);
+
+void Find2FOffsets(const amrex::FabArray<amrex::FArrayBox> &mf, const std::string &filePrefix, amrex::VisMF::Header &hdr,
+		   amrex::VisMF::Header::Version /*whichVersion*/, amrex::NFilesIter &nfi, int nOutFiles, MPI_Comm comm);
+
+void write_2D_header(std::ostream &os, const amrex::FArrayBox &f, int nvar);
+
 } // namespace detail
 
 template <typename ReduceOp, typename F>
