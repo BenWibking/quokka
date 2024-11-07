@@ -7,9 +7,11 @@
 ///  \brief AMReX I/O for 2D projections
 
 #include "AMReX_Array.H"
+#include "AMReX_BLassert.H"
 #include "AMReX_DistributionMapping.H"
 #include "AMReX_FPC.H"
 #include "AMReX_Geometry.H"
+#include "AMReX_GpuDevice.H"
 #include "AMReX_IntVect.H"
 #include "AMReX_Orientation.H"
 #include "AMReX_PlotFileUtil.H"
@@ -461,11 +463,11 @@ auto transform_box_to_2D(amrex::Direction const &dir, amrex::Box const &box) -> 
 	amrex::IntVect bigEnd;
 
 	if (dir == amrex::Direction::x) { // y-z plane
-		bigEnd = amrex::IntVect(amrex::Dim3{dim[1], dim[2], 1});
+		bigEnd = amrex::IntVect(amrex::Dim3{dim[1], dim[2], 0});
 	} else if (dir == amrex::Direction::y) { // x-z plane
-		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[2], 1});
+		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[2], 0});
 	} else if (dir == amrex::Direction::z) { // x-y plane
-		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[1], 1});
+		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[1], 0});
 	} else {
 		amrex::Abort("detail::transform_box_to_2D: invalid direction!");
 	}
@@ -516,44 +518,47 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 	const amrex::Box box2d = detail::transform_box_to_2D(dir, firstFab.box());
 	const amrex::RealBox domain2d = detail::transform_realbox_to_2D(dir, geom3d.ProbDomain());
 	const amrex::Geometry geom2d(box2d, &domain2d);
+	//amrex::Print() << box2d << "\n";
+	//amrex::Print() << domain2d << "\n";
 
 	// construct output multifab on rank 0
 	const amrex::BoxArray ba(box2d);
 	const amrex::DistributionMapping dm(amrex::Vector<int>{0});
-	amrex::MultiFab mf_all(ba, dm, static_cast<int>(proj.size()), 0);
+	const int ncomp = static_cast<int>(proj.size());
+	amrex::MultiFab mf_all(ba, dm, ncomp, 0);
 
 	// copy all projections into a single Multifab with x-y geometry
 	auto iter = proj.begin();
-	for (int icomp = 0; icomp < static_cast<int>(proj.size()); ++icomp) {
+	for (int icomp = 0; icomp < ncomp; ++icomp) {
 		const std::string &varname = iter->first;
-		varnames.push_back(varname);
-
 		const amrex::BaseFab<amrex::Real> &baseFab = iter->second;
-		const amrex::BoxArray ba_comp(baseFab.box());
-		const amrex::DistributionMapping dm_comp(amrex::Vector<int>{0});
-
-		amrex::MultiFab mf_comp(ba_comp, dm_comp, 1, 0, amrex::MFInfo().SetAlloc(false));
-		if (amrex::ParallelDescriptor::IOProcessor()) {
-			// set MultiFab to point to existing BaseFab<Real> data
-			mf_comp.setFab(0, amrex::FArrayBox(baseFab.array()));
-		}
+		varnames.push_back(varname);
+		//amrex::Print() << "varname: " << varname << " icomp: " << icomp << "\n";
 
 		// copy mf_comp into mf_all
 		auto output_arr = mf_all.arrays();
-		auto const &input_arr = mf_comp.const_arrays();
+		auto const &input_arr = baseFab.const_array();
+
 		if (dir == amrex::Direction::x) {
 			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-				output_arr[bx](i, j, k, icomp) = input_arr[bx](0, i, j);
+				AMREX_ALWAYS_ASSERT(bx == 0);
+				AMREX_ALWAYS_ASSERT(k == 0);
+				output_arr[bx](i, j, k, icomp) = input_arr(0, i, j);
 			});
 		} else if (dir == amrex::Direction::y) {
 			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-				output_arr[bx](i, j, k, icomp) = input_arr[bx](i, 0, j);
+				AMREX_ALWAYS_ASSERT(bx == 0);
+				AMREX_ALWAYS_ASSERT(k == 0);
+				output_arr[bx](i, j, k, icomp) = input_arr(i, 0, j);
 			});
 		} else if (dir == amrex::Direction::z) {
 			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-				output_arr[bx](i, j, k, icomp) = input_arr[bx](i, j, 0);
+				AMREX_ALWAYS_ASSERT(bx == 0);
+				AMREX_ALWAYS_ASSERT(k == 0);
+				output_arr[bx](i, j, k, icomp) = input_arr(i, j, 0);
 			});
 		}
+		amrex::Gpu::streamSynchronize();
 
 		++iter;
 	}
