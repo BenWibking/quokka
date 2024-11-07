@@ -90,6 +90,8 @@ AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputeTgasFromEin
 	// return temperature for an ideal gas given density and internal energy
 	amrex::Real Tgas = NAN;
 
+	const amrex::Real boltzmann_constant_g = boltzmann_constant_;
+
 #ifdef CHEMISTRY
 	eos_t chemstate;
 	chemstate.rho = rho;
@@ -118,7 +120,7 @@ AMREX_FORCE_INLINE AMREX_GPU_HOST_DEVICE auto EOS<problem_t>::ComputeTgasFromEin
 		estate.mu = mean_molecular_weight_ / C::m_u;
 		eos(eos_input_re, estate);
 		// scale returned temperature in case boltzmann constant is dimensionless
-		Tgas = estate.T * C::k_B / boltzmann_constant_;
+		Tgas = estate.T * C::k_B / boltzmann_constant_g;
 	}
 #endif
 	return Tgas;

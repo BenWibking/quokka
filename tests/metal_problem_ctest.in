@@ -24,7 +24,7 @@ do_reflux     = 1
 do_subcycle   = 1
 stop_time     = 9.462e+15
 max_timesteps = 10
-plotfile_interval = -1
+plotfile_interval = 10000000
 checkpoint_interval = -1
 
 density_floor = 1.67e-30 #in g cm^-3
