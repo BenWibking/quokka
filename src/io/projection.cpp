@@ -503,38 +503,8 @@ auto transform_realbox_to_2D(amrex::Direction const &dir, amrex::RealBox const &
 void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> const &proj, amrex::Real time, int istep)
 {
 	// write projections to plotfile
-
 	auto const &firstFab = proj.begin()->second;
-	const amrex::BoxArray ba(firstFab.box());
-	const amrex::DistributionMapping dm(amrex::Vector<int>{0});
-	amrex::MultiFab mf_all(ba, dm, static_cast<int>(proj.size()), 0);
 	amrex::Vector<std::string> varnames;
-
-	// copy all projections into a single Multifab
-	auto iter = proj.begin();
-	for (int icomp = 0; icomp < static_cast<int>(proj.size()); ++icomp) {
-		const std::string &varname = iter->first;
-		const amrex::BaseFab<amrex::Real> &baseFab = iter->second;
-		const amrex::BoxArray ba_comp(baseFab.box());
-		const amrex::DistributionMapping dm_comp(amrex::Vector<int>{0});
-
-		amrex::MultiFab mf_comp(ba_comp, dm_comp, 1, 0, amrex::MFInfo().SetAlloc(false));
-		if (amrex::ParallelDescriptor::IOProcessor()) {
-			// set MultiFab to point to existing BaseFab<Real> data
-			mf_comp.setFab(0, amrex::FArrayBox(baseFab.array()));
-		}
-
-		// copy mf_comp into mf_all
-		amrex::MultiFab::Copy(mf_all, mf_comp, 0, icomp, 1, 0);
-		varnames.push_back(varname);
-		++iter;
-	}
-
-	// write mf_all to disk
-	const std::string basename = "proj_" + detail::direction_to_string(dir) + "_plt";
-	const std::string filename = amrex::Concatenate(basename, istep, 5);
-	const amrex::Vector<const amrex::MultiFab *> mfs = {&mf_all};
-	amrex::Print() << "Writing projection " << filename << "\n";
 
 	// NOTE: Write2DMultiLevelPlotfile assumes the slice lies in the x-y plane
 	//  (i.e. normal to the z axis) and the Geometry object corresponds to this.
@@ -546,6 +516,53 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 	const amrex::Box box2d = detail::transform_box_to_2D(dir, firstFab.box());
 	const amrex::RealBox domain2d = detail::transform_realbox_to_2D(dir, geom3d.ProbDomain());
 	const amrex::Geometry geom2d(box2d, &domain2d);
+
+	// construct output multifab on rank 0
+	const amrex::BoxArray ba(box2d);
+	const amrex::DistributionMapping dm(amrex::Vector<int>{0});
+	amrex::MultiFab mf_all(ba, dm, static_cast<int>(proj.size()), 0);
+
+	// copy all projections into a single Multifab with x-y geometry
+	auto iter = proj.begin();
+	for (int icomp = 0; icomp < static_cast<int>(proj.size()); ++icomp) {
+		const std::string &varname = iter->first;
+		varnames.push_back(varname);
+
+		const amrex::BaseFab<amrex::Real> &baseFab = iter->second;
+		const amrex::BoxArray ba_comp(baseFab.box());
+		const amrex::DistributionMapping dm_comp(amrex::Vector<int>{0});
+
+		amrex::MultiFab mf_comp(ba_comp, dm_comp, 1, 0, amrex::MFInfo().SetAlloc(false));
+		if (amrex::ParallelDescriptor::IOProcessor()) {
+			// set MultiFab to point to existing BaseFab<Real> data
+			mf_comp.setFab(0, amrex::FArrayBox(baseFab.array()));
+		}
+
+		// copy mf_comp into mf_all
+		auto output_arr = mf_all.arrays();
+		auto const &input_arr = mf_comp.const_arrays();
+		if (dir == amrex::Direction::x) {
+			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+				output_arr[bx](i, j, k, icomp) = input_arr[bx](0, i, j);
+			});
+		} else if (dir == amrex::Direction::y) {
+			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+				output_arr[bx](i, j, k, icomp) = input_arr[bx](i, 0, j);
+			});
+		} else if (dir == amrex::Direction::z) {
+			amrex::ParallelFor(mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+				output_arr[bx](i, j, k, icomp) = input_arr[bx](i, j, 0);
+			});
+		}
+
+		++iter;
+	}
+
+	// write mf_all to disk
+	const std::string basename = "proj_" + detail::direction_to_string(dir) + "_plt";
+	const std::string filename = amrex::Concatenate(basename, istep, 5);
+	const amrex::Vector<const amrex::MultiFab *> mfs = {&mf_all};
+	amrex::Print() << "Writing projection " << filename << "\n";
 
 	detail::Write2DMultiLevelPlotfile(filename, 1, mfs, varnames, {geom2d}, time, {istep}, {});
 }
