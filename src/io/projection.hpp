@@ -13,8 +13,8 @@
 // AMReX headers
 #include "AMReX_MultiFab.H"
 #include "AMReX_MultiFabUtil.H"
-#include "AMReX_VisMF.H"
 #include "AMReX_Orientation.H"
+#include "AMReX_VisMF.H"
 #include <AMReX.H>
 
 namespace quokka::diagnostics
