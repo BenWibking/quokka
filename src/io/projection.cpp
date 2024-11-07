@@ -16,6 +16,7 @@
 #include "AMReX_Orientation.H"
 #include "AMReX_PlotFileUtil.H"
 #include "AMReX_REAL.H"
+#include "AMReX_SPACE.H"
 
 #include "projection.hpp"
 
@@ -464,10 +465,14 @@ auto transform_box_to_2D(amrex::Direction const &dir, amrex::Box const &box) -> 
 
 	if (dir == amrex::Direction::x) { // y-z plane
 		bigEnd = amrex::IntVect(amrex::Dim3{dim[1], dim[2], 0});
+#if AMREX_SPACEDIM >= 2
 	} else if (dir == amrex::Direction::y) { // x-z plane
 		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[2], 0});
+#endif
+#if AMREX_SPACEDIM == 3
 	} else if (dir == amrex::Direction::z) { // x-y plane
 		bigEnd = amrex::IntVect(amrex::Dim3{dim[0], dim[1], 0});
+#endif
 	} else {
 		amrex::Abort("detail::transform_box_to_2D: invalid direction!");
 	}
@@ -481,18 +486,22 @@ auto transform_realbox_to_2D(amrex::Direction const &dir, amrex::RealBox const &
 	// NOTE: smallBox is assumed to be {0, 0, 0}.
 	amrex::Real const *hi = box.hi();
 	amrex::Real const *lo = box.lo();
-	std::array<amrex::Real, 3> new_hi{};
-	std::array<amrex::Real, 3> new_lo{};
+	std::array<amrex::Real, AMREX_SPACEDIM> new_hi{};
+	std::array<amrex::Real, AMREX_SPACEDIM> new_lo{};
 
 	if (dir == amrex::Direction::x) { // y-z plane
-		new_lo = {lo[1], lo[2], lo[0]};
-		new_hi = {hi[1], hi[2], hi[0]};
+		new_lo = {AMREX_D_DECL(lo[1], lo[2], lo[0])};
+		new_hi = {AMREX_D_DECL(hi[1], hi[2], hi[0])};
+#if AMREX_SPACEDIM >= 2
 	} else if (dir == amrex::Direction::y) { // x-z plane
-		new_lo = {lo[0], lo[2], lo[1]};
-		new_hi = {hi[0], hi[2], hi[1]};
+		new_lo = {AMREX_D_DECL(lo[0], lo[2], lo[1])};
+		new_hi = {AMREX_D_DECL(hi[0], hi[2], hi[1])};
+#endif
+#if AMREX_SPACEDIM == 3
 	} else if (dir == amrex::Direction::z) { // x-y plane
-		new_lo = {lo[0], lo[1], lo[2]};
-		new_hi = {hi[0], hi[1], hi[2]};
+		new_lo = {AMREX_D_DECL(lo[0], lo[1], lo[2])};
+		new_hi = {AMREX_D_DECL(hi[0], hi[1], hi[2])};
+#endif
 	} else {
 		amrex::Abort("detail::transform_box_to_2D: invalid direction!");
 	}
@@ -541,16 +550,22 @@ void WriteProjection(const amrex::Direction dir, std::unordered_map<std::string,
 
 		if (dir == amrex::Direction::x) {
 			amrex::ParallelFor(
-			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr[bx](0, i, j); });
-		} else if (dir == amrex::Direction::y) {
-			amrex::ParallelFor(
-			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr[bx](i, 0, j); });
-		} else if (dir == amrex::Direction::z) {
-			amrex::ParallelFor(
-			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr[bx](i, j, 0); });
+			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(0, i, j); });
 		}
-		amrex::Gpu::streamSynchronize();
+#if AMREX_SPACEDIM >= 2
+		else if (dir == amrex::Direction::y) {
+			amrex::ParallelFor(
+			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(i, 0, j); });
+		}
+#endif
+#if AMREX_SPACEDIM == 3
+		else if (dir == amrex::Direction::z) {
+			amrex::ParallelFor(
+			    mf_all, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept { output_arr[bx](i, j, k, icomp) = input_arr(i, j, 0); });
+		}
+#endif
 
+		amrex::Gpu::streamSynchronize();
 		++iter;
 	}
 
