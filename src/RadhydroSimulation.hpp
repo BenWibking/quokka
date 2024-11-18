@@ -1181,9 +1181,10 @@ auto RadhydroSimulation<problem_t>::advanceHydroAtLevel(amrex::MultiFab &state_o
 		if constexpr (Physics_Traits<problem_t>::is_mhd_enabled) {
 			std::array<amrex::MultiFab, AMREX_SPACEDIM> ec_emf_components;
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-        auto ba_ec = amrex::convert(ba_cc, amrex::IntVect(1,1,1) - amrex::IntVect::TheDimensionVector(2-idim));
-        ec_emf_components[idim].define(ba_ec, dm, 2, nghost_fc_);
         fast_mhd_wavespeeds[idim].FillBoundary(geom[lev].periodicity());
+        auto ba_ec = amrex::convert(ba_cc, amrex::IntVect(1,1,1) - amrex::IntVect::TheDimensionVector(2-idim));
+        ec_emf_components[idim].define(ba_ec, dm, 1, nghost_fc_); // only need one components, since reconstructions permutations will be averaged in-place
+        ec_emf_components[idim].setVal(0);
       }
 			MHDSystem<problem_t>::ComputeEMF(ec_emf_components, stateOld_cc, stateOld_fc, fast_mhd_wavespeeds, nghost_fc_);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
@@ -1317,9 +1318,10 @@ auto RadhydroSimulation<problem_t>::advanceHydroAtLevel(amrex::MultiFab &state_o
     if constexpr (Physics_Traits<problem_t>::is_mhd_enabled) {
 			std::array<amrex::MultiFab, AMREX_SPACEDIM> ec_emf_components;
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {
-        auto ba_ec = amrex::convert(ba_cc, amrex::IntVect(1,1,1) - amrex::IntVect::TheDimensionVector(2-idim));
-        ec_emf_components[idim].define(ba_ec, dm, 2, nghost_fc_);
         fast_mhd_wavespeeds[idim].FillBoundary(geom[lev].periodicity());
+        auto ba_ec = amrex::convert(ba_cc, amrex::IntVect(1,1,1) - amrex::IntVect::TheDimensionVector(2-idim));
+        ec_emf_components[idim].define(ba_ec, dm, 1, nghost_fc_); // combine and average reconstructions in-place
+        ec_emf_components[idim].setVal(0);
       }
 			MHDSystem<problem_t>::ComputeEMF(ec_emf_components, stateOld_cc, stateOld_fc, fast_mhd_wavespeeds, nghost_fc_);
       for (int idim = 0; idim < AMREX_SPACEDIM; ++idim) {

@@ -51,10 +51,10 @@ void MHDSystem<problem_t>::ComputeEMF(std::array<amrex::MultiFab, AMREX_SPACEDIM
 	for (amrex::MFIter mfi(cc_mf_cVars); mfi.isValid(); ++mfi) {
 		const amrex::Box &box_cc = mfi.validbox();
 
-		// In this function we distinguish between world (w:3), array (i:2), quandrant (q:4), and component (x:3) indexing with prefixes. We will use
-		// the x-prefix when the w- and i- indexes are the same. We will minimise the storage footprint by only computing and holding onto the
-		// quantities required for calculating the EMF in the w-direction. This inadvertently leads to duplicate computation, but also significantly
-		// reduces the memory footprint, which is a bigger bottleneck.
+		// In this function we distinguish between world (w:3), array (i:2), quandrant (q:4), and component (x:3) index-ing by using prefixes. We will use
+		// the prefix x- when the w- and i- indexes are the same. We also choose to minimise the storage footprint by only computing and holding onto the
+		// quantities required for calculating the EMF in the w-direction. This inadvertently leads to duplicate computation, but allows us to significantly
+		// reduces the total memory used, which is a much bigger bottleneck.
 
 		// extract cell-centered velocity fields
 		// indexing: field[3: x-component]
@@ -131,6 +131,7 @@ void MHDSystem<problem_t>::ComputeEMF(std::array<amrex::MultiFab, AMREX_SPACEDIM
 					ec_fabs_Bi_ieside[icomp][1].resize(box_ecpgm1, 1);
 					for (int iquad = 0; iquad < 4; ++iquad) {
 						ec_fabs_Ui_q[icomp][iquad].resize(box_ecpgm2, 1);
+            ec_fabs_Ui_q[icomp][iquad].setVal(0.0);
 					}
 				}
 
@@ -255,9 +256,9 @@ void MHDSystem<problem_t>::ComputeEMF(std::array<amrex::MultiFab, AMREX_SPACEDIM
 				const auto &E2_q3 = ec_fabs_E_q[3].const_array();
 				// compute electric field on the cell-edge
 				const auto &E2_ave = ec_mf_emf_comps[w0_comp+w1_comp-1][mfi].array();
-        const int i_perm = (wsolve == w0_comp) ? 0 : 1;
+        // const int i_perm = (wsolve == w0_comp) ? 0 : 1; // no need to store reconstruction permutations separately
 				amrex::ParallelFor(box_ec, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-					E2_ave(i,j,k,i_perm) = \
+					E2_ave(i,j,k) += 0.5 * (
                 fspd_x0(i, j, k, 1) * fspd_x1(i, j, k, 1) * E2_q0(i, j, k) +
 							  fspd_x0(i, j, k, 0) * fspd_x1(i, j, k, 1) * E2_q3(i, j, k) +
 							  fspd_x0(i, j, k, 0) * fspd_x1(i, j, k, 0) * E2_q1(i, j, k) +
@@ -265,8 +266,10 @@ void MHDSystem<problem_t>::ComputeEMF(std::array<amrex::MultiFab, AMREX_SPACEDIM
 							  fspd_x1(i, j, k, 1) * fspd_x1(i, j, k, 0) / (fspd_x1(i, j, k, 1) + fspd_x1(i, j, k, 0)) *
 							      (B0_p(i, j, k) - B0_m(i, j, k)) +
 							  fspd_x0(i, j, k, 1) * fspd_x0(i, j, k, 0) / (fspd_x0(i, j, k, 1) + fspd_x0(i, j, k, 0)) *
-							      (B1_p(i, j, k) - B1_m(i, j, k));
+							      (B1_p(i, j, k) - B1_m(i, j, k))
+          );
 				});
+        int tmp = 0;
 			}
 		}
 	}
@@ -330,7 +333,6 @@ void MHDSystem<problem_t>::SolveInductionEqn(std::array<amrex::MultiFab, AMREX_S
 	// left of zone i, and -1.0*flux(i+1) is the flux *into* zone i through
 	// the interface on the right of zone i.
 
-
   // loop over faces pointing in the w0-direction
   for (int w0 = 0; w0 < 3; ++w0) {
     int w1 = (w0 + 1) % 3;
@@ -356,7 +358,7 @@ void MHDSystem<problem_t>::SolveInductionEqn(std::array<amrex::MultiFab, AMREX_S
               ec_emf_w2[bx](i, j, k) + \
               ec_emf_w1[bx](i+delta_w1[0], j+delta_w1[1], k+delta_w1[2]) + \
               ec_emf_w2[bx](i+delta_w2[0], j+delta_w2[1], k+delta_w2[2]);
-      fc_consVarNew[bx](i, j, k) = fc_consVarOld[bx](i, j, k) + dt * db_dt;
+      fc_consVarNew[bx](i, j, k, Physics_Indices<problem_t>::mhdFirstIndex) = fc_consVarOld[bx](i, j, k, Physics_Indices<problem_t>::mhdFirstIndex) + dt * db_dt;
     });
   }
 }
