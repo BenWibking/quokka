@@ -22,6 +22,8 @@ do_reflux = 0
 do_subcycle = 0
 plotfile_interval = 10000000
 
-radiation.print_iteration_counts = 1
+radiation.print_iteration_counts = 0
 
 max_timesteps = 10000
+
+suppress_output = 1

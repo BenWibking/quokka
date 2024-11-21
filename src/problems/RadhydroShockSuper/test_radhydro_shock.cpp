@@ -47,8 +47,8 @@ constexpr double v0 = (Mach0 * c_s0);
 constexpr double v1 = v0 * rho0 / rho1;
 
 // constexpr double chat = 10.0 * (v0 + c_s0); // reduced speed of light
-// constexpr double chat = c / 10.0;
-constexpr double chat = c;
+constexpr double chat = c / 10.0;
+// constexpr double chat = c;
 
 constexpr double Ggrav = 1.0; // dimensionless gravitational constant; arbitrary
 
@@ -269,6 +269,7 @@ auto problem_main() -> int
 	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.0);
 	int nx = static_cast<int>(position.size());
 	int status = 0;
+	int status2 = 0;
 
 	const double x_left = position.at(0);
 
@@ -304,61 +305,117 @@ auto problem_main() -> int
 			gasVelocity.at(i) = x1GasMom / rho;
 		}
 
-		// read in exact solution
-		std::vector<double> xs_exact;
-		std::vector<double> Trad_exact;
-		std::vector<double> Tmat_exact;
-		std::vector<double> Frad_over_c_exact;
+		// // read in exact solution
+		// std::vector<double> xs_exact;
+		// std::vector<double> Trad_exact;
+		// std::vector<double> Tmat_exact;
+		// std::vector<double> Frad_over_c_exact;
 
-		std::string filename = "../extern/LowrieEdwards/shock.txt";
-		std::ifstream fstream(filename, std::ios::in);
-		AMREX_ALWAYS_ASSERT(fstream.is_open());
-		std::string header;
-		std::getline(fstream, header);
+		// std::string filename = "../extern/LowrieEdwards/shock.txt";
+		// std::ifstream fstream(filename, std::ios::in);
+		// AMREX_ALWAYS_ASSERT(fstream.is_open());
+		// std::string header;
+		// std::getline(fstream, header);
 
-		for (std::string line; std::getline(fstream, line);) {
+		// for (std::string line; std::getline(fstream, line);) {
+		// 	std::istringstream iss(line);
+		// 	std::vector<double> values;
+
+		// 	for (double value = NAN; iss >> value;) {
+		// 		values.push_back(value);
+		// 	}
+		// 	auto x_val = values.at(0);
+		// 	auto Tmat_val = values.at(3);
+		// 	auto Trad_val = values.at(4);
+		// 	auto Frad_over_c_val = values.at(5);
+
+		// 	if ((x_val > 0.0) && (x_val < Lx)) {
+		// 		xs_exact.push_back(x_val + x_left);
+		// 		Tmat_exact.push_back(Tmat_val);
+		// 		Trad_exact.push_back(Trad_val);
+		// 		Frad_over_c_exact.push_back(Frad_over_c_val);
+		// 	}
+		// }
+
+		// // compute error norm
+		// std::vector<double> Trad_interp(xs_exact.size());
+		// amrex::Print() << "xs min/max = " << xs[0] << ", " << xs[xs.size() - 1] << std::endl;
+		// amrex::Print() << "xs_exact min/max = " << xs_exact[0] << ", " << xs_exact[xs_exact.size() - 1] << std::endl;
+
+		// interpolate_arrays(xs_exact.data(), Trad_interp.data(), static_cast<int>(xs_exact.size()), xs.data(), Trad.data(), static_cast<int>(xs.size()));
+
+		// double err_norm = 0.;
+		// double sol_norm = 0.;
+		// for (size_t i = 0; i < xs_exact.size(); ++i) {
+		// 	err_norm += std::abs(Trad_interp[i] - Trad_exact[i]);
+		// 	sol_norm += std::abs(Trad_exact[i]);
+		// }
+
+		// const double error_tol = 0.01;
+		// double rel_error = NAN;
+		// rel_error = err_norm / sol_norm;
+		// amrex::Print() << "Error norm = " << err_norm << std::endl;
+		// amrex::Print() << "Solution norm = " << sol_norm << std::endl;
+		// amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
+
+		// if ((rel_error > error_tol) || std::isnan(rel_error)) {
+		// 	status = 1;
+		// }
+
+		// // export to file
+		// std::ofstream file;
+		// file.open("radshock_super_temperature_no_RSLA.csv");
+		// file << "x,Trad,Tmat\n";
+		// for (size_t i = 0; i < xs.size(); ++i) {
+		// 	file << std::scientific << std::setprecision(12) << xs.at(i) << "," << Trad.at(i) << "," << Tgas.at(i) << "\n";
+		// }
+		// file.close();
+
+		// read radshock_super_temperature_no_RSLA.csv as exact answer
+		std::ifstream fstream_exact("radshock_super_temperature_no_RSLA.csv", std::ios::in);
+		AMREX_ALWAYS_ASSERT(fstream_exact.is_open());
+		std::string header_exact;
+		std::getline(fstream_exact, header_exact);
+
+		std::vector<double> xs_exact2;
+		std::vector<double> Trad_exact2;
+		std::vector<double> Tmat_exact2;
+
+		// read radshock_super_temperature_no_RSLA.csv as CSV file with columns x,Trad,Tmat
+		for (std::string line; std::getline(fstream_exact, line);) {
 			std::istringstream iss(line);
+			std::string token;
 			std::vector<double> values;
 
-			for (double value = NAN; iss >> value;) {
-				values.push_back(value);
+			while (std::getline(iss, token, ',')) {
+				values.push_back(std::stod(token));
 			}
+
 			auto x_val = values.at(0);
-			auto Tmat_val = values.at(3);
-			auto Trad_val = values.at(4);
-			auto Frad_over_c_val = values.at(5);
+			auto Trad_val = values.at(1);
+			auto Tmat_val = values.at(2);
 
-			if ((x_val > 0.0) && (x_val < Lx)) {
-				xs_exact.push_back(x_val + x_left);
-				Tmat_exact.push_back(Tmat_val);
-				Trad_exact.push_back(Trad_val);
-				Frad_over_c_exact.push_back(Frad_over_c_val);
-			}
+			xs_exact2.push_back(x_val);
+			Trad_exact2.push_back(Trad_val);
+			Tmat_exact2.push_back(Tmat_val);
 		}
 
-		// compute error norm
-		std::vector<double> Trad_interp(xs_exact.size());
-		amrex::Print() << "xs min/max = " << xs[0] << ", " << xs[xs.size() - 1] << std::endl;
-		amrex::Print() << "xs_exact min/max = " << xs_exact[0] << ", " << xs_exact[xs_exact.size() - 1] << std::endl;
 
-		interpolate_arrays(xs_exact.data(), Trad_interp.data(), static_cast<int>(xs_exact.size()), xs.data(), Trad.data(), static_cast<int>(xs.size()));
-
-		double err_norm = 0.;
-		double sol_norm = 0.;
-		for (size_t i = 0; i < xs_exact.size(); ++i) {
-			err_norm += std::abs(Trad_interp[i] - Trad_exact[i]);
-			sol_norm += std::abs(Trad_exact[i]);
+		// compute error norm, also check xs_exact2 and xs have the same length and values
+		double err_norm2 = 0.;
+		double sol_norm2 = 0.;
+		AMREX_ALWAYS_ASSERT(xs.size() == xs_exact2.size());
+		for (size_t i = 0; i < xs.size(); ++i) {
+			AMREX_ALWAYS_ASSERT(std::abs(xs.at(i) - xs_exact2.at(i)) < 1.0e-12);
+			err_norm2 += std::abs(Tgas.at(i) - Tmat_exact2.at(i));
+			sol_norm2 += std::abs(Tmat_exact2.at(i));
 		}
 
-		const double error_tol = 0.01;
-		double rel_error = NAN;
-		rel_error = err_norm / sol_norm;
-		amrex::Print() << "Error norm = " << err_norm << std::endl;
-		amrex::Print() << "Solution norm = " << sol_norm << std::endl;
-		amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
-
-		if ((rel_error > error_tol) || std::isnan(rel_error)) {
-			status = 1;
+		const double error_tol2 = 0.006;
+		const double rel_error2 = err_norm2 / sol_norm2;
+		amrex::Print() << "L1 relative error norm = " << rel_error2 << std::endl;
+		if ((rel_error2 > error_tol2) || std::isnan(rel_error2)) {
+			status2 = 1;
 		}
 
 #ifdef HAVE_PYTHON
@@ -370,26 +427,26 @@ auto problem_main() -> int
 		Trad_args["color"] = "black";
 		matplotlibcpp::plot(xs, Trad, Trad_args);
 
-		// if (fstream.is_open()) {
-		// 	std::map<std::string, std::string> Trad_exact_args;
-		// 	Trad_exact_args["label"] = "Trad (diffusion ODE)";
-		// 	Trad_exact_args["color"] = "black";
-		// 	Trad_exact_args["linestyle"] = "dashed";
-		// 	matplotlibcpp::plot(xs_exact, Trad_exact, Trad_exact_args);
-		// }
+		if (fstream_exact.is_open()) {
+			std::map<std::string, std::string> Trad_exact_args;
+			Trad_exact_args["label"] = "Trad (chat = c)";
+			Trad_exact_args["color"] = "black";
+			Trad_exact_args["linestyle"] = "dashed";
+			matplotlibcpp::plot(xs_exact2, Trad_exact2, Trad_exact_args);
+		}
 
 		std::map<std::string, std::string> Tgas_args;
 		Tgas_args["label"] = "Tmat";
 		Tgas_args["color"] = "red";
 		matplotlibcpp::plot(xs, Tgas, Tgas_args);
 
-		// if (fstream.is_open()) {
-		// 	std::map<std::string, std::string> Tgas_exact_args;
-		// 	Tgas_exact_args["label"] = "Tmat (diffusion ODE)";
-		// 	Tgas_exact_args["color"] = "red";
-		// 	Tgas_exact_args["linestyle"] = "dashed";
-		// 	matplotlibcpp::plot(xs_exact, Tmat_exact, Tgas_exact_args);
-		// }
+		if (fstream_exact.is_open()) {
+			std::map<std::string, std::string> Tgas_exact_args;
+			Tgas_exact_args["label"] = "Tmat (chat = c)";
+			Tgas_exact_args["color"] = "red";
+			Tgas_exact_args["linestyle"] = "dashed";
+			matplotlibcpp::plot(xs_exact2, Tmat_exact2, Tgas_exact_args);
+		}
 
 		matplotlibcpp::xlabel("length x (dimensionless)");
 		matplotlibcpp::ylabel("temperature (dimensionless)");
@@ -418,5 +475,5 @@ auto problem_main() -> int
 #endif
 	}
 
-	return 0;
+	return status2;
 }
