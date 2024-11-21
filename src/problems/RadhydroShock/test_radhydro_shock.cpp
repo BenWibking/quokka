@@ -50,7 +50,8 @@ constexpr double Egas0 = rho0 * c_v * T0;
 constexpr double Erad1 = a_rad * (T1 * T1 * T1 * T1);
 constexpr double Egas1 = rho1 * c_v * T1;
 
-constexpr double shock_position = 0.0130; // 0.0132; // cm
+constexpr double shock_position = 0.0;
+// constexpr double shock_position = 0.0130; // 0.0132; // cm
 					  // (shock position drifts to the right
 					  // slightly during the simulation, so
 // we initialize slightly to the left...)
@@ -262,6 +263,8 @@ auto problem_main() -> int
 	int nx = static_cast<int>(position.size());
 	int status = 0;
 
+	const double x_left = position.at(0);
+
 	if (amrex::ParallelDescriptor::IOProcessor()) {
 		std::vector<double> xs(nx);
 		std::vector<double> Trad(nx);
@@ -272,7 +275,7 @@ auto problem_main() -> int
 		std::vector<double> gasVelocity(nx);
 
 		for (int i = 0; i < nx; ++i) {
-			const double x = Lx * ((i + 0.5) / static_cast<double>(nx));
+			const double x = position.at(i);
 			xs.at(i) = x; // cm
 
 			const double Erad_t = values.at(RadSystem<ShockProblem>::radEnergy_index)[i];
@@ -317,7 +320,7 @@ auto problem_main() -> int
 			auto Frad_over_c_val = values.at(5);
 
 			if ((x_val > 0.0) && (x_val < Lx)) {
-				xs_exact.push_back(x_val);
+				xs_exact.push_back(x_val + x_left);
 				Tmat_exact.push_back(Tmat_val);
 				Trad_exact.push_back(Trad_val);
 				Frad_over_c_exact.push_back(Frad_over_c_val);
