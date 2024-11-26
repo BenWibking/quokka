@@ -54,6 +54,15 @@ template <> struct RadSystem_Traits<StreamingProblem> {
 	static constexpr int beta_order = 0;
 };
 
+template <> 
+void QuokkaSimulation<StreamingProblem>::createInitialRadParticles()
+{
+	// read particles from ASCII file
+	const int nreal_extra = 3; // mass birth_time death_time
+	RadParticles->SetVerbose(0);
+	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
+}
+
 template <>
 void RadSystem<StreamingProblem>::SetRadEnergySource(array_t &radEnergySource, amrex::Box const &indexRange,
 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & dx,
@@ -61,14 +70,11 @@ void RadSystem<StreamingProblem>::SetRadEnergySource(array_t &radEnergySource, a
 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & /*prob_hi*/, amrex::Real /*time*/)
 {
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		double src = 0.0;
-
 		if (i == 32) {
 			// src = lum / c / (dx[0] * dx[1]);
-			src = lum1 / c / (dx[0]);
+			const double src = lum1 / c / (dx[0]);
+			radEnergySource(i, j, k, 0) = src;
 		}
-
-		radEnergySource(i, j, k, 0) = src;
 	});
 }
 
