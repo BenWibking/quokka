@@ -64,3 +64,5 @@ add_subdirectory(PopIII)
 add_subdirectory(ShockCloud)
 add_subdirectory(StarCluster)
 add_subdirectory(SphericalCollapse)
+
+add_subdirectory(MetalAdvectionProblem)
