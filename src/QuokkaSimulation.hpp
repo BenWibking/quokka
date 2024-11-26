@@ -178,6 +178,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void setInitialConditionsOnGrid(quokka::grid const &grid_elem) override;
 	void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) override;
 	void createInitialParticles() override;
+	void createInitialRadParticles() override;
 	void advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle) override;
 	void computeBeforeTimestep() override;
 	void computeAfterTimestep() override;
@@ -540,6 +541,13 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialPar
 	// default empty implementation
 	// user should implement using problem-specific template specialization
 	// note: an implementation is only required if particles are used
+}
+
+template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialRadParticles()
+{
+	// default empty implementation
+	// user should implement using problem-specific template specialization
+	// note: an implementation is only required if rad-particles are used
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::computeBeforeTimestep()
