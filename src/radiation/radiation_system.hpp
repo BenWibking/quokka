@@ -631,14 +631,28 @@ void RadSystem<problem_t>::DepositeParticleRadiation(array_t &radEnergySource, a
 {
 	// do nothing -- user implemented
 
-	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		if (i == 32) {
-			// src = lum / c / (dx[0] * dx[1]);
-			const double lum1 = c_light_ * 2.0 * 1.0 * 1.0; // L = c * 2 * r * E
-			const double src = lum1 / c_light_ / (dx[0]);
-			radEnergySource(i, j, k, 0) = src;
-		}
-	});
+	// test particle source
+	const double par_loc = 0.5;
+	const double lum1 = c_light_ * 2.0 * 1.0 * 1.0; // L = c * 2 * r * E
+	const double src = lum1 / c_light_ / (dx[0]);
+
+	// amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+	// 	if (i == 32) {
+	// 		// src = lum / c / (dx[0] * dx[1]);
+	// 		const double src = lum1 / c_light_ / (dx[0]);
+	// 		radEnergySource(i, j, k, 0) = src;
+	// 	}
+	// });
+
+	// On CPU: find the boundary of the box and check if the particle is inside
+	if (par_loc >= prob_lo[0] && par_loc < prob_hi[0]) {
+		const int i = static_cast<int>(std::floor((par_loc - prob_lo[0]) / dx[0]));
+		const int j = 0;
+		const int k = 0;
+
+		radEnergySource(i, j, k, 0) = src;
+	}
+
 }
 
 template <typename problem_t>
