@@ -47,7 +47,7 @@ constexpr double v0 = (Mach0 * c_s0);
 constexpr double v1 = v0 * rho0 / rho1;
 
 // constexpr double chat = 10.0 * (v0 + c_s0); // reduced speed of light
-constexpr double chat = c / 10.0;
+constexpr double chat = c / 100.0;
 // constexpr double chat = c;
 
 constexpr double Ggrav = 1.0; // dimensionless gravitational constant; arbitrary
