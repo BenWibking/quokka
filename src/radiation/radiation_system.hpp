@@ -630,6 +630,15 @@ void RadSystem<problem_t>::DepositeParticleRadiation(array_t &radEnergySource, a
 					      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, amrex::Real time)
 {
 	// do nothing -- user implemented
+
+	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+		if (i == 32) {
+			// src = lum / c / (dx[0] * dx[1]);
+			const double lum1 = c_light_ * 2.0 * 1.0 * 1.0; // L = c * 2 * r * E
+			const double src = lum1 / c_light_ / (dx[0]);
+			radEnergySource(i, j, k, 0) = src;
+		}
+	});
 }
 
 template <typename problem_t>

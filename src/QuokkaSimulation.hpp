@@ -1926,6 +1926,13 @@ void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::
 	// cell-centered radiation energy source
 	RadSystem<problem_t>::SetRadEnergySource(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
 
+#ifdef AMREX_PARTICLES
+	if (AMRSimulation<problem_t>::do_rad_particles != 0) {
+		// deposit radiation from particles into radEnergySource
+		RadSystem<problem_t>::DepositeParticleRadiation(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
+	}
+#endif
+
 	// cell-centered source terms
 	if constexpr (Physics_Traits<problem_t>::nGroups <= 1) {
 		RadSystem<problem_t>::AddSourceTermsSingleGroup(stateNew, radEnergySource.const_array(), indexRange, dt, stage, dustGasInteractionCoeff_,
