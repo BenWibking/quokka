@@ -52,6 +52,7 @@ template <> struct RadSystem_Traits<StreamingProblem> {
 	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = initial_Erad;
 	static constexpr int beta_order = 0;
+	static constexpr bool do_rad_particles = true;
 };
 
 // template <> 

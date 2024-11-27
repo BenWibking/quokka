@@ -69,7 +69,6 @@ namespace filesystem = experimental::filesystem;
 
 #ifdef AMREX_PARTICLES
 #include "particles/CICParticles.hpp"
-#include "particles/RadParticles.hpp"
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
 #endif
@@ -449,13 +448,12 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 #ifdef AMREX_PARTICLES
 	void InitParticles();	 // create tracer particles
 	void InitCICParticles(); // create CIC particles
-	void InitRadParticles(); // create CIC particles
+	// void InitRadParticles(); // create CIC particles
 	int do_tracers = 0;
 	int do_cic_particles = 0;
-	int do_rad_particles = 0;
 	std::unique_ptr<amrex::AmrTracerParticleContainer> TracerPC;
 	std::unique_ptr<quokka::CICParticleContainer> CICParticles;
-	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
+	// std::unique_ptr<quokka::RadParticleContainer> RadParticles;
 #endif
 
 	// external objects
@@ -657,9 +655,6 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	// Default do_cic_particles = 0 (turns on/off CIC particles)
 	pp.query("do_cic_particles", do_cic_particles);
 
-	// Default do_rad_particles = 0 (turns on/off radiating particles)
-	pp.query("do_rad_particles", do_rad_particles);
-
 	// Default suppress_output = 0
 	pp.query("suppress_output", suppress_output);
 
@@ -710,9 +705,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::setInitialCondition
 		if (do_cic_particles != 0) {
 			InitCICParticles();
 		}
-		if (do_rad_particles != 0) {
-			InitRadParticles();
-		}
+		// if (do_rad_particles != 0) {
+		// 	InitRadParticles();
+		// }
 #endif
 
 		if (checkpointInterval_ > 0) {
@@ -2080,17 +2075,17 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
 	}
 }
 
-template <typename problem_t> void AMRSimulation<problem_t>::InitRadParticles()
-{
-	if (do_rad_particles != 0) {
-		AMREX_ASSERT(RadParticles == nullptr);
-		RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+// template <typename problem_t> void AMRSimulation<problem_t>::InitRadParticles()
+// {
+// 	if (do_rad_particles != 0) {
+// 		AMREX_ASSERT(RadParticles == nullptr);
+// 		RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
 
-		RadParticles->SetVerbose(0);
-		createInitialRadParticles();
-		RadParticles->Redistribute();
-	}
-}
+// 		RadParticles->SetVerbose(0);
+// 		createInitialRadParticles();
+// 		RadParticles->Redistribute();
+// 	}
+// }
 #endif
 
 // get plotfile name

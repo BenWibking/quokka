@@ -29,6 +29,7 @@
 #include "physics_info.hpp"
 #include "radiation/planck_integral.hpp"
 #include "util/valarray.hpp"
+#include "particles/RadParticles.hpp"
 
 using Real = amrex::Real;
 
@@ -464,7 +465,23 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 	    -> RadPressureResult;
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
+
+	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
+
+	void createInitialRadParticles();
+	void InitRadParticles(); // create radiating particles
 };
+
+template <typename problem_t> void RadSystem<problem_t>::InitRadParticles()
+{
+	AMREX_ASSERT(RadParticles == nullptr);
+	RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+
+	RadParticles->SetVerbose(0);
+	createInitialRadParticles();
+	RadParticles->Redistribute();
+}
+
 
 // Compute radiation energy fractions for each photon group from a Planck function, given nGroups, radBoundaries, and temperature
 // This function enforces that the total fraction is 1.0, no matter what are the group boundaries
@@ -652,6 +669,55 @@ void RadSystem<problem_t>::DepositeParticleRadiation(array_t &radEnergySource, a
 
 		radEnergySource(i, j, k, 0) = src;
 	}
+
+
+
+#if 0
+	// Loop over particles on this level
+	for (quokka::RadParticleIterator pIter(*RadParticles, lev); pIter.isValid(); ++pIter) {
+			auto &particles = pIter.GetArrayOfStructs();
+			quokka::RadParticleContainer::ParticleType *pData = particles().data();
+			const amrex::Long np = pIter.numParticles();
+
+			// Calculate cell volume based on dimensions
+#if AMREX_SPACEDIM == 3
+			const double cell_vol = dx[0] * dx[1] * dx[2];
+#elif AMREX_SPACEDIM == 2  
+			const double cell_vol = dx[0] * dx[1];
+#else
+			const double cell_vol = dx[0];
+#endif
+
+			// Loop through particles
+			amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+					quokka::RadParticleContainer::ParticleType &p = pData[idx];
+					
+					// Get particle position
+					const double lum1 = c_light_ * 2.0 * 1.0 * 1.0; // L = c * 2 * r * E
+					const double src = lum1 / c_light_ / cell_vol;
+
+					// Find the cell containing this particle
+					int i = static_cast<int>(std::floor((p.pos(0) - prob_lo[0]) / dx[0]));
+#if AMREX_SPACEDIM >= 2
+					int j = static_cast<int>(std::floor((p.pos(1) - prob_lo[1]) / dx[1]));
+#else
+					int j = 0;
+#endif
+#if AMREX_SPACEDIM == 3
+					int k = static_cast<int>(std::floor((p.pos(2) - prob_lo[2]) / dx[2]));
+#else
+					int k = 0;
+#endif
+
+					// Check if particle's cell is within the box
+					if (indexRange.contains(i,j,k)) {
+							// Atomic add since multiple particles could be in same cell
+							amrex::Gpu::Atomic::Add(&radEnergySource(i,j,k,0), src);
+					}
+			});
+	}
+#endif
+
 
 }
 

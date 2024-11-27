@@ -1927,7 +1927,7 @@ void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::
 	RadSystem<problem_t>::SetRadEnergySource(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
 
 #ifdef AMREX_PARTICLES
-	if (AMRSimulation<problem_t>::do_rad_particles != 0) {
+	if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
 		// deposit radiation from particles into radEnergySource
 		RadSystem<problem_t>::DepositeParticleRadiation(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
 	}
