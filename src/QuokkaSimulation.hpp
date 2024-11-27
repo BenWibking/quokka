@@ -178,7 +178,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void setInitialConditionsOnGrid(quokka::grid const &grid_elem) override;
 	void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) override;
 	void createInitialParticles() override;
-	void createInitialRadParticles() override;
 	void advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle) override;
 	void computeBeforeTimestep() override;
 	void computeAfterTimestep() override;
@@ -186,6 +185,8 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void computeAfterEvolve(amrex::Vector<amrex::Real> &initSumCons) override;
 	void computeReferenceSolution(amrex::MultiFab &ref, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
 				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo);
+
+	void createInitialRadParticles();
 
 	// compute derived variables
 	void ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const override;
