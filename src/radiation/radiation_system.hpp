@@ -667,7 +667,7 @@ void RadSystem<problem_t>::DepositeParticleRadiation(array_t &radEnergySource, a
 		const int j = 0;
 		const int k = 0;
 
-		radEnergySource(i, j, k, 0) = src;
+		radEnergySource(i, j, k, 0) += src;
 	}
 
 
