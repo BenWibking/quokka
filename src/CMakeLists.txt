@@ -69,19 +69,23 @@ endif(ENABLE_HWASAN)
 
 if(DISABLE_FMAD)
   message(STATUS "Fused multiply-add (FMAD) is disabled for device code.")
-  if(CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
-    message(FATAL_ERROR "Fused multiply-add cannot be disabled for NVHPC compilers. Reconfigure with -DDISABLE_FMAD=OFF.")
-  endif()
-
   set(AMReX_CUDA_FASTMATH OFF CACHE BOOL "" FORCE)
+
   if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVIDIA")
     add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:--fmad=false>)
   endif()
+
   if(CMAKE_CUDA_COMPILER_ID STREQUAL "Clang")
     add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-ffp-contract=off>)
     add_compile_options($<$<COMPILE_LANGUAGE:C>:-ffp-contract=off>)
     add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-ffp-contract=off>)
-    endif()
+  endif()
+
+  if(CMAKE_CUDA_COMPILER_ID STREQUAL "NVHPC")
+    add_compile_options($<$<COMPILE_LANGUAGE:C>:-Mnofma>)
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-Mnofma>)
+    add_compile_options($<$<COMPILE_LANGUAGE:CUDA>:-gpu=nofma>)
+  endif()
 else()
   # fused MAD causes directional asymmetry -- enabled by default by nvcc and clang
   message(STATUS "Fused multiply-add (FMAD) is *enabled* for device code. Exact direction symmetry will NOT be preserved.")
