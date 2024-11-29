@@ -465,23 +465,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 	    -> RadPressureResult;
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
-
-	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
-
-	void createInitialRadParticles();
-	void InitRadParticles(); // create radiating particles
 };
-
-template <typename problem_t> void RadSystem<problem_t>::InitRadParticles()
-{
-	AMREX_ASSERT(RadParticles == nullptr);
-	RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
-
-	RadParticles->SetVerbose(0);
-	createInitialRadParticles();
-	RadParticles->Redistribute();
-}
-
 
 // Compute radiation energy fractions for each photon group from a Planck function, given nGroups, radBoundaries, and temperature
 // This function enforces that the total fraction is 1.0, no matter what are the group boundaries

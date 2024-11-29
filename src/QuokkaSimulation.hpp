@@ -19,6 +19,7 @@
 
 #include "AMReX.H"
 #include "AMReX_AmrParticles.H"
+#include "AMReX_ParticleMesh.H"
 #include "AMReX_Arena.H"
 #include "AMReX_Array.H"
 #include "AMReX_Array4.H"
@@ -59,6 +60,8 @@
 #include "physics_numVars.hpp"
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
+#include "particles/RadParticles.hpp"
+#include "particles/trilinear_deposition_K.H"
 
 // Simulation class should be initialized only once per program (i.e., is a singleton)
 template <typename problem_t> class QuokkaSimulation : public AMRSimulation<problem_t>
@@ -143,6 +146,10 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Long radiationCellUpdates_ = 0; // total number of radiation cell-updates
 
+	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
+
+	void InitRadParticles(); // create radiating particles
+
 	// member functions
 	explicit QuokkaSimulation(amrex::Vector<amrex::BCRec> &BCs_cc, amrex::Vector<amrex::BCRec> &BCs_fc) : AMRSimulation<problem_t>(BCs_cc, BCs_fc)
 	{
@@ -165,6 +172,9 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 		amrex::Real small_temp = 1e-10;
 		amrex::Real small_dens = 1e-100;
 		eos_init(small_temp, small_dens);
+	
+	  // Initialize radiation particles
+    InitRadParticles(); // Call to initialize radiation particles
 	}
 
 	[[nodiscard]] static auto getScalarVariableNames() -> std::vector<std::string>;
@@ -283,6 +293,16 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void replaceFluxes(std::array<amrex::MultiFab, AMREX_SPACEDIM> &fluxes, std::array<amrex::MultiFab, AMREX_SPACEDIM> &FOfluxes,
 			   amrex::iMultiFab &redoFlag);
 };
+
+template <typename problem_t> void QuokkaSimulation<problem_t>::InitRadParticles()
+{
+	AMREX_ASSERT(RadParticles == nullptr);
+	RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+
+	RadParticles->SetVerbose(0);
+	createInitialRadParticles();
+	// RadParticles->Redistribute();
+}
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentNames()
 {
@@ -1681,12 +1701,22 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		int *p_iteration_failure_counter = iteration_failure_counter.data();
 		int *p_iteration_counter = iteration_counter.data();
 
+		// Create a MultiFab to hold radEnergySource for the current AMR level
+		amrex::MultiFab radEnergySource(grids[lev], dmap[lev], Physics_Traits<problem_t>::nGroups, 0);
+
 		if constexpr (IMEX_a22 > 0.0) {
 			// matter-radiation exchange source terms of stage 1
 
-			// Create a MultiFab to hold radEnergySource for the current AMR level
-			amrex::MultiFab radEnergySource(grids[lev], dmap[lev], Physics_Traits<problem_t>::nGroups, 0);
 			radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
+
+#ifdef AMREX_PARTICLES
+			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+				// deposit radiation from particles into radEnergySource
+
+				// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, quokka::RadDeposition{1.0, quokka::RadParticleMassIdx, 0, 1}, false);
+				// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, TrilinearDeposition{0, 0, 1}, false);
+			}
+#endif
 
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
 				const amrex::Box &indexRange = iter.validbox();
@@ -1711,8 +1741,6 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		// new radiation state is stored in state_new_cc_
 		// new hydro state is stored in state_new_cc_ (always the case during radiation update)
 
-		// Create a MultiFab to hold radEnergySource for the current AMR level
-		amrex::MultiFab radEnergySource(grids[lev], dmap[lev], Physics_Traits<problem_t>::nGroups, 0);
 		radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
 
 		// Add the matter-radiation exchange source terms to the radiation subsystem and evolve by (1 - IMEX_a32) * dt
