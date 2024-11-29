@@ -301,7 +301,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::InitRadParticles
 
 	RadParticles->SetVerbose(0);
 	createInitialRadParticles();
-	// RadParticles->Redistribute();
+	RadParticles->Redistribute();
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentNames()
