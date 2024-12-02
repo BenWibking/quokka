@@ -1,5 +1,5 @@
 # Use the NVIDIA CUDA image as the base image
-FROM nvcr.io/nvidia/nvhpc:24.9-devel-cuda12.6-ubuntu24.04
+FROM nvcr.io/nvidia/nvhpc:24.11-devel-cuda12.6-ubuntu24.04
 
 # Set environment variables for NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all
@@ -9,7 +9,7 @@ ENV NVIDIA_DRIVER_CAPABILITIES=compute,utility
 RUN apt-get update -qq && apt-get upgrade -y -qq && \
     apt-get install -y -qq --no-install-recommends \
     build-essential wget curl git ninja-build gcc g++ \
-    python3-dev python3-numpy python3-matplotlib python3-pip \
+    python3-dev python3-numpy python3-matplotlib python3-venv python3-pip \
     libhdf5-dev && \
     apt-get --yes -qq clean && \
     rm -rf /var/lib/apt/lists/*
