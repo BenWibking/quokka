@@ -588,7 +588,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::PerformanceHints()
 #ifdef QUOKKA_USE_OPENPMD
 	// warning about particles and OpenPMD outputs
 	amrex::Print() << "\n[Warning] [I/O] OpenPMD outputs currently do NOT include particles!"
-		       	   << " Support for outputting particles for openPMD is not yet implemented.\n";
+		       << " Support for outputting particles for openPMD is not yet implemented.\n";
 #endif
 }
 
