@@ -56,26 +56,42 @@ template <> struct RadSystem_Traits<StreamingProblem> {
 	static constexpr bool do_rad_particles = true;
 };
 
-template <> 
-void QuokkaSimulation<StreamingProblem>::createInitialRadParticles()
+// template <> 
+// void QuokkaSimulation<StreamingProblem>::createInitialRadParticles()
+// {
+// 	// read particles from ASCII file
+// 	const int nreal_extra = 3; // mass birth_time death_time
+// 	RadParticles->SetVerbose(0);
+// 	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
+
+// 	// const double mass = 1.0;
+// 	// // MyParticleContainer::ParticleInitData pdata = {{mass}, {},{},{}};
+// 	// // MyParticleContainer::ParticleInitData pdata = {{mass}, {}, {}, {}};
+// 	// // MyParticleContainer::ParticleInitData pdata = {{mass}, {0.0, 0.0, 0.0}, {}, {}};
+// 	// // RadParticles->InitRandom(1, 333, pdata, true);
+
+//   // // MyParticleContainer::ParticleInitData pdata = {{mass, AMREX_D_DECL(1.0, 2.0, 3.0), AMREX_D_DECL(0.0, 0.0, 0.0)}, {},{},{}};
+//   // quokka::RadParticleContainer::ParticleInitData pdata = {{mass}, {},{},{}};
+//   // // myPC.InitRandom(num_particles, iseed, pdata, serialize);
+// 	// RadParticles->InitRandom(1, 333, pdata, true);
+
+// 	// RadParticles->Redistribute();
+// }
+
+// template <> void QuokkaSimulation<StreamingProblem>::createInitialParticles()
+// {
+// 	// read particles from ASCII file
+// 	const int nreal_extra = 3; // mass birth_time death_time
+// 	CICParticles->SetVerbose(1);
+// 	CICParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
+// }
+
+template <> void QuokkaSimulation<StreamingProblem>::createInitialParticles()
 {
 	// read particles from ASCII file
-	const int nreal_extra = 3; // mass birth_time death_time
-	RadParticles->SetVerbose(0);
-	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
-
-	// const double mass = 1.0;
-	// // MyParticleContainer::ParticleInitData pdata = {{mass}, {},{},{}};
-	// // MyParticleContainer::ParticleInitData pdata = {{mass}, {}, {}, {}};
-	// // MyParticleContainer::ParticleInitData pdata = {{mass}, {0.0, 0.0, 0.0}, {}, {}};
-	// // RadParticles->InitRandom(1, 333, pdata, true);
-
-  // // MyParticleContainer::ParticleInitData pdata = {{mass, AMREX_D_DECL(1.0, 2.0, 3.0), AMREX_D_DECL(0.0, 0.0, 0.0)}, {},{},{}};
-  // quokka::RadParticleContainer::ParticleInitData pdata = {{mass}, {},{},{}};
-  // // myPC.InitRandom(num_particles, iseed, pdata, serialize);
-	// RadParticles->InitRandom(1, 333, pdata, true);
-
-	// RadParticles->Redistribute();
+	const int nreal_extra = 3; // mass vx vy vz
+	CICParticles->SetVerbose(1);
+	CICParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
 }
 
 template <>
@@ -88,7 +104,7 @@ void RadSystem<StreamingProblem>::SetRadEnergySource(array_t &radEnergySource, a
 		if (i == 32) {
 			// src = lum / c / (dx[0] * dx[1]);
 			const double src = lum1 / c / (dx[0]);
-			radEnergySource(i, j, k, 0) = src;
+			radEnergySource(i, j, k, 0) += src;
 		}
 	});
 }

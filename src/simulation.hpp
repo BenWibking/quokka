@@ -1158,7 +1158,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 {
 	// kick particles (do: vel[i] += 0.5 * dt * accel[i])
 
-	if (do_cic_particles != 0) {
+	if (0) {
 		// gravitational acceleration multifabs
 		amrex::Vector<amrex::MultiFab> accel(finest_level + 1);
 
@@ -1246,7 +1246,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLe
 {
 	// drift all particles (do: pos[i] += dt * vel[i])
 
-	if (do_cic_particles != 0) {
+	if (0) {
 		for (int lev = 0; lev <= finest_level; ++lev) {
 			for (quokka::CICParticleIterator pIter(*CICParticles, lev); pIter.isValid(); ++pIter) {
 				auto &particles = pIter.GetArrayOfStructs();

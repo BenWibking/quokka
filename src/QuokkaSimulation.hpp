@@ -42,6 +42,7 @@
 #include "AMReX_Print.H"
 #include "AMReX_REAL.H"
 #include "AMReX_YAFluxRegister.H"
+#include "particles/CICParticles.hpp"
 
 #ifdef AMREX_USE_ASCENT
 #include "AMReX_Conduit_Blueprint.H"
@@ -174,7 +175,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 		eos_init(small_temp, small_dens);
 	
 	  // Initialize radiation particles
-    InitRadParticles(); // Call to initialize radiation particles
+    // InitRadParticles(); // Call to initialize radiation particles
 	}
 
 	[[nodiscard]] static auto getScalarVariableNames() -> std::vector<std::string>;
@@ -1708,6 +1709,15 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			// matter-radiation exchange source terms of stage 1
 
 			radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
+			// for debugging, set a pointer to the radEnergySource array
+			for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
+				auto const &radEnergySource_arr = radEnergySource.array(iter);
+				amrex::Print() << "before, radEnergySource_arr.data() = ";
+				for (int i = 0; i <= 63; ++i) {
+					amrex::Print() << radEnergySource_arr(i, 0, 0) << ", ";
+				}
+				amrex::Print() << "\n";
+			}
 
 #ifdef AMREX_PARTICLES
 			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
@@ -1715,8 +1725,37 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 
 				// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, quokka::RadDeposition{1.0, quokka::RadParticleMassIdx, 0, 1}, false);
 				// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, TrilinearDeposition{0, 0, 1}, false);
+
+				// amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
+				// 	// TrilinearDeposition{0, 0, 1},
+				// 	quokka::CICDeposition{1.0, quokka::ParticleMassIdx, 0, 1},
+				// 	false);
+
+				amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
+                        [=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& p, 
+                                              amrex::Array4<amrex::Real> const& rho,
+																							amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
+																							amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi)
+      {
+          amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
+          interp.ParticleToMesh(p, rho, 0, 0, 1,
+                      [=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& part, int comp) {
+                          return part.rdata(comp);  // no weighting
+                      });
+			}, false);
+
 			}
 #endif
+
+			// for debugging, set a pointer to the radEnergySource array
+			for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
+				auto const &radEnergySource_arr = radEnergySource.array(iter);
+				amrex::Print() << "after, radEnergySource_arr.data() = ";
+				for (int i = 0; i <= 63; ++i) {
+					amrex::Print() << radEnergySource_arr(i, 0, 0) << ", ";
+				}
+				amrex::Print() << "\n";
+			}
 
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
 				const amrex::Box &indexRange = iter.validbox();
