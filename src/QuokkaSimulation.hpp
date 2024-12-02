@@ -293,6 +293,8 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	void replaceFluxes(std::array<amrex::MultiFab, AMREX_SPACEDIM> &fluxes, std::array<amrex::MultiFab, AMREX_SPACEDIM> &FOfluxes,
 			   amrex::iMultiFab &redoFlag);
+
+	void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
 };
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::InitRadParticles()
@@ -303,6 +305,18 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::InitRadParticles
 	RadParticles->SetVerbose(0);
 	createInitialRadParticles();
 	RadParticles->Redistribute();
+}
+
+template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
+{
+	amrex::Print() << "radEnergySource_arr.data() = ";
+	for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
+		auto const &radEnergySource_arr = radEnergySource.array(iter);
+		for (int i = 0; i <= 63; ++i) {
+			amrex::Print() << radEnergySource_arr(i, 0, 0) << ", ";
+		}
+		amrex::Print() << "\n";
+	}
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentNames()
@@ -1709,15 +1723,10 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			// matter-radiation exchange source terms of stage 1
 
 			radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
-			// for debugging, set a pointer to the radEnergySource array
-			for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
-				auto const &radEnergySource_arr = radEnergySource.array(iter);
-				amrex::Print() << "before, radEnergySource_arr.data() = ";
-				for (int i = 0; i <= 63; ++i) {
-					amrex::Print() << radEnergySource_arr(i, 0, 0) << ", ";
-				}
-				amrex::Print() << "\n";
-			}
+
+			// for debugging, print the radEnergySource array
+			amrex::Print() << "Initial, ";
+			PrintRadEnergySource(radEnergySource);
 
 #ifdef AMREX_PARTICLES
 			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
@@ -1740,22 +1749,16 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
           amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
           interp.ParticleToMesh(p, rho, 0, 0, 1,
                       [=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& part, int comp) {
-                          return part.rdata(comp);  // no weighting
+												return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2])) / RadSystem<problem_t>::c_light_;
                       });
 			}, false);
 
 			}
 #endif
 
-			// for debugging, set a pointer to the radEnergySource array
-			for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
-				auto const &radEnergySource_arr = radEnergySource.array(iter);
-				amrex::Print() << "after, radEnergySource_arr.data() = ";
-				for (int i = 0; i <= 63; ++i) {
-					amrex::Print() << radEnergySource_arr(i, 0, 0) << ", ";
-				}
-				amrex::Print() << "\n";
-			}
+			// for debugging, print the radEnergySource array
+			amrex::Print() << "after ParticleToMesh, ";
+			PrintRadEnergySource(radEnergySource);
 
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
 				const amrex::Box &indexRange = iter.validbox();
@@ -1772,7 +1775,12 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				operatorSplitSourceTerms(stateNew, radEnergySource_arr, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi, p_iteration_counter,
 							 p_iteration_failure_counter);
 			}
+
+			// for debugging, print the radEnergySource array
+			amrex::Print() << "after SetRadEnergySource, ";
+			PrintRadEnergySource(radEnergySource);
 		}
+
 
 		// Stage 2: advance hyperbolic radiation subsystem using midpoint RK2 method, starting from state_old_cc_ to state_new_cc_
 		advanceRadiationMidpointRK2(lev, time_subcycle, dt_radiation, i, nsubSteps, fr_as_crse, fr_as_fine);
@@ -1781,6 +1789,34 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		// new hydro state is stored in state_new_cc_ (always the case during radiation update)
 
 		radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
+
+#ifdef AMREX_PARTICLES
+		if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+			// deposit radiation from particles into radEnergySource
+
+			// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, quokka::RadDeposition{1.0, quokka::RadParticleMassIdx, 0, 1}, false);
+			// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, TrilinearDeposition{0, 0, 1}, false);
+
+			// amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
+			// 	// TrilinearDeposition{0, 0, 1},
+			// 	quokka::CICDeposition{1.0, quokka::ParticleMassIdx, 0, 1},
+			// 	false);
+
+			amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
+											[=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& p, 
+																						amrex::Array4<amrex::Real> const& rho,
+																						amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
+																						amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi)
+		{
+				amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
+				interp.ParticleToMesh(p, rho, 0, 0, 1,
+										[=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& part, int comp) {
+												return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2])) / RadSystem<problem_t>::c_light_;
+										});
+		}, false);
+
+		}
+#endif
 
 		// Add the matter-radiation exchange source terms to the radiation subsystem and evolve by (1 - IMEX_a32) * dt
 		for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
