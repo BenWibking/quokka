@@ -1753,6 +1753,8 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
                       });
 			}, false);
 
+			// amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, quokka::RadDeposition{quokka::RadParticleMassIdx, 0, 1}, false);
+
 			}
 #endif
 

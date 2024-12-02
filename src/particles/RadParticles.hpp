@@ -18,7 +18,6 @@ using RadParticleContainer = amrex::AmrParticleContainer<RadParticleRealComps>;
 using RadParticleIterator = amrex::ParIter<RadParticleRealComps>;
 
 struct RadDeposition {
-	amrex::Real mass_to_light_ratio{};
 	int start_part_comp{};
 	int start_mesh_comp{};
 	int num_comp{};
@@ -30,7 +29,7 @@ struct RadDeposition {
 		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
 		interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
 				      [=] AMREX_GPU_DEVICE(const RadParticleContainer::ParticleType &part, int comp) {
-					      return mass_to_light_ratio * part.rdata(comp);
+								return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2]));
 				      });
 	}
 };
