@@ -1979,21 +1979,6 @@ void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::
 							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, int *p_iteration_counter,
 							   int *p_iteration_failure_counter)
 {
-	// amrex::FArrayBox radEnergySource(indexRange, Physics_Traits<problem_t>::nGroups,
-	// 				 amrex::The_Async_Arena()); // cell-centered scalar
-
-	// radEnergySource.setVal<amrex::RunOn::Device>(0.);
-
-	// // cell-centered radiation energy source
-	// RadSystem<problem_t>::SetRadEnergySource(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
-
-// #ifdef AMREX_PARTICLES
-// 	if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
-// 		// deposit radiation from particles into radEnergySource
-// 		RadSystem<problem_t>::DepositeParticleRadiation(radEnergySource.array(), indexRange, dx, prob_lo, prob_hi, time + dt);
-// 	}
-// #endif
-
 	// cell-centered source terms
 	if constexpr (Physics_Traits<problem_t>::nGroups <= 1) {
 		RadSystem<problem_t>::AddSourceTermsSingleGroup(stateNew, radEnergySource, indexRange, dt, stage, dustGasInteractionCoeff_, p_iteration_counter,
