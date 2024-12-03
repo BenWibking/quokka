@@ -116,7 +116,7 @@ auto problem_main() -> int
 	amrex::Vector<amrex::BCRec> BCs_cc(nvars);
 	for (int n = 0; n < nvars; ++n) {
 		for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-			BCs_cc[n].setLo(i, amrex::BCType::int_dir);  // periodic
+			BCs_cc[n].setLo(i, amrex::BCType::int_dir); // periodic
 			BCs_cc[n].setHi(i, amrex::BCType::int_dir); // periodic
 		}
 	}
