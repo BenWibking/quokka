@@ -69,6 +69,7 @@ namespace filesystem = experimental::filesystem;
 
 #ifdef AMREX_PARTICLES
 #include "particles/CICParticles.hpp"
+#include "particles/RadParticles.hpp"
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
 #endif
@@ -226,6 +227,7 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	virtual void setInitialConditionsOnGrid(quokka::grid const &grid_elem) = 0;
 	virtual void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) = 0;
 	virtual void createInitialParticles() = 0;
+	virtual void createInitialRadParticles() = 0;
 	virtual void computeBeforeTimestep() = 0;
 	virtual void computeAfterTimestep() = 0;
 	virtual void computeAfterEvolve(amrex::Vector<amrex::Real> &initSumCons) = 0;
@@ -447,10 +449,13 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 #ifdef AMREX_PARTICLES
 	void InitParticles();	 // create tracer particles
 	void InitCICParticles(); // create CIC particles
+	void InitRadParticles(); // create radiating particles
 	int do_tracers = 0;
 	int do_cic_particles = 0;
+	int do_rad_particles = 0;
 	std::unique_ptr<amrex::AmrTracerParticleContainer> TracerPC;
 	std::unique_ptr<quokka::CICParticleContainer> CICParticles;
+	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
 #endif
 
 	// external objects
@@ -652,6 +657,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	// Default do_cic_particles = 0 (turns on/off CIC particles)
 	pp.query("do_cic_particles", do_cic_particles);
 
+	// Default do_rad_particles = 0 (turns on/off radiating particles)
+	pp.query("do_rad_particles", do_rad_particles);
+
 	// Default suppress_output = 0
 	pp.query("suppress_output", suppress_output);
 
@@ -701,6 +709,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::setInitialCondition
 		}
 		if (do_cic_particles != 0) {
 			InitCICParticles();
+		}
+		if (do_rad_particles != 0) {
+			InitRadParticles();
 		}
 #endif
 
@@ -1309,6 +1320,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 				if (do_cic_particles != 0) {
 					CICParticles->Redistribute(lev);
 				}
+				if (do_rad_particles != 0) {
+					RadParticles->Redistribute(lev);
+				}
 #endif
 
 				// do fix-up on all levels that have been re-gridded
@@ -1387,6 +1401,17 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 				redistribute_ngrow = iteration;
 			}
 			CICParticles->Redistribute(lev, CICParticles->finestLevel(), redistribute_ngrow);
+		}
+	}
+	if (do_rad_particles != 0) {
+		int redistribute_ngrow = 0;
+		if ((iteration < nsubsteps[lev]) || (lev == 0)) {
+			if (lev == 0) {
+				redistribute_ngrow = 0;
+			} else {
+				redistribute_ngrow = iteration;
+			}
+			RadParticles->Redistribute(lev, RadParticles->finestLevel(), redistribute_ngrow);
 		}
 	}
 #endif
@@ -2065,6 +2090,18 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
 		CICParticles->Redistribute();
 	}
 }
+
+template <typename problem_t> void AMRSimulation<problem_t>::InitRadParticles()
+{
+	if (do_rad_particles != 0) {
+		AMREX_ASSERT(RadParticles == nullptr);
+		RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+
+		RadParticles->SetVerbose(0);
+		createInitialRadParticles();
+		RadParticles->Redistribute();
+	}
+}
 #endif
 
 // get plotfile name
@@ -2380,6 +2417,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::WritePlotFile()
 	if (do_cic_particles != 0) {
 		CICParticles->WritePlotFile(plotfilename, "CIC_particles");
 	}
+	if (do_rad_particles != 0) {
+		RadParticles->WritePlotFile(plotfilename, "Rad_particles");
+	}
 #endif // AMREX_PARTICLES
 #endif
 }
@@ -2632,6 +2672,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::WriteCheckpointFile
 	if (do_cic_particles != 0) {
 		CICParticles->Checkpoint(checkpointname, "CIC_particles", true);
 	}
+	if (do_rad_particles != 0) {
+		RadParticles->Checkpoint(checkpointname, "Rad_particles", true);
+	}
 #endif
 
 	// create symlink and point it at this checkpoint dir
@@ -2799,6 +2842,11 @@ template <typename problem_t> void AMRSimulation<problem_t>::ReadCheckpointFile(
 		AMREX_ASSERT(CICParticles == nullptr);
 		CICParticles = std::make_unique<quokka::CICParticleContainer>(this);
 		CICParticles->Restart(restart_chkfile, "CIC_particles");
+	}
+	if (do_rad_particles != 0) {
+		AMREX_ASSERT(RadParticles == nullptr);
+		RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+		RadParticles->Restart(restart_chkfile, "Rad_particles");
 	}
 #endif
 

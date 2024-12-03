@@ -19,7 +19,6 @@
 
 #include "AMReX.H"
 #include "AMReX_AmrParticles.H"
-#include "AMReX_ParticleMesh.H"
 #include "AMReX_Arena.H"
 #include "AMReX_Array.H"
 #include "AMReX_Array4.H"
@@ -42,7 +41,6 @@
 #include "AMReX_Print.H"
 #include "AMReX_REAL.H"
 #include "AMReX_YAFluxRegister.H"
-#include "particles/CICParticles.hpp"
 
 #ifdef AMREX_USE_ASCENT
 #include "AMReX_Conduit_Blueprint.H"
@@ -61,8 +59,6 @@
 #include "physics_numVars.hpp"
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
-#include "particles/RadParticles.hpp"
-#include "particles/trilinear_deposition_K.H"
 
 // Simulation class should be initialized only once per program (i.e., is a singleton)
 template <typename problem_t> class QuokkaSimulation : public AMRSimulation<problem_t>
@@ -147,10 +143,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Long radiationCellUpdates_ = 0; // total number of radiation cell-updates
 
-	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
-
-	void InitRadParticles(); // create radiating particles
-
 	// member functions
 	explicit QuokkaSimulation(amrex::Vector<amrex::BCRec> &BCs_cc, amrex::Vector<amrex::BCRec> &BCs_fc) : AMRSimulation<problem_t>(BCs_cc, BCs_fc)
 	{
@@ -173,9 +165,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 		amrex::Real small_temp = 1e-10;
 		amrex::Real small_dens = 1e-100;
 		eos_init(small_temp, small_dens);
-	
-	  // Initialize radiation particles
-    // InitRadParticles(); // Call to initialize radiation particles
 	}
 
 	[[nodiscard]] static auto getScalarVariableNames() -> std::vector<std::string>;
@@ -189,6 +178,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void setInitialConditionsOnGrid(quokka::grid const &grid_elem) override;
 	void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) override;
 	void createInitialParticles() override;
+	void createInitialRadParticles() override;
 	void advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle) override;
 	void computeBeforeTimestep() override;
 	void computeAfterTimestep() override;
@@ -196,8 +186,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void computeAfterEvolve(amrex::Vector<amrex::Real> &initSumCons) override;
 	void computeReferenceSolution(amrex::MultiFab &ref, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
 				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo);
-
-	void createInitialRadParticles();
 
 	// compute derived variables
 	void ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const override;
@@ -296,16 +284,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
 };
-
-template <typename problem_t> void QuokkaSimulation<problem_t>::InitRadParticles()
-{
-	AMREX_ASSERT(RadParticles == nullptr);
-	RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
-
-	RadParticles->SetVerbose(0);
-	createInitialRadParticles();
-	RadParticles->Redistribute();
-}
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
 {
@@ -1724,43 +1702,20 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 
 			radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
 
-			// for debugging, print the radEnergySource array
-			amrex::Print() << "Initial, ";
-			PrintRadEnergySource(radEnergySource);
-
 #ifdef AMREX_PARTICLES
 			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+				// for debugging, print the radEnergySource array
+				amrex::Print() << "Initial, ";
+				PrintRadEnergySource(radEnergySource);
+
 				// deposit radiation from particles into radEnergySource
+				amrex::ParticleToMesh(*AMRSimulation<problem_t>::RadParticles, radEnergySource, lev, quokka::RadDeposition{quokka::RadParticleMassIdx, 0, 1}, false);
 
-				// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, quokka::RadDeposition{1.0, quokka::RadParticleMassIdx, 0, 1}, false);
-				// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, TrilinearDeposition{0, 0, 1}, false);
-
-				// amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
-				// 	// TrilinearDeposition{0, 0, 1},
-				// 	quokka::CICDeposition{1.0, quokka::ParticleMassIdx, 0, 1},
-				// 	false);
-
-				amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
-                        [=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& p, 
-                                              amrex::Array4<amrex::Real> const& rho,
-																							amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
-																							amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi)
-      {
-          amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
-          interp.ParticleToMesh(p, rho, 0, 0, 1,
-                      [=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& part, int comp) {
-												return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2])) / RadSystem<problem_t>::c_light_;
-                      });
-			}, false);
-
-			// amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, quokka::RadDeposition{quokka::RadParticleMassIdx, 0, 1}, false);
-
+				// for debugging, print the radEnergySource array
+				amrex::Print() << "after ParticleToMesh, ";
+				PrintRadEnergySource(radEnergySource);
 			}
 #endif
-
-			// for debugging, print the radEnergySource array
-			amrex::Print() << "after ParticleToMesh, ";
-			PrintRadEnergySource(radEnergySource);
 
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
 				const amrex::Box &indexRange = iter.validbox();
@@ -1778,9 +1733,13 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 							 p_iteration_failure_counter);
 			}
 
-			// for debugging, print the radEnergySource array
-			amrex::Print() << "after SetRadEnergySource, ";
-			PrintRadEnergySource(radEnergySource);
+#ifdef AMREX_PARTICLES
+			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+				// for debugging, print the radEnergySource array
+				amrex::Print() << "after SetRadEnergySource, ";
+				PrintRadEnergySource(radEnergySource);
+			}
+#endif
 		}
 
 
@@ -1795,28 +1754,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 #ifdef AMREX_PARTICLES
 		if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
 			// deposit radiation from particles into radEnergySource
-
-			// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, quokka::RadDeposition{1.0, quokka::RadParticleMassIdx, 0, 1}, false);
-			// amrex::ParticleToMesh(*RadParticles, radEnergySource, lev, TrilinearDeposition{0, 0, 1}, false);
-
-			// amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
-			// 	// TrilinearDeposition{0, 0, 1},
-			// 	quokka::CICDeposition{1.0, quokka::ParticleMassIdx, 0, 1},
-			// 	false);
-
-			amrex::ParticleToMesh(*AMRSimulation<problem_t>::CICParticles, radEnergySource, lev, 
-											[=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& p, 
-																						amrex::Array4<amrex::Real> const& rho,
-																						amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
-																						amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi)
-		{
-				amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
-				interp.ParticleToMesh(p, rho, 0, 0, 1,
-										[=] AMREX_GPU_DEVICE (const quokka::CICParticleContainer::ParticleType& part, int comp) {
-												return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2])) / RadSystem<problem_t>::c_light_;
-										});
-		}, false);
-
+			amrex::ParticleToMesh(*AMRSimulation<problem_t>::RadParticles, radEnergySource, lev, quokka::RadDeposition{quokka::RadParticleMassIdx, 0, 1}, false);
 		}
 #endif
 

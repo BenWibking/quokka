@@ -78,13 +78,13 @@ template <> struct RadSystem_Traits<StreamingProblem> {
 // 	// RadParticles->Redistribute();
 // }
 
-// template <> void QuokkaSimulation<StreamingProblem>::createInitialParticles()
-// {
-// 	// read particles from ASCII file
-// 	const int nreal_extra = 3; // mass birth_time death_time
-// 	CICParticles->SetVerbose(1);
-// 	CICParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
-// }
+template <> void QuokkaSimulation<StreamingProblem>::createInitialRadParticles()
+{
+	// read particles from ASCII file
+	const int nreal_extra = 3; // mass birth_time death_time
+	RadParticles->SetVerbose(1);
+	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
+}
 
 template <> void QuokkaSimulation<StreamingProblem>::createInitialParticles()
 {
