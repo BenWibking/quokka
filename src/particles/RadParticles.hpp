@@ -35,13 +35,12 @@ struct RadDeposition {
 	{
 		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
 		interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
-							  [=] AMREX_GPU_DEVICE(const typename RadParticleContainer<problem_t>::ParticleType &part, int comp) {
-									if (current_time < part.rdata(RadParticleBirthTimeIdx) || 
-										current_time >= part.rdata(RadParticleDeathTimeIdx)) {
-										return 0.0;
-									}
-									return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2]));
-							  });
+							[=] AMREX_GPU_DEVICE(const typename RadParticleContainer<problem_t>::ParticleType &part, int comp) {
+								if (current_time < part.rdata(RadParticleBirthTimeIdx) || current_time >= part.rdata(RadParticleDeathTimeIdx)) {
+									return 0.0;
+								}
+								return part.rdata(comp) * (AMREX_D_TERM(dxi[0], * dxi[1], * dxi[2]));
+							});
 	}
 };
 
