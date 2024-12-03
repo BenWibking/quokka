@@ -1,5 +1,5 @@
 /// \file test_radparticle.cpp
-/// \brief Defines a 1D test problem for radiating particles.
+/// \brief Defines a 2D test problem for radiating particles.
 ///
 
 #include "test_radparticle.hpp"
@@ -10,6 +10,8 @@
 
 struct ParticleProblem {
 };
+
+constexpr int nGroups_ = 3;
 
 constexpr double erad_floor = 1.0e-15;
 constexpr double initial_Erad = 1.0e-5;
@@ -32,7 +34,7 @@ template <> struct Physics_Traits<ParticleProblem> {
 	static constexpr bool is_radiation_enabled = true;
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
-	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr int nGroups = nGroups_; // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gravitational_constant = 1.0;
@@ -44,12 +46,15 @@ template <> struct RadSystem_Traits<ParticleProblem> {
 	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
+	static constexpr OpacityModel opacity_model = OpacityModel::piecewise_constant_opacity;
+	static constexpr double energy_unit = 1.0;
+	static constexpr amrex::GpuArray<double, nGroups_ + 1> radBoundaries{0.001, 1.0, 3.0, 100.0};
 };
 
 template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 {
 	// read particles from ASCII file
-	const int nreal_extra = 3; // mass birth_time death_time
+	const int nreal_extra = 3 + nGroups_; // mass birth_time death_time lum1 lum2 lum3
 	RadParticles->SetVerbose(1);
 	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
 }
@@ -69,14 +74,17 @@ template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 // 	});
 // }
 
-template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ParticleProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
+template <>
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto
+RadSystem<ParticleProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, nGroups_ + 1> /*rad_boundaries*/, const double rho, const double /*Tgas*/)
+    -> amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2>
 {
-	return kappa0;
-}
-
-template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ParticleProblem>::ComputeFluxMeanOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
-{
-	return kappa0;
+	amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2> exponents_and_values{};
+	for (int i = 0; i < nGroups_ + 1; ++i) {
+		exponents_and_values[0][i] = 0.0;
+		exponents_and_values[1][i] = kappa0 / rho;
+	}
+	return exponents_and_values;
 }
 
 template <> void QuokkaSimulation<ParticleProblem>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
@@ -89,10 +97,12 @@ template <> void QuokkaSimulation<ParticleProblem>::setInitialConditionsOnGrid(q
 
 	// loop over the grid and set the initial condition
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		state_cc(i, j, k, RadSystem<ParticleProblem>::radEnergy_index) = Erad0;
-		state_cc(i, j, k, RadSystem<ParticleProblem>::x1RadFlux_index) = 0;
-		state_cc(i, j, k, RadSystem<ParticleProblem>::x2RadFlux_index) = 0;
-		state_cc(i, j, k, RadSystem<ParticleProblem>::x3RadFlux_index) = 0;
+		for (int g = 0; g < nGroups_; ++g) {
+			state_cc(i, j, k, RadSystem<ParticleProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad0;
+			state_cc(i, j, k, RadSystem<ParticleProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+			state_cc(i, j, k, RadSystem<ParticleProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+			state_cc(i, j, k, RadSystem<ParticleProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+		}
 		state_cc(i, j, k, RadSystem<ParticleProblem>::gasEnergy_index) = Egas0;
 		state_cc(i, j, k, RadSystem<ParticleProblem>::gasDensity_index) = rho;
 		state_cc(i, j, k, RadSystem<ParticleProblem>::gasInternalEnergy_index) = Egas0;
@@ -141,14 +151,18 @@ auto problem_main() -> int
 	const int nx = static_cast<int>(position.size());
 
 	// compute error norm
-	std::vector<double> erad(nx);
+	std::vector<double> Erad_group0(nx);
+	std::vector<double> Erad_group1(nx);
+	std::vector<double> Erad_group2(nx);
 	// std::vector<double> erad_exact(nx);
 	std::vector<double> xs(nx);
 	for (int i = 0; i < nx; ++i) {
 		amrex::Real const x = position[i];
 		xs.at(i) = x;
 		// erad_exact.at(i) = (x <= chat * tmax) ? 1.0 : 0.0;
-		erad.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index)[i];
+		Erad_group0.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index)[i];
+		Erad_group1.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index + Physics_NumVars::numRadVars)[i];
+		Erad_group2.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index + 2 * Physics_NumVars::numRadVars)[i];
 	}
 
 	// double err_norm = 0.;
@@ -169,14 +183,18 @@ auto problem_main() -> int
 #ifdef HAVE_PYTHON
 	// Plot results
 	matplotlibcpp::clf();
-	// matplotlibcpp::ylim(-0.1, 3.1);
+	matplotlibcpp::ylim(-0.05, 1.4);
 
 	std::map<std::string, std::string> erad_args;
-	std::map<std::string, std::string> erad_exact_args;
-	erad_args["label"] = "numerical solution";
-	erad_exact_args["label"] = "exact solution";
-	erad_exact_args["linestyle"] = "--";
-	matplotlibcpp::plot(xs, erad, erad_args);
+	// std::map<std::string, std::string> erad_exact_args;
+	erad_args["label"] = "Erad group 0";
+	// erad_exact_args["label"] = "exact solution";
+	// erad_exact_args["linestyle"] = "--";
+	matplotlibcpp::plot(xs, Erad_group0, erad_args);
+	erad_args["label"] = "Erad group 1";
+	matplotlibcpp::plot(xs, Erad_group1, erad_args);
+	erad_args["label"] = "Erad group 2";
+	matplotlibcpp::plot(xs, Erad_group2, erad_args);
 	// matplotlibcpp::plot(xs, erad_exact, erad_exact_args);
 
 	matplotlibcpp::legend();

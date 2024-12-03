@@ -12,7 +12,7 @@
 namespace quokka
 {
 
-enum RadParticleDataIdx { RadParticleMassIdx = 0, RadParticleBirthTimeIdx, RadParticleDeathTimeIdx };
+enum RadParticleDataIdx { RadParticleMassIdx = 0, RadParticleBirthTimeIdx, RadParticleDeathTimeIdx, RadParticleLumIdx };
 template <typename problem_t>
 constexpr int RadParticleRealComps = 3 + Physics_Traits<problem_t>::nGroups;
 
