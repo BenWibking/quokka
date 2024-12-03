@@ -109,7 +109,6 @@ auto problem_main() -> int
 	// const double Lx = 1.0;
 	const double CFL_number = 0.8;
 	const double dt_max = 1e-2;
-	const double tmax = 0.4;
 	const int max_timesteps = 5000;
 
 	// Boundary conditions
@@ -126,7 +125,6 @@ auto problem_main() -> int
 	QuokkaSimulation<ParticleProblem> sim(BCs_cc);
 
 	sim.radiationReconstructionOrder_ = 3; // PPM
-	sim.stopTime_ = tmax;
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
