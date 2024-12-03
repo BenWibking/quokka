@@ -10,7 +10,6 @@
 #include "test_radiation_streaming.hpp"
 #include "AMReX.H"
 #include "QuokkaSimulation.hpp"
-#include "particles/RadParticles.hpp"
 #include "util/fextract.hpp"
 #include "util/valarray.hpp"
 
@@ -20,12 +19,9 @@ struct StreamingProblem {
 constexpr double initial_Erad = 1.0e-5;
 constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
-constexpr double chat = 1.0;	   // reduced speed of light
+constexpr double chat = 0.2;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-10; // opacity
 constexpr double rho = 1.0;
-
-const double lum1 = c * 2.0 * 1.0 * 1.0; // L = c * 2 * r * E
-// const double lum2 = c * 2.0 * PI * 1.0 * 1.0; // L = c * 2 * PI * r * E
 
 template <> struct quokka::EOS_Traits<StreamingProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
@@ -53,37 +49,6 @@ template <> struct RadSystem_Traits<StreamingProblem> {
 	static constexpr double Erad_floor = initial_Erad;
 	static constexpr int beta_order = 0;
 };
-
-template <> void QuokkaSimulation<StreamingProblem>::createInitialRadParticles()
-{
-	// read particles from ASCII file
-	const int nreal_extra = 3; // mass birth_time death_time
-	RadParticles->SetVerbose(1);
-	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
-}
-
-template <> void QuokkaSimulation<StreamingProblem>::createInitialParticles()
-{
-	// read particles from ASCII file
-	const int nreal_extra = 3; // mass vx vy vz
-	CICParticles->SetVerbose(1);
-	CICParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
-}
-
-// template <>
-// void RadSystem<StreamingProblem>::SetRadEnergySource(array_t &radEnergySource, amrex::Box const &indexRange,
-// 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & dx,
-// 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & /*prob_lo*/,
-// 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & /*prob_hi*/, amrex::Real /*time*/)
-// {
-// 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-// 		if (i == 32) {
-// 			// src = lum / c / (dx[0] * dx[1]);
-// 			const double src = lum1 / c / (dx[0]);
-// 			radEnergySource(i, j, k, 0) += src;
-// 		}
-// 	});
-// }
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<StreamingProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
 {
@@ -126,6 +91,70 @@ template <> void QuokkaSimulation<StreamingProblem>::setInitialConditionsOnGrid(
 	});
 }
 
+template <>
+AMREX_GPU_DEVICE AMREX_FORCE_INLINE void
+AMRSimulation<StreamingProblem>::setCustomBoundaryConditions(const amrex::IntVect &iv, amrex::Array4<amrex::Real> const &consVar, int /*dcomp*/,
+							     int /*numcomp*/, amrex::GeometryData const &geom, const amrex::Real /*time*/,
+							     const amrex::BCRec * /*bcr*/, int /*bcomp*/, int /*orig_comp*/)
+{
+#if (AMREX_SPACEDIM == 1)
+	auto i = iv.toArray()[0];
+	int j = 0;
+	int k = 0;
+#endif
+#if (AMREX_SPACEDIM == 2)
+	auto [i, j] = iv.toArray();
+	int k = 0;
+#endif
+#if (AMREX_SPACEDIM == 3)
+	auto [i, j, k] = iv.toArray();
+#endif
+
+	amrex::Box const &box = geom.Domain();
+	amrex::GpuArray<int, 3> lo = box.loVect3d();
+	amrex::GpuArray<int, 3> hi = box.hiVect3d();
+
+	// calculate radEnergyFractions
+	quokka::valarray<amrex::Real, Physics_Traits<StreamingProblem>::nGroups> radEnergyFractions{};
+	for (int g = 0; g < Physics_Traits<StreamingProblem>::nGroups; ++g) {
+		radEnergyFractions[g] = 1.0 / Physics_Traits<StreamingProblem>::nGroups;
+	}
+
+	if (i < lo[0]) {
+		// streaming inflow boundary
+		const double Erad = 1.0;
+		const double Frad = c * Erad;
+
+		// multigroup radiation
+		// x1 left side boundary (Marshak)
+		for (int g = 0; g < Physics_Traits<StreamingProblem>::nGroups; ++g) {
+			consVar(i, j, k, RadSystem<StreamingProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad * radEnergyFractions[g];
+			consVar(i, j, k, RadSystem<StreamingProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = Frad * radEnergyFractions[g];
+			consVar(i, j, k, RadSystem<StreamingProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+			consVar(i, j, k, RadSystem<StreamingProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+		}
+	} else if (i >= hi[0]) {
+		// right-side boundary -- constant
+		const double Erad = initial_Erad;
+		for (int g = 0; g < Physics_Traits<StreamingProblem>::nGroups; ++g) {
+			auto const Erad_g = Erad * radEnergyFractions[g];
+			consVar(i, j, k, RadSystem<StreamingProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_g;
+			consVar(i, j, k, RadSystem<StreamingProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+			consVar(i, j, k, RadSystem<StreamingProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+			consVar(i, j, k, RadSystem<StreamingProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
+		}
+	}
+
+	// gas boundary conditions are the same everywhere
+	const double Egas = initial_Egas;
+	consVar(i, j, k, RadSystem<StreamingProblem>::gasEnergy_index) = Egas;
+	consVar(i, j, k, RadSystem<StreamingProblem>::gasDensity_index) = rho;
+	consVar(i, j, k, RadSystem<StreamingProblem>::gasInternalEnergy_index) = Egas;
+	consVar(i, j, k, RadSystem<StreamingProblem>::x1GasMomentum_index) = 0.;
+	consVar(i, j, k, RadSystem<StreamingProblem>::x2GasMomentum_index) = 0.;
+	consVar(i, j, k, RadSystem<StreamingProblem>::x3GasMomentum_index) = 0.;
+}
+
 auto problem_main() -> int
 {
 	// Problem parameters
@@ -133,15 +162,15 @@ auto problem_main() -> int
 	// const double Lx = 1.0;
 	const double CFL_number = 0.8;
 	const double dt_max = 1e-2;
-	const double tmax = 0.8;
+	const double tmax = 1.0;
 	const int max_timesteps = 5000;
 
 	// Boundary conditions
 	constexpr int nvars = RadSystem<StreamingProblem>::nvar_;
 	amrex::Vector<amrex::BCRec> BCs_cc(nvars);
 	for (int n = 0; n < nvars; ++n) {
-		BCs_cc[n].setLo(0, amrex::BCType::foextrap);
-		BCs_cc[n].setHi(0, amrex::BCType::foextrap);
+		BCs_cc[n].setLo(0, amrex::BCType::ext_dir);  // Dirichlet x1
+		BCs_cc[n].setHi(0, amrex::BCType::foextrap); // extrapolate x1
 		for (int i = 1; i < AMREX_SPACEDIM; ++i) {
 			BCs_cc[n].setLo(i, amrex::BCType::int_dir); // periodic
 			BCs_cc[n].setHi(i, amrex::BCType::int_dir);
@@ -201,7 +230,7 @@ auto problem_main() -> int
 #ifdef HAVE_PYTHON
 	// Plot results
 	matplotlibcpp::clf();
-	matplotlibcpp::ylim(-0.1, 2.6);
+	matplotlibcpp::ylim(0.0, 1.1);
 
 	std::map<std::string, std::string> erad_args;
 	std::map<std::string, std::string> erad_exact_args;
@@ -209,7 +238,7 @@ auto problem_main() -> int
 	erad_exact_args["label"] = "exact solution";
 	erad_exact_args["linestyle"] = "--";
 	matplotlibcpp::plot(xs, erad, erad_args);
-	// matplotlibcpp::plot(xs, erad_exact, erad_exact_args);
+	matplotlibcpp::plot(xs, erad_exact, erad_exact_args);
 
 	matplotlibcpp::legend();
 	matplotlibcpp::title(fmt::format("t = {:.4f}", sim.tNew_[0]));
@@ -218,5 +247,5 @@ auto problem_main() -> int
 
 	// Cleanup and exit
 	amrex::Print() << "Finished." << std::endl;
-	return 0;
+	return status;
 }
