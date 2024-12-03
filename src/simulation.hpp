@@ -455,7 +455,7 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	int do_rad_particles = 0;
 	std::unique_ptr<amrex::AmrTracerParticleContainer> TracerPC;
 	std::unique_ptr<quokka::CICParticleContainer> CICParticles;
-	std::unique_ptr<quokka::RadParticleContainer> RadParticles;
+	std::unique_ptr<quokka::RadParticleContainer<problem_t>> RadParticles;
 #endif
 
 	// external objects
@@ -2095,7 +2095,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitRadParticles()
 {
 	if (do_rad_particles != 0) {
 		AMREX_ASSERT(RadParticles == nullptr);
-		RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
 
 		RadParticles->SetVerbose(0);
 		createInitialRadParticles();
@@ -2845,7 +2845,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::ReadCheckpointFile(
 	}
 	if (do_rad_particles != 0) {
 		AMREX_ASSERT(RadParticles == nullptr);
-		RadParticles = std::make_unique<quokka::RadParticleContainer>(this);
+		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
 		RadParticles->Restart(restart_chkfile, "Rad_particles");
 	}
 #endif

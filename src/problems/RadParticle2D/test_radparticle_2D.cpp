@@ -11,6 +11,8 @@
 struct ParticleProblem {
 };
 
+constexpr int nGroups_ = 1;
+
 constexpr double erad_floor = 1.0e-15;
 constexpr double initial_Erad = 1.0e-5;
 constexpr double initial_Egas = 1.0e-5;
@@ -32,7 +34,7 @@ template <> struct Physics_Traits<ParticleProblem> {
 	static constexpr bool is_radiation_enabled = true;
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
-	static constexpr int nGroups = 1; // number of radiation groups
+	static constexpr int nGroups = nGroups_; // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gravitational_constant = 1.0;
@@ -49,7 +51,7 @@ template <> struct RadSystem_Traits<ParticleProblem> {
 template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 {
 	// read particles from ASCII file
-	const int nreal_extra = 3; // mass birth_time death_time
+	const int nreal_extra = 3 + nGroups_; // mass birth_time death_time lum1
 	RadParticles->SetVerbose(1);
 	RadParticles->InitFromAsciiFile("RadParticles2D.txt", nreal_extra, nullptr);
 }
