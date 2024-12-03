@@ -2091,8 +2091,10 @@ void AMRSimulation<problem_t>::AverageFCToCC(amrex::MultiFab &mf_cc, const amrex
 	// iterate over the domain
 	auto const &state_cc = mf_cc.arrays();
 	auto const &state_fc = mf_fc.const_arrays();
-	int const ng = mf_cc.nGrow();
-	amrex::ParallelFor(mf_cc, amrex::IntVect(AMREX_D_DECL(ng, ng, ng)), [=] AMREX_GPU_DEVICE(int boxidx, int i, int j, int k) {
+	int const ng_cc = mf_cc.nGrow();
+	int const ng_fc = mf_fc.nGrow();
+	AMREX_ALWAYS_ASSERT(ng_cc <= ng_fc); // if this is false, we can't fill the ghost cells!
+	amrex::ParallelFor(mf_cc, amrex::IntVect(AMREX_D_DECL(ng_cc, ng_cc, ng_cc)), [=] AMREX_GPU_DEVICE(int boxidx, int i, int j, int k) {
 		for (int icomp = 0; icomp < srccomp_total; ++icomp) {
 			state_cc[boxidx](i, j, k, dstcomp_start + icomp) =
 			    0.5 * (state_fc[boxidx](i, j, k, srccomp_start + icomp) + state_fc[boxidx](i + di, j + dj, k + dk, srccomp_start + icomp));
@@ -2352,7 +2354,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::WritePlotFile()
 #ifdef QUOKKA_USE_OPENPMD
 	int included_ghosts = 0;
 #else
-	int included_ghosts = nghost_cc_;
+	int included_ghosts = std::min(nghost_cc_, nghost_fc_);
 #endif
 	amrex::Vector<amrex::MultiFab> mf = PlotFileMF(included_ghosts);
 	amrex::Vector<const amrex::MultiFab *> mf_ptr = amrex::GetVecOfConstPtrs(mf);
