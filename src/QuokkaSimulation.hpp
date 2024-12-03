@@ -1703,7 +1703,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
 
 #ifdef AMREX_PARTICLES
-			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+			if (AMRSimulation<problem_t>::do_rad_particles != 0) {
 				// for debugging, print the radEnergySource array
 				amrex::Print() << "Initial, ";
 				PrintRadEnergySource(radEnergySource);
@@ -1734,7 +1734,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			}
 
 #ifdef AMREX_PARTICLES
-			if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+			if (AMRSimulation<problem_t>::do_rad_particles != 0) {
 				// for debugging, print the radEnergySource array
 				amrex::Print() << "after SetRadEnergySource, ";
 				PrintRadEnergySource(radEnergySource);
@@ -1752,7 +1752,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
 
 #ifdef AMREX_PARTICLES
-		if constexpr (RadSystem_Traits<problem_t>::do_rad_particles) {
+		if (AMRSimulation<problem_t>::do_rad_particles != 0) {
 			// deposit radiation from particles into radEnergySource
 			amrex::ParticleToMesh(*AMRSimulation<problem_t>::RadParticles, radEnergySource, lev, quokka::RadDeposition{time_subcycle, quokka::RadParticleMassIdx, 0, 1}, false);
 		}
