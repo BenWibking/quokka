@@ -1,8 +1,8 @@
-/// \file test_radparticle.cpp
-/// \brief Defines a 1D test problem for radiating particles.
+/// \file test_radparticle_2D.cpp
+/// \brief Defines a 2D test problem for radiating particles.
 ///
 
-#include "test_radparticle.hpp"
+#include "test_radparticle_2D.hpp"
 #include "AMReX.H"
 #include "QuokkaSimulation.hpp"
 #include "util/fextract.hpp"
@@ -51,7 +51,7 @@ template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 	// read particles from ASCII file
 	const int nreal_extra = 3; // mass birth_time death_time
 	RadParticles->SetVerbose(1);
-	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
+	RadParticles->InitFromAsciiFile("RadParticles2D.txt", nreal_extra, nullptr);
 }
 
 // template <>
@@ -128,7 +128,6 @@ auto problem_main() -> int
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
-	sim.plotfileInterval_ = -1;
 
 	// initialize
 	sim.setInitialConditions();
@@ -137,7 +136,7 @@ auto problem_main() -> int
 	sim.evolve();
 
 	// read output variables
-	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.5, true);
+	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.25, true);
 	const int nx = static_cast<int>(position.size());
 
 	// compute error norm
@@ -181,7 +180,7 @@ auto problem_main() -> int
 
 	matplotlibcpp::legend();
 	matplotlibcpp::title(fmt::format("t = {:.4f}", sim.tNew_[0]));
-	matplotlibcpp::save("./radparticle.pdf");
+	matplotlibcpp::save("./radparticle_2D.pdf");
 #endif // HAVE_PYTHON
 
 	// Cleanup and exit
