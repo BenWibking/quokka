@@ -13,15 +13,15 @@ amr.v              = 1       # verbosity in Amr
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 32 32 32
+amr.n_cell          = 16 16 16
 amr.max_level       = 0     # number of levels = max_level + 1
-amr.blocking_factor = 32    # grid size must be divisible by this
-amr.max_grid_size   = 32    # at least 128 for GPUs
+amr.blocking_factor = 16    # grid size must be divisible by this
+amr.max_grid_size   = 16    # at least 128 for GPUs
 amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
 amr.grid_eff        = 1.0
 
 cfl = 0.3
-max_timesteps = 8000
+max_timesteps = 10
 stop_time = 5.0e7   # s
 
 do_reflux = 1
@@ -30,5 +30,5 @@ do_cic_particles = 1    # turns on CIC particles
 
 ascent_interval = -1
 checkpoint_interval = -1
-plottime_interval = 2.0e5 # s
+# plottime_interval = 2.0e5 # s
 derived_vars = gpot
