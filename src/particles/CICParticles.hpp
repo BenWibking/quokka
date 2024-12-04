@@ -16,6 +16,11 @@
 #include "AMReX_ParIter.H"
 #include "AMReX_ParticleInterpolators.H"
 #include "AMReX_Particles.H"
+
+template <int T_NArrayReal, int T_NArrayInt=0,
+          template<class> class Allocator=amrex::DefaultAllocator, class CellAssignor=amrex::DefaultAssignor>
+using AmrParticleContainerPureSoA = amrex::AmrParticleContainer_impl<amrex::SoAParticle<T_NArrayReal, T_NArrayInt>, T_NArrayReal, T_NArrayInt, Allocator, CellAssignor>;
+
 namespace quokka
 {
 
