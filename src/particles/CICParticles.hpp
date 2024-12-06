@@ -25,6 +25,7 @@ constexpr int CICParticleRealComps = 4; // mass vx vy vz
 using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
 using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
 
+// N.B.: This whole object is lambda-captured by value on the GPU by the calling code. Therefore, capturing 'this' is safe.
 struct CICDeposition {
 	amrex::Real Gconst{};
 	int start_part_comp{};
@@ -37,7 +38,7 @@ struct CICDeposition {
 	{
 		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
 		interp.ParticleToMesh(p, rho, start_part_comp, start_mesh_comp, num_comp,
-				      [=] AMREX_GPU_DEVICE(const CICParticleContainer::ParticleType &part, int comp) {
+				      [=, this] AMREX_GPU_DEVICE(const CICParticleContainer::ParticleType &part, int comp) {
 					      return 4.0 * M_PI * Gconst * part.rdata(comp); // weight by 4 pi G
 				      });
 	}
