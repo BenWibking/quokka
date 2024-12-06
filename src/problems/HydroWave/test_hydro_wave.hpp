@@ -14,7 +14,6 @@
 #include "util/matplotlibcpp.h"
 #endif
 
-
 // internal headers
 #include "hydro/hydro_system.hpp"
 

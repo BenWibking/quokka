@@ -14,7 +14,6 @@
 #include "util/matplotlibcpp.h"
 #endif
 
-
 // internal headers
 
 #include "linear_advection/linear_advection.hpp"

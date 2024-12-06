@@ -14,7 +14,6 @@
 #include "util/matplotlibcpp.h"
 #endif
 
-
 // internal headers
 
 #include "radiation/radiation_system.hpp"

@@ -15,7 +15,6 @@
 #endif
 #include <cmath>
 
-
 // internal headers
 
 #include "QuokkaSimulation.hpp"

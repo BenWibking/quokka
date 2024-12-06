@@ -11,7 +11,6 @@
 
 // external headers
 
-
 // internal headers
 #include "math/ODEIntegrate.hpp"
 #include "util/valarray.hpp"

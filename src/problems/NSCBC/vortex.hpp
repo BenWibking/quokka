@@ -12,7 +12,6 @@
 
 // external headers
 
-
 // internal headers
 
 // function definitions

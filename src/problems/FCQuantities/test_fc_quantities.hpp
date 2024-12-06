@@ -10,7 +10,6 @@
 
 // external headers
 
-
 // internal headers
 #include "hydro/hydro_system.hpp"
 #include "hydro/mhd_system.hpp"
