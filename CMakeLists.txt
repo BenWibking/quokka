@@ -59,6 +59,10 @@ if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU")
   add_compile_options(-Wno-psabi)
 endif()
 
+if(CMAKE_CXX_COMPILER_ID STREQUAL "NVHPC")
+  add_compile_options(--diag_suppress code_is_unreachable)
+endif()
+
 add_subdirectory(${QuokkaCode_SOURCE_DIR}/extern/amrex ${QuokkaCode_BINARY_DIR}/amrex)
 add_subdirectory(${QuokkaCode_SOURCE_DIR}/extern/yaml-cpp ${QuokkaCode_BINARY_DIR}/yaml-cpp)
 
