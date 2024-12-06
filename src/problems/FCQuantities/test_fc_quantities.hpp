@@ -9,7 +9,7 @@
 ///
 
 // external headers
-#include <fmt/format.h>
+
 
 // internal headers
 #include "hydro/hydro_system.hpp"

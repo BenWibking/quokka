@@ -13,7 +13,7 @@
 #ifdef HAVE_PYTHON
 #include "util/matplotlibcpp.h"
 #endif
-#include <fmt/format.h>
+
 
 // internal headers
 #include "hydro/hydro_system.hpp"

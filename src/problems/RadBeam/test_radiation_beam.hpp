@@ -10,7 +10,7 @@
 ///
 
 // external headers
-#include <fmt/format.h>
+
 #include <fstream>
 
 // internal headers

@@ -14,7 +14,7 @@
 #include "util/matplotlibcpp.h"
 #endif
 #include <cmath>
-#include <fmt/format.h>
+
 
 // internal headers
 
