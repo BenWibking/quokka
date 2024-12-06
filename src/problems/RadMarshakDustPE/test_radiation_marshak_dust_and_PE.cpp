@@ -282,7 +282,7 @@ auto problem_main() -> int
 	matplotlibcpp::xlabel("x");
 	matplotlibcpp::ylabel("E_rad_group1");
 	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
+	matplotlibcpp::title(std::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
 	matplotlibcpp::tight_layout();
 	matplotlibcpp::save("./radiation_marshak_dust_PE_Erad1.pdf");
 
@@ -295,7 +295,7 @@ auto problem_main() -> int
 		matplotlibcpp::xlabel("x");
 		matplotlibcpp::ylabel("E_rad_group2");
 		matplotlibcpp::legend();
-		matplotlibcpp::title(fmt::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
+		matplotlibcpp::title(std::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
 		matplotlibcpp::tight_layout();
 		matplotlibcpp::save("./radiation_marshak_dust_PE_Erad2.pdf");
 	}
@@ -308,7 +308,7 @@ auto problem_main() -> int
 	matplotlibcpp::xlabel("x");
 	matplotlibcpp::ylabel("Temperature");
 	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
+	matplotlibcpp::title(std::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
 	matplotlibcpp::tight_layout();
 	matplotlibcpp::save("./radiation_marshak_dust_PE_temperature.pdf");
 #endif // HAVE_PYTHON

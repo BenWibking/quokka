@@ -174,7 +174,7 @@ void QuokkaSimulation<ContactProblem>::computeReferenceSolution(amrex::MultiFab 
 		matplotlibcpp::plot(x, d_exact, dexact_args);
 
 		matplotlibcpp::legend();
-		matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
+		matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
 		matplotlibcpp::save("./hydro_contact.pdf");
 	}
 #endif

@@ -329,10 +329,10 @@ void QuokkaSimulation<ShocktubeProblem>::computeReferenceSolution(amrex::MultiFa
 		matplotlibcpp::scatter(strided_vector_from(xs_exact, skip), strided_vector_from(Pexact, skip), msize, Pexact_args);
 
 		matplotlibcpp::legend();
-		// matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
+		// matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
 		matplotlibcpp::xlabel("length x");
 		matplotlibcpp::tight_layout();
-		matplotlibcpp::save(fmt::format("./hydro_shocktube_{:.4f}.pdf", tNew_[0]));
+		matplotlibcpp::save(std::format("./hydro_shocktube_{:.4f}.pdf", tNew_[0]));
 	}
 #endif
 }

@@ -246,8 +246,8 @@ void QuokkaSimulation<ShocktubeProblem>::computeReferenceSolution(amrex::MultiFa
 		matplotlibcpp::xlabel("length x");
 		matplotlibcpp::ylabel("density");
 		matplotlibcpp::tight_layout();
-		// matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
-		matplotlibcpp::save(fmt::format("./hydro_sms_{:.4f}.pdf", tNew_[0]));
+		// matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
+		matplotlibcpp::save(std::format("./hydro_sms_{:.4f}.pdf", tNew_[0]));
 #endif
 	}
 }

@@ -204,7 +204,7 @@ void QuokkaSimulation<ScalarProblem>::computeReferenceSolution(amrex::MultiFab &
 		matplotlibcpp::plot(x, s_exact, sexact_args);
 
 		matplotlibcpp::legend();
-		matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
+		matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
 		matplotlibcpp::save("./passive_scalar.pdf");
 	}
 #endif

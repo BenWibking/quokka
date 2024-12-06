@@ -52,7 +52,7 @@ void initialize_cloudy_data(cloudy_cooling_tools_data &my_cloudy, std::string co
 	const double small_fastlog_value = FastMath::log10(1.0e-99 / CoolUnit);
 
 	amrex::Print() << "Initializing Cloudy cooling.\n";
-	amrex::Print() << fmt::format("cloudy_table_file: {}.\n", grackle_data_file);
+	amrex::Print() << std::format("cloudy_table_file: {}.\n", grackle_data_file);
 
 	// Read cooling data from hdf5 file
 	herr_t const h5_error = -1;
@@ -91,7 +91,7 @@ void initialize_cloudy_data(cloudy_cooling_tools_data &my_cloudy, std::string co
 	// Read grid parameters
 	for (int64_t q = 0; q < my_cloudy.grid_rank; q++) {
 		if (q < my_cloudy.grid_rank - 1) {
-			parameter_name = fmt::format("/Parameter{}", q + 1);
+			parameter_name = std::format("/Parameter{}", q + 1);
 		} else {
 			parameter_name = "/Temperature";
 		}
@@ -114,7 +114,7 @@ void initialize_cloudy_data(cloudy_cooling_tools_data &my_cloudy, std::string co
 		}
 		H5Dclose(dset_id);
 
-		amrex::Print() << fmt::format("\t{}: {} to {} ({} steps).\n", parameter_name, my_cloudy.grid_parameters[q](0),
+		amrex::Print() << std::format("\t{}: {} to {} ({} steps).\n", parameter_name, my_cloudy.grid_parameters[q](0),
 					      my_cloudy.grid_parameters[q](static_cast<int>(my_cloudy.grid_dimension[q]) - 1), my_cloudy.grid_dimension[q]);
 	}
 

@@ -681,7 +681,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	int nargs = std::sscanf(maxWalltimeInput.c_str(), "%d:%d:%d", &hours, &minutes, &seconds); // NOLINT
 	if (nargs == 3) {
 		maxWalltime_ = 3600 * hours + 60 * minutes + seconds;
-		amrex::Print() << fmt::format("Setting walltime limit to {} hours, {} minutes, {} seconds.\n", hours, minutes, seconds);
+		amrex::Print() << std::format("Setting walltime limit to {} hours, {} minutes, {} seconds.\n", hours, minutes, seconds);
 	}
 }
 
@@ -2431,12 +2431,12 @@ template <typename problem_t> void AMRSimulation<problem_t>::ReadMetadataFile(st
 
 		if (value_real) {
 			simulationMetadata_[key] = value_real.value();
-			amrex::Print() << fmt::format("\t{} = {}\n", key, value_real.value());
+			amrex::Print() << std::format("\t{} = {}\n", key, value_real.value());
 		} else if (value_string) {
 			simulationMetadata_[key] = value_string.value();
-			amrex::Print() << fmt::format("\t{} = {}\n", key, value_string.value());
+			amrex::Print() << std::format("\t{} = {}\n", key, value_string.value());
 		} else {
-			amrex::Print() << fmt::format("\t{} has unknown type! skipping this entry.\n", key);
+			amrex::Print() << std::format("\t{} has unknown type! skipping this entry.\n", key);
 		}
 	}
 }

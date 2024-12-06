@@ -358,7 +358,7 @@ auto problem_main() -> int
 		// matplotlibcpp::yscale("log");
 		matplotlibcpp::legend();
 		matplotlibcpp::tight_layout();
-		// matplotlibcpp::title(fmt::format("time t = {:.4g}", sim.tNew_[0]));
+		// matplotlibcpp::title(std::format("time t = {:.4g}", sim.tNew_[0]));
 		matplotlibcpp::save("./marshak_wave_cgs_gastemperature.pdf");
 #endif
 	}

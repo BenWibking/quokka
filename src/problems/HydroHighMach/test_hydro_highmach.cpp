@@ -220,7 +220,7 @@ void QuokkaSimulation<HighMachProblem>::computeReferenceSolution(amrex::MultiFab
 		matplotlibcpp::plot(x_exact, d_exact, args_exact);
 		matplotlibcpp::yscale("log");
 		matplotlibcpp::ylim(0.1, 31.623);
-		matplotlibcpp::title(fmt::format("density (t = {:.4f})", tNew_[0]));
+		matplotlibcpp::title(std::format("density (t = {:.4f})", tNew_[0]));
 		matplotlibcpp::save("./hydro_highmach_density.pdf");
 
 		// velocity
@@ -228,7 +228,7 @@ void QuokkaSimulation<HighMachProblem>::computeReferenceSolution(amrex::MultiFab
 		matplotlibcpp::scatter(x, vx_final, 5.0, args);
 		matplotlibcpp::plot(x_exact, vx_exact, args_exact);
 		matplotlibcpp::ylim(-0.3, 0.3);
-		matplotlibcpp::title(fmt::format("velocity (t = {:.4f})", tNew_[0]));
+		matplotlibcpp::title(std::format("velocity (t = {:.4f})", tNew_[0]));
 		matplotlibcpp::save("./hydro_highmach_velocity.pdf");
 
 		// pressure
@@ -237,7 +237,7 @@ void QuokkaSimulation<HighMachProblem>::computeReferenceSolution(amrex::MultiFab
 		matplotlibcpp::plot(x_exact, P_exact, args_exact);
 		matplotlibcpp::yscale("log");
 		matplotlibcpp::ylim(1.0e-17, 1.0);
-		matplotlibcpp::title(fmt::format("pressure (t = {:.4f})", tNew_[0]));
+		matplotlibcpp::title(std::format("pressure (t = {:.4f})", tNew_[0]));
 		matplotlibcpp::save("./hydro_highmach_pressure.pdf");
 #endif
 	}

@@ -721,7 +721,7 @@ auto problem_main() -> int
 	// compute background pressure
 	// (pressure equilibrium should hold *before* the shock enters the box)
 	::P0 = P_over_k * C::k_B; // erg cm^-3
-	amrex::Print() << fmt::format("Pressure = {} K cm^-3\n", P_over_k);
+	amrex::Print() << std::format("Pressure = {} K cm^-3\n", P_over_k);
 
 	// compute mass density of background, cloud
 	::rho0 = nH_bg * m_H / quokka::TabulatedCooling::cloudy_H_mass_fraction;    // g cm^-3
@@ -738,8 +738,8 @@ auto problem_main() -> int
 	const Real Eint_cl = ::P0 / (gamma - 1.);
 	const Real T_bg = ComputeTgasFromEgas(rho0, Eint_bg, gamma, tables);
 	const Real T_cl = ComputeTgasFromEgas(rho1, Eint_cl, gamma, tables);
-	amrex::Print() << fmt::format("T_bg = {} K\n", T_bg);
-	amrex::Print() << fmt::format("T_cl = {} K\n", T_cl);
+	amrex::Print() << std::format("T_bg = {} K\n", T_bg);
+	amrex::Print() << std::format("T_cl = {} K\n", T_cl);
 
 	// compute shock jump conditions from rho0, P0, and M0
 	const Real x0 = M0 * M0;
@@ -754,23 +754,23 @@ auto problem_main() -> int
 
 	const Real Eint_post = P_post / (gamma - 1.);
 	const Real T_post = ComputeTgasFromEgas(rho_post, Eint_post, gamma, tables);
-	amrex::Print() << fmt::format("T_wind = {} K\n", T_post);
+	amrex::Print() << std::format("T_wind = {} K\n", T_post);
 
 	::v_wind = v_wind; // set global variables
 	::rho_wind = rho_post;
 	::P_wind = P_post;
-	amrex::Print() << fmt::format("v_wind = {} km/s\n", v_wind / 1.0e5);
-	amrex::Print() << fmt::format("P_wind = {} K cm^-3\n", P_post / C::k_B);
-	amrex::Print() << fmt::format("v_shock = {} km/s\n", v_shock / 1.0e5);
+	amrex::Print() << std::format("v_wind = {} km/s\n", v_wind / 1.0e5);
+	amrex::Print() << std::format("P_wind = {} K cm^-3\n", P_post / C::k_B);
+	amrex::Print() << std::format("v_shock = {} km/s\n", v_shock / 1.0e5);
 
 	// compute shock-crossing time
 	::shock_crossing_time = sim.geom[0].ProbLength(0) / v_shock;
-	amrex::Print() << fmt::format("shock crossing time = {} Myr\n", ::shock_crossing_time / (1.0e6 * seconds_in_year));
+	amrex::Print() << std::format("shock crossing time = {} Myr\n", ::shock_crossing_time / (1.0e6 * seconds_in_year));
 
 	// compute cloud-crushing time
 	const Real chi = rho1 / rho0;
 	const Real t_cc = std::sqrt(chi) * R_cloud / v_shock;
-	amrex::Print() << fmt::format("t_cc = {} Myr\n", t_cc / (1.0e6 * seconds_in_year)) << "\n";
+	amrex::Print() << std::format("t_cc = {} Myr\n", t_cc / (1.0e6 * seconds_in_year)) << "\n";
 
 	// compute maximum simulation time
 	const double max_time = max_t_cc * t_cc;

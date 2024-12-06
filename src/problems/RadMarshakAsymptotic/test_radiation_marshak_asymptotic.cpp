@@ -326,7 +326,7 @@ auto problem_main() -> int
 	matplotlibcpp::xlabel("length x (cm)");
 	matplotlibcpp::ylabel("temperature (keV)");
 	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("time t = {:.4g}", sim.tNew_[0]));
+	matplotlibcpp::title(std::format("time t = {:.4g}", sim.tNew_[0]));
 	if (use_wavespeed_correction) {
 		matplotlibcpp::save("./marshak_wave_asymptotic_correction_gastemperature.pdf");
 	} else {

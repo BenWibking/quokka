@@ -269,8 +269,8 @@ void QuokkaSimulation<ShocktubeProblem>::computeReferenceSolution(amrex::MultiFa
 		matplotlibcpp::ylabel("density");
 		matplotlibcpp::xlabel("length x");
 		matplotlibcpp::tight_layout();
-		// matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
-		matplotlibcpp::save(fmt::format("./hydro_vacuum_{:.4f}.pdf", tNew_[0]));
+		// matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
+		matplotlibcpp::save(std::format("./hydro_vacuum_{:.4f}.pdf", tNew_[0]));
 
 		// internal energy plot
 		matplotlibcpp::clf();
@@ -288,8 +288,8 @@ void QuokkaSimulation<ShocktubeProblem>::computeReferenceSolution(amrex::MultiFa
 		matplotlibcpp::ylabel("specific internal energy");
 		matplotlibcpp::xlabel("length x");
 		matplotlibcpp::tight_layout();
-		// matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
-		matplotlibcpp::save(fmt::format("./hydro_vacuum_eint_{:.4f}.pdf", tNew_[0]));
+		// matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
+		matplotlibcpp::save(std::format("./hydro_vacuum_eint_{:.4f}.pdf", tNew_[0]));
 	}
 #endif
 }

@@ -379,7 +379,7 @@ template <typename problem_t> auto QuokkaSimulation<problem_t>::getScalarVariabl
 	names.reserve(nscalars);
 	for (int n = 0; n < nscalars; ++n) {
 		// write string 'scalar_1', etc.
-		names.push_back(fmt::format("scalar_{}", n));
+		names.push_back(std::format("scalar_{}", n));
 	}
 	return names;
 }

@@ -251,7 +251,7 @@ auto problem_main() -> int
 	matplotlibcpp::plot(xs, erad_exact, erad_exact_args);
 
 	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("t = {:.4f}", sim.tNew_[0]));
+	matplotlibcpp::title(std::format("t = {:.4f}", sim.tNew_[0]));
 	if constexpr (direction == 0) {
 		matplotlibcpp::save("./radiation_streaming_x.pdf");
 	} else {

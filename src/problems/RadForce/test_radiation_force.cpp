@@ -291,7 +291,7 @@ auto problem_main() -> int
 	matplotlibcpp::plot(x_exact_scaled, rho_exact, rhoexact_args);
 	matplotlibcpp::scatter(xs, rho_arr, 1.0, rho_args);
 	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("t = {:.4g} s", sim.tNew_[0]));
+	matplotlibcpp::title(std::format("t = {:.4g} s", sim.tNew_[0]));
 	matplotlibcpp::xlabel("x (cm)");
 	matplotlibcpp::ylabel("density");
 	matplotlibcpp::tight_layout();
@@ -310,7 +310,7 @@ auto problem_main() -> int
 	matplotlibcpp::plot(x_exact_scaled, Mach_exact, vx_exact_args);
 	matplotlibcpp::scatter(strided_vector_from(xs, s), strided_vector_from(Mach_arr, s), 10.0, vx_args);
 	matplotlibcpp::legend();
-	// matplotlibcpp::title(fmt::format("t = {:.4g} s", sim.tNew_[0]));
+	// matplotlibcpp::title(std::format("t = {:.4g} s", sim.tNew_[0]));
 	matplotlibcpp::xlabel("length x (cm)");
 	matplotlibcpp::ylabel("Mach number");
 	matplotlibcpp::tight_layout();

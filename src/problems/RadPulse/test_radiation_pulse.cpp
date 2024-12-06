@@ -226,7 +226,7 @@ auto problem_main() -> int
 	matplotlibcpp::xlabel("length x (dimensionless)");
 	matplotlibcpp::ylabel("temperature (dimensionless)");
 	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("time ct = {:.4g}", initial_time + sim.tNew_[0] * c));
+	matplotlibcpp::title(std::format("time ct = {:.4g}", initial_time + sim.tNew_[0] * c));
 	matplotlibcpp::save("./radiation_pulse_temperature.pdf");
 #endif
 

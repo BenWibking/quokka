@@ -304,9 +304,9 @@ void QuokkaSimulation<ShocktubeProblem>::computeReferenceSolution(amrex::MultiFa
 
 		matplotlibcpp::legend();
 		matplotlibcpp::xlabel("length x");
-		// matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
+		// matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
 		matplotlibcpp::tight_layout();
-		matplotlibcpp::save(fmt::format("./hydro_leblanc_{:.4f}.pdf", tNew_[0]));
+		matplotlibcpp::save(std::format("./hydro_leblanc_{:.4f}.pdf", tNew_[0]));
 
 		// internal energy plot
 		matplotlibcpp::clf();
@@ -322,10 +322,10 @@ void QuokkaSimulation<ShocktubeProblem>::computeReferenceSolution(amrex::MultiFa
 		matplotlibcpp::scatter(strided_vector_from(xs_exact, s), strided_vector_from(eint_exact, s), msize, eexact_args);
 
 		matplotlibcpp::legend();
-		// matplotlibcpp::title(fmt::format("t = {:.4f}", tNew_[0]));
+		// matplotlibcpp::title(std::format("t = {:.4f}", tNew_[0]));
 		matplotlibcpp::xlabel("length x");
 		matplotlibcpp::tight_layout();
-		matplotlibcpp::save(fmt::format("./hydro_leblanc_eint_{:.4f}.pdf", tNew_[0]));
+		matplotlibcpp::save(std::format("./hydro_leblanc_eint_{:.4f}.pdf", tNew_[0]));
 	}
 #endif
 }

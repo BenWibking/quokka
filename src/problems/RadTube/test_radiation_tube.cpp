@@ -420,7 +420,7 @@ auto problem_main() -> int
 	matplotlibcpp::scatter(strided_vector_from(xs, s), strided_vector_from(Trad_exact_arr, s), 10.0, Texact_args);
 
 	matplotlibcpp::legend();
-	// matplotlibcpp::title(fmt::format("t = {:.4g} s", sim.tNew_[0]));
+	// matplotlibcpp::title(std::format("t = {:.4g} s", sim.tNew_[0]));
 	matplotlibcpp::xlabel("length x (cm)");
 	matplotlibcpp::ylabel("temperature (Kelvins)");
 	matplotlibcpp::tight_layout();
@@ -434,8 +434,8 @@ auto problem_main() -> int
 	Trad_args["color"] = "k";
 	matplotlibcpp::plot(xs, Erad_arr, Trad_args);
 	for (int g = 0; g < Physics_Traits<TubeProblem>::nGroups; ++g) {
-		Trad_args["label"] = fmt::format("E_{}", g);
-		Trad_args["color"] = fmt::format("C{}", g);
+		Trad_args["label"] = std::format("E_{}", g);
+		Trad_args["color"] = std::format("C{}", g);
 		// matplotlibcpp::plot(xs, strided_vector_from(Erad_arr_at_group, s, g), Trad_args);
 		matplotlibcpp::plot(xs, Erad_arr_at_group[g], Trad_args);
 	}
