@@ -23,7 +23,6 @@
 #include "AMReX_GpuContainers.H"
 #include "AMReX_Print.H"
 #include "AMReX_TableData.H"
-#include "fmt/core.h"
 
 #include "CloudyDataReader.hpp"
 #include "math/FastMath.hpp"

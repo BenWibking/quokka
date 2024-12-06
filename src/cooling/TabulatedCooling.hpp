@@ -12,7 +12,6 @@
 #include "AMReX_Extension.H"
 #include "AMReX_GpuQualifiers.H"
 #include "AMReX_iMultiFab.H"
-#include "fmt/core.h"
 
 #include "fundamental_constants.H"
 #include "hydro/hydro_system.hpp"

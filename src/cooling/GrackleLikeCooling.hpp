@@ -15,7 +15,6 @@
 #include "AMReX_iMultiFab.H"
 
 #include "GrackleDataReader.hpp"
-#include "fmt/core.h"
 #include "fundamental_constants.H"
 #include "hydro/hydro_system.hpp"
 #include "math/FastMath.hpp"

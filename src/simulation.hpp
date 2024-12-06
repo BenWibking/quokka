@@ -64,7 +64,6 @@ namespace filesystem = experimental::filesystem;
 #include <AMReX_PlotFileUtil.H>
 #include <AMReX_Print.H>
 #include <AMReX_Utility.H>
-#include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
 #ifdef AMREX_PARTICLES
