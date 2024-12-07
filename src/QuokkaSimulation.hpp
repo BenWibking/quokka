@@ -692,9 +692,14 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeAfterEvol
 	amrex::Print() << '\n';
 
 	// compute average number of radiation subcycles per timestep
-	double const avg_rad_subcycles = static_cast<double>(radiationCellUpdates_) / static_cast<double>(cellUpdates_);
-	amrex::Print() << "avg. num. of radiation subcycles = " << avg_rad_subcycles << '\n';
-	amrex::Print() << '\n';
+	if (cellUpdates_ > 0) {
+		double const avg_rad_subcycles = static_cast<double>(radiationCellUpdates_) / static_cast<double>(cellUpdates_);
+		amrex::Print() << "avg. num. of radiation subcycles = " << avg_rad_subcycles << '\n';
+		amrex::Print() << '\n';
+	} else {
+		amrex::Print() << "No cell updates performed!\n";
+		amrex::Print() << '\n';
+	}
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle)
