@@ -641,12 +641,12 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeAfterEvol
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
 			Erad0 += initSumCons[RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g];
 		}
-		Etot0 = Egas0 + (RadSystem<problem_t>::c_light_ / RadSystem<problem_t>::chat_) * Erad0;
+		Etot0 = Egas0 + Erad0 / RadSystem<problem_t>::chat_over_c;
 		amrex::Real Erad = 0.;
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
 			Erad += state_new_cc_[0].sum(RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g) * vol;
 		}
-		Etot = Egas + (RadSystem<problem_t>::c_light_ / RadSystem<problem_t>::chat_) * Erad;
+		Etot = Egas + Erad / RadSystem<problem_t>::chat_over_c;
 	} else {
 		Etot0 = Egas0;
 		Etot = Egas;

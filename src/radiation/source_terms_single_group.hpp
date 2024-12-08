@@ -493,7 +493,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					// Old scheme: since the source term does not include work term, add the work term to radiation energy.
 
 					// compute loss of radiation energy to gas kinetic energy
-					auto dErad_work = -(chat_ / c_light_) * dEkin_work;
+					auto dErad_work = -chat_over_c * dEkin_work;
 
 					auto radEnergyNew = Erad_guess + dErad_work;
 					// AMREX_ASSERT(radEnergyNew > 0.0);
