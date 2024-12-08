@@ -362,7 +362,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 		simulationMetadata_["G"] = Gconst_;
 		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			simulationMetadata_["c"] = RadSystem<problem_t>::c_light_;
-			simulationMetadata_["c_hat"] = RadSystem<problem_t>::c_hat_;
+			simulationMetadata_["c_hat"] = RadSystem<problem_t>::chat_;
 			simulationMetadata_["a_rad"] = RadSystem<problem_t>::radiation_constant_;
 		}
 	}
@@ -445,7 +445,7 @@ template <typename problem_t> auto QuokkaSimulation<problem_t>::computeNumberOfR
 {
 	// compute radiation timestep
 	auto const &dx = geom[lev].CellSizeArray();
-	amrex::Real c_hat = RadSystem<problem_t>::c_hat_;
+	amrex::Real c_hat = RadSystem<problem_t>::chat_;
 	amrex::Real dx_min = std::min({AMREX_D_DECL(dx[0], dx[1], dx[2])});
 	amrex::Real dtrad_tmp = radiationCflNumber_ * (dx_min / c_hat);
 	int nsubSteps = std::ceil(dt_lev_hydro / dtrad_tmp);
@@ -641,12 +641,12 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeAfterEvol
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
 			Erad0 += initSumCons[RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g];
 		}
-		Etot0 = Egas0 + (RadSystem<problem_t>::c_light_ / RadSystem<problem_t>::c_hat_) * Erad0;
+		Etot0 = Egas0 + (RadSystem<problem_t>::c_light_ / RadSystem<problem_t>::chat_) * Erad0;
 		amrex::Real Erad = 0.;
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
 			Erad += state_new_cc_[0].sum(RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g) * vol;
 		}
-		Etot = Egas + (RadSystem<problem_t>::c_light_ / RadSystem<problem_t>::c_hat_) * Erad;
+		Etot = Egas + (RadSystem<problem_t>::c_light_ / RadSystem<problem_t>::chat_) * Erad;
 	} else {
 		Etot0 = Egas0;
 		Etot = Egas;
