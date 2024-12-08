@@ -284,7 +284,8 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 	template <FluxDir DIR>
 	static void ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiffusive_in, amrex::Array4<const amrex::Real> const &x1LeftState_in,
 				  amrex::Array4<const amrex::Real> const &x1RightState_in, amrex::Box const &indexRange, arrayconst_t &consVar_in,
-				  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, bool use_wavespeed_correction);
+				  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, bool use_wavespeed_correction,
+				  amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor_in);
 
 	static void SetRadEnergySource(array_t &radEnergySource, amrex::Box const &indexRange, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
 				       amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi,
@@ -1025,13 +1026,16 @@ template <typename problem_t>
 template <FluxDir DIR>
 void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiffusive_in, amrex::Array4<const amrex::Real> const &x1LeftState_in,
 					 amrex::Array4<const amrex::Real> const &x1RightState_in, amrex::Box const &indexRange, arrayconst_t &consVar_in,
-					 amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, bool const use_wavespeed_correction)
+					 amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, bool const use_wavespeed_correction,
+					 amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor_in)
 {
 	quokka::Array4View<const amrex::Real, DIR> x1LeftState(x1LeftState_in);
 	quokka::Array4View<const amrex::Real, DIR> x1RightState(x1RightState_in);
 	quokka::Array4View<amrex::Real, DIR> x1Flux(x1Flux_in);
 	quokka::Array4View<amrex::Real, DIR> x1FluxDiffusive(x1FluxDiffusive_in);
 	quokka::Array4View<const amrex::Real, DIR> consVar(consVar_in);
+
+	// quokka::Array4View<const amrex::Real, 0> reducedSpeedOfLightFactor(reducedSpeedOfLightFactor_in);
 
 	amrex::GpuArray<amrex::Real, nGroups_ + 1> radBoundaries_g = radBoundaries_;
 
@@ -1044,6 +1048,8 @@ void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiff
 	// interface-centered kernel
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i_in, int j_in, int k_in) {
 		auto [i, j, k] = quokka::reorderMultiIndex<DIR>(i_in, j_in, k_in);
+
+		// const double c_hat_local = reducedSpeedOfLightFactor_in(i, j, k) * c_light_;
 
 		amrex::GpuArray<double, nGroups_ + 1> radBoundaries_g_copy{};
 		for (int g = 0; g < nGroups_ + 1; ++g) {
@@ -1122,15 +1128,19 @@ void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiff
 			S_L *= -1.; // speed sign is -1
 			auto [F_R, S_R] = ComputeRadPressure<DIR>(erad_R, Fx_R, Fy_R, Fz_R, fx_R, fy_R, fz_R);
 
+			// set c_hat_left and c_hat_right to the minimum of the two adjacent cells
+			const double c_hat_left = std::min(reducedSpeedOfLightFactor_in(i - 1, j, k, g), reducedSpeedOfLightFactor_in(i, j, k, g)) * c_light_;
+			const double c_hat_right = std::min(reducedSpeedOfLightFactor_in(i, j, k, g), reducedSpeedOfLightFactor_in(i + 1, j, k, g)) * c_light_;
+
 			// correct for reduced speed of light
-			F_L[0] *= chat0_over_c;
-			F_R[0] *= chat0_over_c;
+			F_L[0] *= c_hat_left / c_light_;
+			F_R[0] *= c_hat_right / c_light_;
 			for (int n = 1; n < numRadVars_; ++n) {
-				F_L[n] *= chat0_over_c * c_light_ * c_light_;
-				F_R[n] *= chat0_over_c * c_light_ * c_light_;
+				F_L[n] *= c_hat_left * c_light_;
+				F_R[n] *= c_hat_right * c_light_;
 			}
-			S_L *= chat0_;
-			S_R *= chat0_;
+			S_L *= c_hat_left;
+			S_R *= c_hat_right;
 
 			const quokka::valarray<double, numRadVars_> U_L = {erad_L, Fx_L, Fy_L, Fz_L};
 			const quokka::valarray<double, numRadVars_> U_R = {erad_R, Fx_R, Fy_R, Fz_R};
@@ -1147,8 +1157,8 @@ void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiff
 				}
 			}
 
-			AMREX_ASSERT(std::abs(S_L) <= chat0_); // NOLINT
-			AMREX_ASSERT(std::abs(S_R) <= chat0_); // NOLINT
+			AMREX_ASSERT(std::abs(S_L) <= c_hat_left); // NOLINT
+			AMREX_ASSERT(std::abs(S_R) <= c_hat_right); // NOLINT
 
 			// in the frozen Eddington tensor approximation, we are always
 			// in the star region, so F = F_star
