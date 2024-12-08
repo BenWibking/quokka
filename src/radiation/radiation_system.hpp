@@ -200,7 +200,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 		}
 	}();
 	static constexpr double chat_over_c = RadSystem_Traits<problem_t>::c_hat_over_c;
-	static constexpr double chat_ = c_light_ * chat_over_c;
+	static constexpr double chat0_ = c_light_ * chat_over_c;
 
 	static constexpr double radiation_constant_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
@@ -653,7 +653,7 @@ void RadSystem<problem_t>::ComputeMaxSignalSpeed(amrex::Array4<const amrex::Real
 {
 	// cell-centered kernel
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		const double signal_max = chat_;
+		const double signal_max = chat0_;
 		maxSignal(i, j, k) = signal_max;
 	});
 }
@@ -1125,8 +1125,8 @@ void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiff
 				F_L[n] *= chat_over_c * c_light_ * c_light_;
 				F_R[n] *= chat_over_c * c_light_ * c_light_;
 			}
-			S_L *= chat_;
-			S_R *= chat_;
+			S_L *= chat0_;
+			S_R *= chat0_;
 
 			const quokka::valarray<double, numRadVars_> U_L = {erad_L, Fx_L, Fy_L, Fz_L};
 			const quokka::valarray<double, numRadVars_> U_R = {erad_R, Fx_R, Fy_R, Fz_R};
@@ -1143,8 +1143,8 @@ void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiff
 				}
 			}
 
-			AMREX_ASSERT(std::abs(S_L) <= chat_); // NOLINT
-			AMREX_ASSERT(std::abs(S_R) <= chat_); // NOLINT
+			AMREX_ASSERT(std::abs(S_L) <= chat0_); // NOLINT
+			AMREX_ASSERT(std::abs(S_R) <= chat0_); // NOLINT
 
 			// in the frozen Eddington tensor approximation, we are always
 			// in the star region, so F = F_star
@@ -1479,12 +1479,12 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 			const auto fourPiBoverC = ComputeThermalRadiationSingleGroup(T_d);
 			const auto kappaE = ComputeEnergyMeanOpacity(rho, T_d);
 			const auto kappaP = ComputePlanckOpacity(rho, T_d);
-			LHS = chat_ * dt * rho * (kappaE * Erad[0] - kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
+			LHS = chat0_ * dt * rho * (kappaE * Erad[0] - kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
 		} else {
 			const auto fourPiBoverC = ComputeThermalRadiationMultiGroup(T_d, rad_boundaries);
 			const auto opacity_terms = ComputeModelDependentKappaEAndKappaP(T_d, rho, rad_boundaries, rad_boundary_ratios, fourPiBoverC, Erad, 0);
 			LHS =
-			    chat_ * dt * rho * sum(opacity_terms.kappaE * Erad - opacity_terms.kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
+			    chat0_ * dt * rho * sum(opacity_terms.kappaE * Erad - opacity_terms.kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
 		}
 
 		return LHS;
@@ -1497,12 +1497,12 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 		if constexpr (nGroups_ == 1) {
 			const auto kappaP = ComputePlanckOpacity(rho, T_d);
 			const auto d_fourpib_over_c_d_t = ComputeThermalRadiationTempDerivativeSingleGroup(T_d);
-			dLHS_dTd = -chat_ * dt * rho * (kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
+			dLHS_dTd = -chat0_ * dt * rho * (kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
 		} else {
 			const auto fourPiBoverC = ComputeThermalRadiationMultiGroup(T_d, rad_boundaries);
 			const auto opacity_terms = ComputeModelDependentKappaEAndKappaP(T_d, rho, rad_boundaries, rad_boundary_ratios, fourPiBoverC, Erad, 0);
 			const auto d_fourpib_over_c_d_t = ComputeThermalRadiationTempDerivativeMultiGroup(T_d, rad_boundaries);
-			dLHS_dTd = -chat_ * dt * rho * sum(opacity_terms.kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
+			dLHS_dTd = -chat0_ * dt * rho * sum(opacity_terms.kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
 		}
 
 		return dLHS_dTd;

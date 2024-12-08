@@ -173,7 +173,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 	// dF_{D,i} / dD_i = - (1 / (chat * dt * rho * kappa_{E,i}) + 1) * tau0_i = - ((1 / tau_i)(kappa_Pi / kappa_Ei) + 1) * tau0_i
 
 	const double c = c_light_; // make a copy of c_light_ to avoid compiler error "undefined in device code"
-	const double chat = chat_;
+	const double chat = chat0_;
 	const double cscale = c / chat;
 
 	const double H_num_den = ComputeNumberDensityH(rho, massScalars);
@@ -427,7 +427,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 	auto const fourPiBoverC = ComputeThermalRadiationMultiGroup(energy.T_d, radBoundaries_g);
 	auto const kappa_expo_and_lower_value = DefineOpacityExponentsAndLowerValues(radBoundaries_g, rho, energy.T_d);
 
-	const double chat = chat_;
+	const double chat = chat0_;
 
 	for (int g = 0; g < nGroups_; ++g) {
 		Frad_t0[0] = consPrev(i, j, k, x1RadFlux_index + numRadVars_ * g);
@@ -551,7 +551,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 				// AMREX_ASSERT(radEnergyNew > 0.0);
 				if (radEnergyNew < Erad_floor_) {
 					// return energy to Egas_guess
-					energy.Egas -= (Erad_floor_ - radEnergyNew) * (c_light_ / chat_);
+					energy.Egas -= (Erad_floor_ - radEnergyNew) * (c_light_ / chat0_);
 					radEnergyNew = Erad_floor_;
 				}
 				updated_flux.Erad[g] = radEnergyNew;
@@ -595,7 +595,7 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 		auto p_iteration_failure_counter_local = p_iteration_failure_counter; // NOLINT
 
 		const double c = c_light_;
-		const double chat = chat_;
+		const double chat = chat0_;
 		const double dustGasCoeff_local = dustGasCoeff;
 
 		// load fluid properties

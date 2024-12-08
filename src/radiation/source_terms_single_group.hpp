@@ -31,7 +31,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		auto p_iteration_failure_counter_local = p_iteration_failure_counter; // NOLINT
 
 		const double c = c_light_;
-		const double chat = chat_;
+		const double chat = chat0_;
 		const double dustGasCoeff_ = dustGasCoeff;
 
 		// load fluid properties

@@ -28,7 +28,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
 {
 	JacobianResult<problem_t> result;
 
-	const double cscale = c_light_ / chat_;
+	const double cscale = c_light_ / chat0_;
 
 	// compute cooling/heating terms
 	const auto cooling = DefineNetCoolingRate(T_gas, num_den) * dt;
@@ -136,7 +136,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
 {
 	JacobianResult<problem_t> result;
 
-	const double cscale = c_light_ / chat_;
+	const double cscale = c_light_ / chat0_;
 
 	// compute cooling/heating terms
 	const auto cooling = DefineNetCoolingRate(T_gas, num_den) * dt;
@@ -252,7 +252,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 	// dF_{D,i} / dD_i = - (1 / (chat * dt * rho * kappa_{E,i}) + 1) * tau0_i = - ((1 / tau_i)(kappa_Pi / kappa_Ei) + 1) * tau0_i
 
 	const double c = c_light_; // make a copy of c_light_ to avoid compiler error "undefined in device code"
-	const double chat = chat_;
+	const double chat = chat0_;
 	const double cscale = c / chat;
 
 	int dust_model = 1;
@@ -602,7 +602,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 	// dF_{D,i} / dD_i = - (1 / (chat * dt * rho * kappa_{E,i}) + 1) * tau0_i = - ((1 / tau_i)(kappa_Pi / kappa_Ei) + 1) * tau0_i
 
 	const double c = c_light_; // make a copy of c_light_ to avoid compiler error "undefined in device code"
-	const double chat = chat_;
+	const double chat = chat0_;
 	const double cscale = c / chat;
 
 	int dust_model = 1;
