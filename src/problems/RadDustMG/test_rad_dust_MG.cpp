@@ -58,7 +58,7 @@ template <> struct Physics_Traits<DustProblem> {
 };
 
 template <> struct RadSystem_Traits<DustProblem> {
-	static constexpr double c_hat_over_c = 1.0;
+	static constexpr double c_hat_over_c = 0.9;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 	static constexpr double energy_unit = 1.;

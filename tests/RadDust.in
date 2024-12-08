@@ -28,3 +28,5 @@ amr.max_grid_size   = 16
 do_reflux = 0
 do_subcycle = 0
 suppress_output = 0
+#checkpoint_interval = 100
+#restartfile = chk00100

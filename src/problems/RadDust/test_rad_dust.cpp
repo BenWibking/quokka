@@ -16,7 +16,7 @@ struct DustProblem {
 
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
-constexpr double chat = c;
+constexpr double chat_over_c = 0.1;
 constexpr double v0 = 0.0;
 constexpr double chi0 = 10000.0;
 
@@ -26,7 +26,7 @@ constexpr double a_rad = 1.0;
 constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
 
-constexpr double max_time = 1.0e-5;
+constexpr double max_time = 1.0e-4;
 constexpr double delta_time = 1.0e-8;
 
 constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
@@ -44,7 +44,7 @@ template <> struct quokka::EOS_Traits<DustProblem> {
 };
 
 template <> struct RadSystem_Traits<DustProblem> {
-	static constexpr double c_hat_over_c = chat / c;
+	static constexpr double c_hat_over_c = chat_over_c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
