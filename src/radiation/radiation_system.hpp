@@ -455,6 +455,11 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 							     const amrex::GpuArray<double, nGroups_ + 1> &group_boundaries)
 	    -> quokka::valarray<double, nGroups_>;
 
+	AMREX_GPU_DEVICE static auto ComputeCellOpticalDepthAllDirMin(const amrex::Array4<const amrex::Real> &consVar,
+								    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, int i, int j, int k,
+								    const amrex::GpuArray<double, nGroups_ + 1> &group_boundaries)
+	    -> quokka::valarray<double, nGroups_>;
+
 	AMREX_GPU_DEVICE static auto isStateValid(std::array<amrex::Real, nvarHyperbolic_> &cons) -> bool;
 
 	AMREX_GPU_DEVICE static void amendRadState(std::array<amrex::Real, nvarHyperbolic_> &cons);
@@ -838,6 +843,29 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeMassScalars(ArrayType const &
 		massScalars[n] = arr(i, j, k, scalar0_index + n);
 	}
 	return massScalars;
+}
+
+template <typename problem_t>
+AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeCellOpticalDepthAllDirMin(const amrex::Array4<const amrex::Real> &consVar,
+								    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, int i, int j, int k, const amrex::GpuArray<double, nGroups_ + 1> &group_boundaries)
+    -> quokka::valarray<double, nGroups_>
+{
+	quokka::valarray<double, nGroups_> tau{};
+
+	const double rho = consVar(i, j, k, gasDensity_index);
+	const double E_gas = consVar(i, j, k, gasInternalEnergy_index);
+	const auto massScalars = RadSystem<problem_t>::ComputeMassScalars(consVar, i, j, k);
+	const double T_gas = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, E_gas, massScalars);
+	quokka::valarray<double, nGroups_> chi{};
+	if constexpr (nGroups_ == 1) {
+		chi[0] = rho * ComputePlanckOpacity(rho, T_gas);
+	} else {
+		const auto opacity = DefineOpacityExponentsAndLowerValues(group_boundaries, rho, T_gas);
+		chi = rho * ComputeBinCenterOpacity(group_boundaries, opacity);
+	}
+	const double dx_min = AMREX_D_PICK(dx[0], std::min(dx[0], dx[1]), std::min({dx[0], dx[1], dx[2]}));
+	tau = dx_min * chi;
+	return tau;
 }
 
 template <typename problem_t>
@@ -1534,6 +1562,99 @@ template <typename problem_t>
 AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, array_t &reducedSpeedOfLightFactor,
 									 const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
 {
+	// quokka::Array4View<const amrex::Real, FluxDir::X1> consVarX1(consVar_in);
+	// quokka::Array4View<const amrex::Real, FluxDir::X2> consVarX2(consVar_in);
+	// quokka::Array4View<const amrex::Real, FluxDir::X3> consVarX3(consVar_in);
+
+	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+		// debugging: print consVar(i - 1, j, k, radEnergy_index), consVar(i, j, k, radEnergy_index), consVar(i + 1, j, k, radEnergy_index)
+		// amrex::Print() << "consVar(" << i - 1 << ", " << j << ", " << k << ", " << radEnergy_index << ") = " << consVar(i - 1, j, k, radEnergy_index) << std::endl;
+		// amrex::Print() << "consVar(" << i << ", " << j << ", " << k << ", " << radEnergy_index << ") = " << consVar(i, j, k, radEnergy_index) << std::endl;
+		// amrex::Print() << "consVar(" << i + 1 << ", " << j << ", " << k << ", " << radEnergy_index << ") = " << consVar(i + 1, j, k, radEnergy_index) << std::endl;
+		// amrex::Print() << std::endl;
+
+		// // compute kappaP
+		// const double rho = consVar(i, j, k, gasDensity_index);
+		// const double E_gas = consVar(i, j, k, gasInternalEnergy_index);
+		// const auto massScalars = RadSystem<problem_t>::ComputeMassScalars(consVar, i, j, k);
+		// const double T_gas = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, E_gas, massScalars);
+		// const double chi = rho * ComputePlanckOpacity(rho, T_gas);
+
+		// if (chi <= 0.0) {
+		// 	reducedSpeedOfLightFactor(i, j, k) = 1.0;
+		// 	return;
+		// }
+
+// 		// Calculate first derivatives of Erad
+// 		double dEdx = 0.0;
+// 		double dEdy = 0.0;
+// 		double dEdz = 0.0;
+
+// 		// Calculate second derivatives of Erad 
+// 		double d2Edx2 = 0.0;
+// 		double d2Edy2 = 0.0;
+// 		double d2Edz2 = 0.0;
+// 		double Eradc = 0.0;
+
+// 		// Sum over all radiation groups
+// 		for (int g = 0; g < nGroups_; ++g) {
+// 			const int Erad_idx = radEnergy_index + numRadVars_ * g;
+
+// 			Eradc += consVar(i, j, k, Erad_idx);
+
+// 			// First derivatives (central difference)
+// 			dEdx += (consVar(i+1, j, k, Erad_idx) - consVar(i-1, j, k, Erad_idx)) / (2.0 * dx[0]);
+// #if AMREX_SPACEDIM > 1
+// 			dEdy += (consVar(i, j+1, k, Erad_idx) - consVar(i, j-1, k, Erad_idx)) / (2.0 * dx[1]);
+// #endif
+// #if AMREX_SPACEDIM > 2
+// 			dEdz += (consVar(i, j, k+1, Erad_idx) - consVar(i, j, k-1, Erad_idx)) / (2.0 * dx[2]);
+// #endif
+
+// 			// Second derivatives
+// 			d2Edx2 += (consVar(i+1, j, k, Erad_idx) - 2.0*consVar(i, j, k, Erad_idx) + consVar(i-1, j, k, Erad_idx)) / (dx[0] * dx[0]);
+// #if AMREX_SPACEDIM > 1
+// 			d2Edy2 += (consVar(i, j+1, k, Erad_idx) - 2.0*consVar(i, j, k, Erad_idx) + consVar(i, j-1, k, Erad_idx)) / (dx[1] * dx[1]);
+// #endif
+// #if AMREX_SPACEDIM > 2
+// 			d2Edz2 += (consVar(i, j, k+1, Erad_idx) - 2.0*consVar(i, j, k, Erad_idx) + consVar(i, j, k-1, Erad_idx)) / (dx[2] * dx[2]);
+// #endif
+// 		}
+
+// 		// Calculate magnitudes
+// 		const double grad_mag = std::sqrt(dEdx*dEdx + dEdy*dEdy + dEdz*dEdz);
+// 		const double laplacian_mag = std::abs(d2Edx2 + d2Edy2 + d2Edz2);
+
+		// // Avoid division by zero
+		// // const double R = (grad_mag > 0.0) ? laplacian_mag / grad_mag / chi : 0.0;
+		// const double R = 1.0 / chi * laplacian_mag / (grad_mag + 1.0e-3 * Eradc / dx[0]);
+		// const double R_scaled = R / 3.0;
+		// const double R_scaled4 = R_scaled * R_scaled * R_scaled * R_scaled;
+
+		const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
+		const int pow = 1;
+		const double scaling = 1.0;
+		// const double scaling = 3.0;
+		const double max_chat_scaleup = 10.0;
+		for (int g = 0; g < nGroups_; ++g) {
+			const double scaled = std::pow(tau_cell[g] * scaling, pow);
+			const double reduced_speed_of_light_factor = c_hat_over_c * (1.0 + max_chat_scaleup * scaled) / (1.0 + scaled);
+			reducedSpeedOfLightFactor(i, j, k, g) = std::min(reduced_speed_of_light_factor, 1.0);
+		}
+	});
+
+	if constexpr (print_chat) {
+		// print reducedSpeedOfLightFactor
+		amrex::Print() << "reducedSpeedOfLightFactor: ";
+		for (int g = 0; g < nGroups_; ++g) {
+			amrex::Print() << "group " << g << ": ";
+			// Use indexRange to iterate over valid indices
+			amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+				amrex::Print() << reducedSpeedOfLightFactor(i, j, k, g) << " ";
+			});
+			amrex::Print() << std::endl;
+		}
+	}
 }
 
 #include "radiation/source_terms_multi_group.hpp"  // IWYU pragma: export
