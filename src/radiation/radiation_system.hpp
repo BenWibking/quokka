@@ -298,7 +298,8 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 					     double dustGasCoeff, int *p_iteration_counter, int *p_iteration_failure_counter);
 
 	static void AddSourceTermsSingleGroup(array_t &consVar, arrayconst_t &radEnergySource, amrex::Box const &indexRange, amrex::Real dt, int stage,
-					      double dustGasCoeff, int *p_iteration_counter, int *p_iteration_failure_counter);
+					      double dustGasCoeff, amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor,
+					      int *p_iteration_counter, int *p_iteration_failure_counter);
 
 	static void balanceMatterRadiation(arrayconst_t &consPrev, array_t &consNew, amrex::Box const &indexRange);
 
