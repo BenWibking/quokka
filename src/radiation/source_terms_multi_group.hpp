@@ -112,7 +112,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGas(double /*T_d*/
 {
 	JacobianResult<problem_t> result;
 
-	const double cscale = c_light_ / c_hat_;
+	const double cscale = c_light_ / chat_;
 
 	// CR_heating term
 	const double CR_heating = DefineCosmicRayHeatingRate(num_den) * dt;
@@ -173,7 +173,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 	// dF_{D,i} / dD_i = - (1 / (chat * dt * rho * kappa_{E,i}) + 1) * tau0_i = - ((1 / tau_i)(kappa_Pi / kappa_Ei) + 1) * tau0_i
 
 	const double c = c_light_; // make a copy of c_light_ to avoid compiler error "undefined in device code"
-	const double chat = c_hat_;
+	const double chat = chat_;
 	const double cscale = c / chat;
 
 	const double H_num_den = ComputeNumberDensityH(rho, massScalars);
@@ -427,7 +427,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 	auto const fourPiBoverC = ComputeThermalRadiationMultiGroup(energy.T_d, radBoundaries_g);
 	auto const kappa_expo_and_lower_value = DefineOpacityExponentsAndLowerValues(radBoundaries_g, rho, energy.T_d);
 
-	const double chat = c_hat_;
+	const double chat = chat_;
 
 	for (int g = 0; g < nGroups_; ++g) {
 		Frad_t0[0] = consPrev(i, j, k, x1RadFlux_index + numRadVars_ * g);
@@ -527,7 +527,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 			// Old scheme: the source term does not include the work term, so we add the work term to the Erad.
 
 			// compute loss of radiation energy to gas kinetic energy
-			auto dErad_work = -(c_hat_ / c_light_) * dEkin_work;
+			auto dErad_work = -(chat_ / c_light_) * dEkin_work;
 
 			// apportion dErad_work according to kappaF_i * (v * F_i)
 			quokka::valarray<double, nGroups_> energyLossFractions{};
@@ -551,7 +551,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 				// AMREX_ASSERT(radEnergyNew > 0.0);
 				if (radEnergyNew < Erad_floor_) {
 					// return energy to Egas_guess
-					energy.Egas -= (Erad_floor_ - radEnergyNew) * (c_light_ / c_hat_);
+					energy.Egas -= (Erad_floor_ - radEnergyNew) * (c_light_ / chat_);
 					radEnergyNew = Erad_floor_;
 				}
 				updated_flux.Erad[g] = radEnergyNew;
@@ -595,7 +595,7 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 		auto p_iteration_failure_counter_local = p_iteration_failure_counter; // NOLINT
 
 		const double c = c_light_;
-		const double chat = c_hat_;
+		const double chat = chat_;
 		const double dustGasCoeff_local = dustGasCoeff;
 
 		// load fluid properties
@@ -762,7 +762,7 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 				const double rel_lag_tol = 1.0e-8;
 				const double lag_tol = 1.0e-13;
 				double ref_work = rel_lag_tol * sum(abs(work));
-				ref_work = std::max(ref_work, lag_tol * Egastot1 / (c_light_ / c_hat_));
+				ref_work = std::max(ref_work, lag_tol * Egastot1 / (c_light_ / chat_));
 				// ref_work = std::max(ref_work, lag_tol * sum(Rvec)); // comment out because Rvec is not accessible here
 				if (sum(abs(work - work_prev)) > ref_work) {
 					work_converged = false;
