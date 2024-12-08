@@ -570,7 +570,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 
 template <typename problem_t>
 void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst_t &radEnergySource, amrex::Box const &indexRange, amrex::Real dt_radiation,
-						    const int stage, double dustGasCoeff, int *p_iteration_counter, int *p_iteration_failure_counter)
+						    const int stage, double dustGasCoeff, amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor,
+						    int *p_iteration_counter, int *p_iteration_failure_counter)
 {
 	static_assert(beta_order_ == 0 || beta_order_ == 1);
 
