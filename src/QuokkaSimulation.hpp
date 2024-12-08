@@ -60,6 +60,9 @@
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
 
+// static constexpr bool use_iRSLA = true;
+static constexpr bool use_iRSLA = false;
+
 // Simulation class should be initialized only once per program (i.e., is a singleton)
 template <typename problem_t> class QuokkaSimulation : public AMRSimulation<problem_t>
 {
@@ -1654,6 +1657,19 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			// (this is not necessary for the i=0 substep because we have already swapped
 			//  the full hydro+radiation state vectors at the beginning of the level advance)
 			swapRadiationState(state_old_cc_[lev], state_new_cc_[lev]);
+		}
+
+		// define a MultiFab to store the reduced speed of light
+		amrex::MultiFab reducedSpeedOfLightFactor(grids[lev], dmap[lev], RadSystem<problem_t>::nGroups_, 2);
+
+		if constexpr (!use_iRSLA) {
+			reducedSpeedOfLightFactor.setVal(RadSystem<problem_t>::chat0_);
+		} else {
+			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
+				auto const &stateNew = state_new_cc_[lev].array(iter);
+				const amrex::Box &indexRange = amrex::grow(iter.validbox(), 2);
+				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, RadSystem<problem_t>::chat0_over_c, reducedSpeedOfLightFactor.array(iter), indexRange, dx);
+			}
 		}
 
 		// We use the IMEX PD-ARS scheme to evolve the radiation subsystem and radiation-matter coupling.

@@ -32,6 +32,8 @@
 
 using Real = amrex::Real;
 
+static constexpr bool print_chat = true;
+
 // Hyper parameters for the radiation solver
 static constexpr bool add_line_cooling_to_radiation_in_jac = false;
 static constexpr bool include_delta_B = true;
@@ -461,6 +463,8 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 	    -> RadPressureResult;
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
+
+	AMREX_GPU_DEVICE static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
 };
 
 // Compute radiation energy fractions for each photon group from a Planck function, given nGroups, radBoundaries, and temperature
@@ -1514,6 +1518,12 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 	AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
 
 	return T_d;
+}
+
+template <typename problem_t>
+AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, array_t &reducedSpeedOfLightFactor,
+									 const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
+{
 }
 
 #include "radiation/source_terms_multi_group.hpp"  // IWYU pragma: export
