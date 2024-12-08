@@ -112,7 +112,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGas(double /*T_d*/
 {
 	JacobianResult<problem_t> result;
 
-	const double cscale = 1.0 / chat_over_c;
+	const double cscale = 1.0 / chat0_over_c;
 
 	// CR_heating term
 	const double CR_heating = DefineCosmicRayHeatingRate(num_den) * dt;
@@ -527,7 +527,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j,
 			// Old scheme: the source term does not include the work term, so we add the work term to the Erad.
 
 			// compute loss of radiation energy to gas kinetic energy
-			auto dErad_work = -chat_over_c * dEkin_work;
+			auto dErad_work = -chat0_over_c * dEkin_work;
 
 			// apportion dErad_work according to kappaF_i * (v * F_i)
 			quokka::valarray<double, nGroups_> energyLossFractions{};
@@ -762,7 +762,7 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 				const double rel_lag_tol = 1.0e-8;
 				const double lag_tol = 1.0e-13;
 				double ref_work = rel_lag_tol * sum(abs(work));
-				ref_work = std::max(ref_work, lag_tol * Egastot1 * chat_over_c);
+				ref_work = std::max(ref_work, lag_tol * Egastot1 * chat0_over_c);
 				// ref_work = std::max(ref_work, lag_tol * sum(Rvec)); // comment out because Rvec is not accessible here
 				if (sum(abs(work - work_prev)) > ref_work) {
 					work_converged = false;

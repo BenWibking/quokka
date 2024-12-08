@@ -199,8 +199,8 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			return c_light_cgs_ / (Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_time);
 		}
 	}();
-	static constexpr double chat_over_c = RadSystem_Traits<problem_t>::c_hat_over_c;
-	static constexpr double chat0_ = c_light_ * chat_over_c;
+	static constexpr double chat0_over_c = RadSystem_Traits<problem_t>::c_hat_over_c;
+	static constexpr double chat0_ = c_light_ * chat0_over_c;
 
 	static constexpr double radiation_constant_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
@@ -1119,11 +1119,11 @@ void RadSystem<problem_t>::ComputeFluxes(array_t &x1Flux_in, array_t &x1FluxDiff
 			auto [F_R, S_R] = ComputeRadPressure<DIR>(erad_R, Fx_R, Fy_R, Fz_R, fx_R, fy_R, fz_R);
 
 			// correct for reduced speed of light
-			F_L[0] *= chat_over_c;
-			F_R[0] *= chat_over_c;
+			F_L[0] *= chat0_over_c;
+			F_R[0] *= chat0_over_c;
 			for (int n = 1; n < numRadVars_; ++n) {
-				F_L[n] *= chat_over_c * c_light_ * c_light_;
-				F_R[n] *= chat_over_c * c_light_ * c_light_;
+				F_L[n] *= chat0_over_c * c_light_ * c_light_;
+				F_R[n] *= chat0_over_c * c_light_ * c_light_;
 			}
 			S_L *= chat0_;
 			S_R *= chat0_;
