@@ -7,21 +7,11 @@
 /// \brief Defines a test problem for a 3D radiation pressure-driven shell.
 ///
 
-#include <limits>
-
-#include "AMReX_Arena.H"
 #include "AMReX_Array.H"
 #include "AMReX_Array4.H"
 #include "AMReX_BC_TYPES.H"
 #include "AMReX_BLassert.H"
-#include "AMReX_Config.H"
-#include "AMReX_Extension.H"
-#include "AMReX_FArrayBox.H"
-#include "AMReX_FabArrayUtility.H"
-#include "AMReX_Loop.H"
-#include "AMReX_ParallelDescriptor.H"
 #include "AMReX_ParmParse.H"
-#include "AMReX_Print.H"
 #include "AMReX_REAL.H"
 #include "AMReX_Vector.H"
 
@@ -29,7 +19,6 @@
 #include "hydro/hydro_system.hpp"
 #include "math/interpolate.hpp"
 #include "radiation/radiation_system.hpp"
-#include "test_radhydro_shell.hpp"
 
 struct ShellProblem {
 };
@@ -86,9 +75,7 @@ constexpr amrex::Real H_shell = 0.3 * r_0;	// cm
 constexpr amrex::Real kappa0 = 20.0;		// specific opacity [cm^2 g^-1]
 
 constexpr amrex::Real rho_0 = M_shell / ((4. / 3.) * M_PI * r_0 * r_0 * r_0); // g cm^-3
-
-constexpr amrex::Real P_0 = gamma_gas * rho_0 * (a0 * a0); // erg cm^-3
-constexpr double c_v = k_B / ((2.2 * m_H) * (gamma_gas - 1.0));
+constexpr amrex::Real c_v = k_B / ((2.2 * m_H) * (gamma_gas - 1.0));
 
 template <>
 void RadSystem<ShellProblem>::SetRadEnergySource(array_t &radEnergy, const amrex::Box &indexRange, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
@@ -251,77 +238,6 @@ template <> void QuokkaSimulation<ShellProblem>::setInitialConditionsOnGrid(quok
 	});
 }
 
-AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto vec_dot_r(amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> vec, int i, int j, int k) -> amrex::Real
-{
-	// compute dot product of vec into rhat
-	amrex::Real xhat = (i + amrex::Real(0.5));
-	amrex::Real yhat = (j + amrex::Real(0.5));
-	amrex::Real zhat = (k + amrex::Real(0.5));
-	amrex::Real const norminv = 1.0 / std::sqrt(xhat * xhat + yhat * yhat + zhat * zhat);
-
-	xhat *= norminv;
-	yhat *= norminv;
-	zhat *= norminv;
-
-	amrex::Real const dotproduct = vec[0] * xhat + vec[1] * yhat + vec[2] * zhat;
-	return dotproduct;
-}
-
-#if 0
-template <> void QuokkaSimulation<ShellProblem>::computeAfterTimestep() {
-  // compute radial momentum for gas, radiation on level 0
-  // (assuming octant symmetry)
-
-  amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx0 =
-      geom[0].CellSizeArray();
-  amrex::Real const vol = AMREX_D_TERM(dx0[0], *dx0[1], *dx0[2]);
-  auto const &state = state_new_cc_[0];
-
-  double radialMom =
-      vol *
-      amrex::ReduceSum(
-          state, 0,
-          [=] AMREX_GPU_DEVICE(amrex::Box const &bx,
-                               amrex::Array4<amrex::Real const> const &arr) {
-            amrex::Real result = 0.;
-            amrex::Loop(bx, [&](int i, int j, int k) {
-              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> vec{
-                  arr(i, j, k, RadSystem<ShellProblem>::x1GasMomentum_index),
-                  arr(i, j, k, RadSystem<ShellProblem>::x2GasMomentum_index),
-                  arr(i, j, k, RadSystem<ShellProblem>::x3GasMomentum_index)};
-              result += vec_dot_r(vec, i, j, k);
-            });
-            return result;
-          });
-
-  amrex::ParallelAllReduce::Sum(radialMom,
-                                amrex::ParallelContext::CommunicatorSub());
-
-  double radialRadMom =
-      (vol / c) *
-      amrex::ReduceSum(
-          state, 0,
-          [=] AMREX_GPU_DEVICE(amrex::Box const &bx,
-                               amrex::Array4<amrex::Real const> const &arr) {
-            amrex::Real result = 0.;
-            amrex::Loop(bx, [&](int i, int j, int k) {
-              amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> vec{
-                  arr(i, j, k, RadSystem<ShellProblem>::x1RadFlux_index),
-                  arr(i, j, k, RadSystem<ShellProblem>::x2RadFlux_index),
-                  arr(i, j, k, RadSystem<ShellProblem>::x3RadFlux_index)};
-              result += vec_dot_r(vec, i, j, k);
-            });
-            return result;
-          });
-
-  amrex::ParallelAllReduce::Sum(radialRadMom,
-                                amrex::ParallelContext::CommunicatorSub());
-
-  amrex::Print() << "radial gas momentum = " << radialMom << std::endl;
-  amrex::Print() << "radial radiation momentum = " << radialRadMom << std::endl;
-}
-#endif
-
 template <> void QuokkaSimulation<ShellProblem>::ErrorEst(int lev, amrex::TagBoxArray &tags, amrex::Real /*time*/, int /*ngrow*/)
 {
 	// tag cells for refinement
@@ -411,37 +327,13 @@ auto problem_main() -> int
 
 	// Problem initialization
 	QuokkaSimulation<ShellProblem> sim(BCs_cc);
-
-	sim.cflNumber_ = 0.3;
-	sim.densityFloor_ = 1.0e-8 * rho_0;
-	sim.pressureFloor_ = 1.0e-8 * P_0;
-	// reconstructionOrder: 1 == donor cell, 2 == PLM, 3 == PPM (not recommended
-	// for this problem)
-	sim.reconstructionOrder_ = 2;
-	sim.radiationReconstructionOrder_ = 2;
-	sim.integratorOrder_ = 2; // RK2
-
 	constexpr amrex::Real t0_hydro = r_0 / a0; // seconds
-	sim.stopTime_ = 0.125 * t0_hydro;	   // 0.124 * t0_hydro;
-
-	// for production
-	// sim.checkpointInterval_ = 1000;
-	// sim.plotfileInterval_ = 100;
-	// sim.maxTimesteps_ = 5000;
-
-	// for scaling tests
-	sim.checkpointInterval_ = -1;
-	sim.plotfileInterval_ = -1;
-	sim.maxTimesteps_ = 50;
-
-	// initialize
+	sim.densityFloor_ = 1.0e-8 * rho_0;
+	sim.stopTime_ = 0.125 * t0_hydro;
 	sim.setInitialConditions();
-	sim.computeAfterTimestep();
 
-	// evolve
+	// run
 	sim.evolve();
 
-	// Cleanup and exit
-	amrex::Print() << "Finished." << std::endl;
 	return 0;
 }
