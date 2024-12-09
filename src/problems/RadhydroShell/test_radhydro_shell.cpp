@@ -313,9 +313,9 @@ auto problem_main() -> int
 	for (int n = 0; n < ncomp_cc; ++n) {
 		for (int i = 0; i < AMREX_SPACEDIM; ++i) {
 			if constexpr (simulate_full_box) {
-				// periodic boundaries
-				BCs_cc[n].setLo(i, amrex::BCType::int_dir);
-				BCs_cc[n].setHi(i, amrex::BCType::int_dir);
+				// outflow boundaries
+				BCs_cc[n].setLo(i, amrex::BCType::foextrap);
+				BCs_cc[n].setHi(i, amrex::BCType::foextrap);
 			} else {
 				// reflecting boundaries, outflow boundaries
 				if (isNormalComp(n, i)) {
