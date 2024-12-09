@@ -16,7 +16,7 @@ struct DustProblem {
 
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
-constexpr double chat_over_c = 1.0;
+constexpr double chat_over_c = 0.1;
 constexpr double v0 = 0.0;
 constexpr double chi0 = 10000.0;
 
