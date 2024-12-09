@@ -26,7 +26,7 @@ do_subcycle = 1
 cfl = 0.2
 
 checkpoint_interval = -1
-plotfile_interval = 50
+plotfile_interval = 100
 max_timesteps = 5000
 
 shell_problem.filename = "../extern/dust_shell/initial_conditions.txt"
