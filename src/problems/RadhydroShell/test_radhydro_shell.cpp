@@ -121,8 +121,7 @@ template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ShellProblem>::ComputeFluxMeanO
 	return ComputePlanckOpacity(0.0, 0.0);
 }
 
-template <> struct SimulationData<ShellProblem>
-{
+template <> struct SimulationData<ShellProblem> {
 	// initial conditions read from file
 	amrex::Gpu::HostVector<double> r_arr;
 	amrex::Gpu::HostVector<double> Erad_arr;
