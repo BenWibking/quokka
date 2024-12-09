@@ -90,7 +90,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		double N_d = NAN;
 		const double H_num_den = ComputeNumberDensityH(rho, massScalars);
 		if constexpr (enable_dust_gas_thermal_coupling_model_) {
-			N_d = dt * dustGasCoeff_ * H_num_den * H_num_den / cscale;
+			N_d = dt * dustGasCoeff_ * H_num_den * H_num_den;
 		} else {
 			amrex::ignore_unused(N_d);
 			amrex::ignore_unused(H_num_den);
@@ -171,7 +171,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 						T_d = ComputeDustTemperatureBateKeto(T_gas, T_gas, rho, Erad_guess_vec, N_d, dt, R, n);
 						AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
 						} else {
-							T_d = T_gas - R / (N_d * std::sqrt(T_gas));
+							T_d = T_gas - (R * cscale) / (N_d * std::sqrt(T_gas));
 							AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
 						}
 						if (T_d < 0.0) {
@@ -298,7 +298,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					} else {
 						const double d_Td_d_T = 3. / 2. - T_d / (2. * T_gas);
 						dEg_dT *= d_Td_d_T;
-						const double dTd_dRg = -1.0 / (N_d * std::sqrt(T_gas));
+						const double dTd_dRg = -cscale / (N_d * std::sqrt(T_gas));
 
 						J00 = 1.0;
 						J01 = cscale;

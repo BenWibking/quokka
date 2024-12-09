@@ -1503,11 +1503,11 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 									   quokka::valarray<double, nGroups_> const &Erad, double N_d, double dt, double R_sum,
 									   int n_step, amrex::GpuArray<double, nGroups_ + 1> const &rad_boundaries) -> double
 {
-	if (n_step > 0) {
-		const auto T_d = T_gas - R_sum / (N_d * std::sqrt(T_gas));
-		AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
-		return T_d;
-	}
+	// if (n_step > 0) {
+	// 	const auto T_d = T_gas - R_sum / (N_d * std::sqrt(T_gas));
+	// 	AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
+	// 	return T_d;
+	// }
 
 	amrex::GpuArray<double, nGroups_> rad_boundary_ratios{};
 
@@ -1525,12 +1525,12 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 			const auto fourPiBoverC = ComputeThermalRadiationSingleGroup(T_d);
 			const auto kappaE = ComputeEnergyMeanOpacity(rho, T_d);
 			const auto kappaP = ComputePlanckOpacity(rho, T_d);
-			LHS = chat0_ * dt * rho * (kappaE * Erad[0] - kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
+			LHS = c_light_ * dt * rho * (kappaE * Erad[0] - kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
 		} else {
 			const auto fourPiBoverC = ComputeThermalRadiationMultiGroup(T_d, rad_boundaries);
 			const auto opacity_terms = ComputeModelDependentKappaEAndKappaP(T_d, rho, rad_boundaries, rad_boundary_ratios, fourPiBoverC, Erad, 0);
 			LHS =
-			    chat0_ * dt * rho * sum(opacity_terms.kappaE * Erad - opacity_terms.kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
+			    c_light_ * dt * rho * sum(opacity_terms.kappaE * Erad - opacity_terms.kappaP * fourPiBoverC) + N_d * std::sqrt(T_gas) * (T_gas - T_d);
 		}
 
 		return LHS;
@@ -1543,12 +1543,12 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 		if constexpr (nGroups_ == 1) {
 			const auto kappaP = ComputePlanckOpacity(rho, T_d);
 			const auto d_fourpib_over_c_d_t = ComputeThermalRadiationTempDerivativeSingleGroup(T_d);
-			dLHS_dTd = -chat0_ * dt * rho * (kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
+			dLHS_dTd = -c_light_ * dt * rho * (kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
 		} else {
 			const auto fourPiBoverC = ComputeThermalRadiationMultiGroup(T_d, rad_boundaries);
 			const auto opacity_terms = ComputeModelDependentKappaEAndKappaP(T_d, rho, rad_boundaries, rad_boundary_ratios, fourPiBoverC, Erad, 0);
 			const auto d_fourpib_over_c_d_t = ComputeThermalRadiationTempDerivativeMultiGroup(T_d, rad_boundaries);
-			dLHS_dTd = -chat0_ * dt * rho * sum(opacity_terms.kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
+			dLHS_dTd = -c_light_ * dt * rho * sum(opacity_terms.kappaP * d_fourpib_over_c_d_t) - N_d * std::sqrt(T_gas);
 		}
 
 		return dLHS_dTd;
