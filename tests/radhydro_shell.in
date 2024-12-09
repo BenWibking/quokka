@@ -13,7 +13,7 @@ amr.v              = 1       # verbosity in Amr
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 64 64 64
+amr.n_cell          = 128 128 128
 amr.max_level       = 0     # number of levels = max_level + 1
 amr.max_grid_size   = 128   # at least 128 for GPUs
 amr.blocking_factor = 32    # grid size must be divisible by this
@@ -28,10 +28,5 @@ cfl = 0.2
 checkpoint_interval = -1
 plotfile_interval = 50
 max_timesteps = 5000
-
-# for scaling tests
-#checkpoint_interval = -1
-#plotfile_interval = -1
-#max_timesteps = 50
 
 shell_problem.filename = "../extern/dust_shell/initial_conditions.txt"
