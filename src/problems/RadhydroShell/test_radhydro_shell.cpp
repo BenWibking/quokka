@@ -314,8 +314,8 @@ auto problem_main() -> int
 		for (int i = 0; i < AMREX_SPACEDIM; ++i) {
 			if constexpr (simulate_full_box) {
 				// periodic boundaries (not recommended for this problem)
-				//BCs_cc[n].setLo(i, amrex::BCType::int_dir);
-				//BCs_cc[n].setHi(i, amrex::BCType::int_dir);
+				// BCs_cc[n].setLo(i, amrex::BCType::int_dir);
+				// BCs_cc[n].setHi(i, amrex::BCType::int_dir);
 				// outflow boundaries
 				BCs_cc[n].setLo(i, amrex::BCType::foextrap);
 				BCs_cc[n].setHi(i, amrex::BCType::foextrap);
@@ -335,7 +335,7 @@ auto problem_main() -> int
 	// Problem initialization
 	QuokkaSimulation<ShellProblem> sim(BCs_cc);
 	constexpr amrex::Real t0_hydro = r_0 / a0; // seconds
-	//sim.densityFloor_ = 1.0e-8 * rho_0;
+	// sim.densityFloor_ = 1.0e-8 * rho_0;
 	sim.stopTime_ = 0.125 * t0_hydro;
 	sim.setInitialConditions();
 
