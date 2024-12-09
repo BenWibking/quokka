@@ -16,6 +16,7 @@
 #include "AMReX_Vector.H"
 
 #include "QuokkaSimulation.hpp"
+#include "SimulationData.hpp"
 #include "hydro/hydro_system.hpp"
 #include "math/interpolate.hpp"
 #include "radiation/radiation_system.hpp"
@@ -120,15 +121,17 @@ template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ShellProblem>::ComputeFluxMeanO
 	return ComputePlanckOpacity(0.0, 0.0);
 }
 
-// declare global variables
-// initial conditions read from file
-amrex::Gpu::HostVector<double> r_arr;
-amrex::Gpu::HostVector<double> Erad_arr;
-amrex::Gpu::HostVector<double> Frad_arr;
+template <> struct SimulationData<ShellProblem>
+{
+	// initial conditions read from file
+	amrex::Gpu::HostVector<double> r_arr;
+	amrex::Gpu::HostVector<double> Erad_arr;
+	amrex::Gpu::HostVector<double> Frad_arr;
 
-amrex::Gpu::DeviceVector<double> r_arr_g;
-amrex::Gpu::DeviceVector<double> Erad_arr_g;
-amrex::Gpu::DeviceVector<double> Frad_arr_g;
+	amrex::Gpu::DeviceVector<double> r_arr_g;
+	amrex::Gpu::DeviceVector<double> Erad_arr_g;
+	amrex::Gpu::DeviceVector<double> Frad_arr_g;
+};
 
 template <> void QuokkaSimulation<ShellProblem>::preCalculateInitialConditions()
 {
@@ -152,19 +155,19 @@ template <> void QuokkaSimulation<ShellProblem>::preCalculateInitialConditions()
 		auto Erad = values.at(2);    // cgs
 		auto Frad = values.at(3);    // cgs
 
-		r_arr.push_back(r);
-		Erad_arr.push_back(Erad);
-		Frad_arr.push_back(Frad);
+		userData_.r_arr.push_back(r);
+		userData_.Erad_arr.push_back(Erad);
+		userData_.Frad_arr.push_back(Frad);
 	}
 
 	// copy to device
-	r_arr_g.resize(r_arr.size());
-	Erad_arr_g.resize(Erad_arr.size());
-	Frad_arr_g.resize(Frad_arr.size());
+	userData_.r_arr_g.resize(userData_.r_arr.size());
+	userData_.Erad_arr_g.resize(userData_.Erad_arr.size());
+	userData_.Frad_arr_g.resize(userData_.Frad_arr.size());
 
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, r_arr.begin(), r_arr.end(), r_arr_g.begin());
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, Erad_arr.begin(), Erad_arr.end(), Erad_arr_g.begin());
-	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, Frad_arr.begin(), Frad_arr.end(), Frad_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, userData_.r_arr.begin(), userData_.r_arr.end(), userData_.r_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, userData_.Erad_arr.begin(), userData_.Erad_arr.end(), userData_.Erad_arr_g.begin());
+	amrex::Gpu::copyAsync(amrex::Gpu::hostToDevice, userData_.Frad_arr.begin(), userData_.Frad_arr.end(), userData_.Frad_arr_g.begin());
 	amrex::Gpu::streamSynchronizeAll();
 }
 
@@ -190,10 +193,10 @@ template <> void QuokkaSimulation<ShellProblem>::setInitialConditionsOnGrid(quok
 		z0 = 0.;
 	}
 
-	auto const &r_ptr = r_arr_g.dataPtr();
-	auto const &Erad_ptr = Erad_arr_g.dataPtr();
-	auto const &Frad_ptr = Frad_arr_g.dataPtr();
-	int r_size = static_cast<int>(r_arr_g.size());
+	auto const &r_ptr = userData_.r_arr_g.dataPtr();
+	auto const &Erad_ptr = userData_.Erad_arr_g.dataPtr();
+	auto const &Frad_ptr = userData_.Frad_arr_g.dataPtr();
+	int r_size = static_cast<int>(userData_.r_arr_g.size());
 
 	// loop over the grid and set the initial condition
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) noexcept {
