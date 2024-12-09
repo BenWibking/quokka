@@ -1663,7 +1663,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		amrex::MultiFab reducedSpeedOfLightFactor(grids[lev], dmap[lev], RadSystem<problem_t>::nGroups_, 2);
 
 		if constexpr (!use_iRSLA) {
-			reducedSpeedOfLightFactor.setVal(RadSystem<problem_t>::chat0_);
+			reducedSpeedOfLightFactor.setVal(RadSystem<problem_t>::chat0_over_c);
 		} else {
 			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
 				auto const &stateNew = state_new_cc_[lev].array(iter);

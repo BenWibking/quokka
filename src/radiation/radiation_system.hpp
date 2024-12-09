@@ -1555,7 +1555,6 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 	const double Lambda_compare = N_d * std::sqrt(T_gas) * T_gas;
 
 	const auto T_d = BackwardEulerOneVariable(rhs, jac, T_d_init, Lambda_compare);
-	AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
 
 	return T_d;
 }

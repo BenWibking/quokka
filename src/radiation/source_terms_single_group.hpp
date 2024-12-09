@@ -31,8 +31,9 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		auto p_iteration_counter_local = p_iteration_counter;		      // NOLINT
 		auto p_iteration_failure_counter_local = p_iteration_failure_counter; // NOLINT
 
+		const double cscale = 1.0 / reducedSpeedOfLightFactor(i, j, k);
 		const double c = c_light_;
-		const double chat = chat0_;
+		const double chat = c * reducedSpeedOfLightFactor(i, j, k);
 		const double dustGasCoeff_ = dustGasCoeff;
 
 		// load fluid properties
@@ -75,8 +76,6 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		amrex::GpuArray<Real, 3> dMomentum{};
 		amrex::GpuArray<Real, 3> Frad_t1{};
 
-		const double cscale = c / chat;
-
 		if constexpr (gamma_ != 1.0) {
 			Egas0 = ComputeEintFromEgas(rho, x1GasMom0, x2GasMom0, x3GasMom0, Egastot0);
 			Etot0 = Egas0 + cscale * (Erad0 + Src);
@@ -88,12 +87,12 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 			gas_update_factor = IMEX_a32;
 		}
 
-		double coeff_n = NAN;
+		double N_d = NAN;
 		const double H_num_den = ComputeNumberDensityH(rho, massScalars);
 		if constexpr (enable_dust_gas_thermal_coupling_model_) {
-			coeff_n = dt * dustGasCoeff_ * H_num_den * H_num_den / cscale;
+			N_d = dt * dustGasCoeff_ * H_num_den * H_num_den / cscale;
 		} else {
-			amrex::ignore_unused(coeff_n);
+			amrex::ignore_unused(N_d);
 			amrex::ignore_unused(H_num_den);
 			amrex::ignore_unused(dustGasCoeff_);
 		}
@@ -101,7 +100,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		const int max_ite = 5;
 		int ite = 0;
 		for (; ite < max_ite; ++ite) {
-			double R = NAN;
+			double R = NAN; // R = c / chat_g * tau_g (fourPiBoverC - Erad_guess / kappaPoverE)
 
 			Erad_guess = Erad0;
 
@@ -168,7 +167,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 						T_d = T_gas;
 					} else {
 						const quokka::valarray<double, 1> Erad_guess_vec{Erad_guess};
-						T_d = ComputeDustTemperatureBateKeto(T_gas, T_gas, rho, Erad_guess_vec, coeff_n, dt, R, n);
+						T_d = ComputeDustTemperatureBateKeto(T_gas, T_gas, rho, Erad_guess_vec, N_d, dt, R, n);
 						AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
 						if (T_d < 0.0) {
 							amrex::Gpu::Atomic::Add(&p_iteration_failure_counter_local[1], 1); // NOLINT
@@ -294,7 +293,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					} else {
 						const double d_Td_d_T = 3. / 2. - T_d / (2. * T_gas);
 						dEg_dT *= d_Td_d_T;
-						const double dTd_dRg = -1.0 / (coeff_n * std::sqrt(T_gas));
+						const double dTd_dRg = -1.0 / (N_d * std::sqrt(T_gas));
 
 						J00 = 1.0;
 						J01 = cscale;
@@ -494,7 +493,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					// Old scheme: since the source term does not include work term, add the work term to radiation energy.
 
 					// compute loss of radiation energy to gas kinetic energy
-					const auto dErad_work = -chat0_over_c * dEkin_work;
+					const auto dErad_work = -chat0_over_c * dEkin_work; // TODO(cch): use chat0_over_c temporarily
 
 					auto radEnergyNew = Erad_guess + dErad_work;
 					// AMREX_ASSERT(radEnergyNew > 0.0);
