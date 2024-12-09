@@ -1,9 +1,9 @@
 # *****************************************************************
 # Problem size and geometry [length in cm]
 # *****************************************************************
-geometry.prob_lo     =  -6.172e19  -6.172e19  -6.172e19
-geometry.prob_hi     =   6.172e19   6.172e19   6.172e19
-geometry.is_periodic =  1   1   1
+geometry.prob_lo     =  0.        0.        0.
+geometry.prob_hi     =  3.086e19  3.086e19  3.086e19
+geometry.is_periodic =  0   0   0
 
 # *****************************************************************
 # VERBOSITY
