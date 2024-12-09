@@ -1,0 +1,32 @@
+# *****************************************************************
+# Problem size and geometry [length in cm]
+# *****************************************************************
+geometry.prob_lo     =  0.        0.        0.
+geometry.prob_hi     =  3.086e19  3.086e19  3.086e19
+geometry.is_periodic =  0   0   0
+
+# *****************************************************************
+# VERBOSITY
+# *****************************************************************
+amr.v              = 1       # verbosity in Amr
+
+# *****************************************************************
+# Resolution and refinement
+# *****************************************************************
+amr.n_cell          = 128 128 128
+amr.max_level       = 0     # number of levels = max_level + 1
+amr.max_grid_size   = 128   # at least 128 for GPUs
+amr.blocking_factor = 32    # grid size must be divisible by this
+amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
+amr.grid_eff        = 0.7   # default
+
+do_reflux = 1
+do_subcycle = 1
+
+cfl = 0.2
+
+checkpoint_interval = -1
+plotfile_interval = 100
+max_timesteps = 5000
+
+shell_problem.filename = "./initial_conditions.txt"
