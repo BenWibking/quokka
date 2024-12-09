@@ -668,9 +668,9 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 		}
 
 		const double H_num_den = ComputeNumberDensityH(rho, massScalars);
-		double coeff_n = NAN;
+		double N_d = NAN;
 		if constexpr (enable_dust_gas_thermal_coupling_model_) {
-			coeff_n = dt * dustGasCoeff_local * H_num_den * H_num_den / c_over_chat[0];
+			N_d = dt * dustGasCoeff_local * H_num_den * H_num_den;
 		}
 
 		// Outer iteration loop to update the work term until it converges
@@ -711,12 +711,12 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 					if constexpr (!enable_photoelectric_heating_) {
 						// gas + radiation + dust
 						updated_energy = SolveGasDustRadiationEnergyExchange(
-						    Egas0, Erad0Vec, rho, coeff_n, dt, massScalars, iter, work, vel_times_F, Src, chat, radBoundaries_g_copy,
+						    Egas0, Erad0Vec, rho, N_d, dt, massScalars, iter, work, vel_times_F, Src, chat, radBoundaries_g_copy,
 						    p_iteration_counter_local, p_iteration_failure_counter_local);
 					} else {
 						// gas + radiation + dust + photoelectric heating
 						updated_energy = SolveGasDustRadiationEnergyExchangeWithPE(
-						    Egas0, Erad0Vec, rho, coeff_n, dt, massScalars, iter, work, vel_times_F, Src, radBoundaries_g_copy,
+						    Egas0, Erad0Vec, rho, N_d, dt, massScalars, iter, work, vel_times_F, Src, chat, radBoundaries_g_copy,
 						    p_iteration_counter_local, p_iteration_failure_counter_local);
 					}
 				}
