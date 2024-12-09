@@ -366,7 +366,7 @@ auto problem_main() -> int
 		file.close();
 
 		// read radshock_super_temperature_no_RSLA.csv as exact answer
-		std::ifstream fstream_exact("radshock_super_temperature_no_RSLA.csv", std::ios::in);
+		std::ifstream fstream_exact("../extern/data/shock_supercritical/radshock_super_temperature_no_RSLA.csv", std::ios::in);
 		AMREX_ALWAYS_ASSERT(fstream_exact.is_open());
 		std::string header_exact;
 		std::getline(fstream_exact, header_exact);
