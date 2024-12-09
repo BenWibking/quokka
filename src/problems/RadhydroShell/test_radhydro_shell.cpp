@@ -210,6 +210,9 @@ template <> void QuokkaSimulation<ShellProblem>::setInitialConditionsOnGrid(quok
 		amrex::Real const y = prob_lo[1] + (j + amrex::Real(0.5)) * dx[1];
 		amrex::Real const z = prob_lo[2] + (k + amrex::Real(0.5)) * dx[2];
 		amrex::Real const r = std::sqrt(std::pow(x - x0, 2) + std::pow(y - y0, 2) + std::pow(z - z0, 2));
+		amrex::Real const rhat_x = (x - x0) / r;
+		amrex::Real const rhat_y = (y - y0) / r;
+		amrex::Real const rhat_z = (z - z0) / r;
 
 		double sigma_sh = H_shell / (2.0 * std::sqrt(2.0 * std::log(2.0)));
 		double rho_norm = M_shell / (4.0 * M_PI * r * r * std::sqrt(2.0 * M_PI * sigma_sh * sigma_sh));
@@ -217,7 +220,7 @@ template <> void QuokkaSimulation<ShellProblem>::setInitialConditionsOnGrid(quok
 		double rho = std::max(rho_shell, 1.0e-8 * rho_0);
 
 		// interpolate Frad from table
-		const double Frad = interpolate_value(r, r_ptr, Frad_ptr, r_size);
+		const double Frad_r = interpolate_value(r, r_ptr, Frad_ptr, r_size);
 
 		// interpolate Erad from table
 		const double Erad = interpolate_value(r, r_ptr, Erad_ptr, r_size);
@@ -236,12 +239,15 @@ template <> void QuokkaSimulation<ShellProblem>::setInitialConditionsOnGrid(quok
 		state_cc(i, j, k, HydroSystem<ShellProblem>::x3Momentum_index) = 0;
 		state_cc(i, j, k, HydroSystem<ShellProblem>::energy_index) = Eint;
 
-		const double Frad_xyz = Frad / std::sqrt(3.0);
+		const double Frad_x = Frad_r * rhat_x;
+		const double Frad_y = Frad_r * rhat_y;
+		const double Frad_z = Frad_r * rhat_z;
+
 		state_cc(i, j, k, RadSystem<ShellProblem>::gasInternalEnergy_index) = Eint;
 		state_cc(i, j, k, RadSystem<ShellProblem>::radEnergy_index) = Erad;
-		state_cc(i, j, k, RadSystem<ShellProblem>::x1RadFlux_index) = Frad_xyz;
-		state_cc(i, j, k, RadSystem<ShellProblem>::x2RadFlux_index) = Frad_xyz;
-		state_cc(i, j, k, RadSystem<ShellProblem>::x3RadFlux_index) = Frad_xyz;
+		state_cc(i, j, k, RadSystem<ShellProblem>::x1RadFlux_index) = Frad_x;
+		state_cc(i, j, k, RadSystem<ShellProblem>::x2RadFlux_index) = Frad_y;
+		state_cc(i, j, k, RadSystem<ShellProblem>::x3RadFlux_index) = Frad_z;
 	});
 }
 
