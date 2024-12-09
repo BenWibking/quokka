@@ -1,8 +1,8 @@
 # *****************************************************************
 # Problem size and geometry [length in cm]
 # *****************************************************************
-geometry.prob_lo     =  0.0  0.0  0.0 
-geometry.prob_hi     =  3.086e19  3.086e19  3.086e19
+geometry.prob_lo     =  -3.086e19  -3.086e19  -3.086e19
+geometry.prob_hi     =   3.086e19   3.086e19   3.086e19
 geometry.is_periodic =  1    1    1
 
 # *****************************************************************
@@ -25,7 +25,7 @@ do_subcycle = 1
 
 cfl = 0.2
 
-checkpoint_interval = 1000
+checkpoint_interval = -1
 plotfile_interval = 100
 max_timesteps = 5000
 
@@ -33,3 +33,5 @@ max_timesteps = 5000
 #checkpoint_interval = -1
 #plotfile_interval = -1
 #max_timesteps = 50
+
+shell_problem.filename = "../extern/dust_shell/initial_conditions.txt"

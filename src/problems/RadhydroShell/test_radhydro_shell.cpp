@@ -132,7 +132,11 @@ amrex::Gpu::DeviceVector<double> Frad_arr_g;
 
 template <> void QuokkaSimulation<ShellProblem>::preCalculateInitialConditions()
 {
-	std::string filename = "./initial_conditions.txt";
+	// get filename from input file
+	amrex::ParmParse pp("shell_problem");
+	std::string filename{};
+	pp.query("filename", filename);
+
 	std::ifstream fstream(filename, std::ios::in);
 	AMREX_ALWAYS_ASSERT(fstream.is_open());
 	std::string header;
@@ -328,7 +332,7 @@ auto problem_main() -> int
 	// Problem initialization
 	QuokkaSimulation<ShellProblem> sim(BCs_cc);
 	constexpr amrex::Real t0_hydro = r_0 / a0; // seconds
-	sim.densityFloor_ = 1.0e-8 * rho_0;
+	//sim.densityFloor_ = 1.0e-8 * rho_0;
 	sim.stopTime_ = 0.125 * t0_hydro;
 	sim.setInitialConditions();
 
