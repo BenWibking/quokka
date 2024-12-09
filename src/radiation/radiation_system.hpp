@@ -1636,8 +1636,8 @@ AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arr
 
 		const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
 		const int pow = 1;
-		const double scaling = 1.0;
-		// const double scaling = 3.0;
+		// const double scaling = 1.0;
+		const double scaling = 3.0;
 		const double max_chat_scaleup = 10.0;
 		for (int g = 0; g < nGroups_; ++g) {
 			const double scaled = std::pow(tau_cell[g] * scaling, pow);
