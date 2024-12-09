@@ -416,7 +416,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 								  quokka::valarray<double, nGroups_> const &Rvec, quokka::valarray<double, nGroups_> const &Src,
 								  double coeff_n, quokka::valarray<double, nGroups_> const &tau, double c_v,
 								  double lambda_gd_time_dt, quokka::valarray<double, nGroups_> const &kappaPoverE,
-								  quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double num_den, double dt)
+								  quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &chat_over_c, double num_den, double dt)
 	    -> JacobianResult<problem_t>;
 
 	AMREX_GPU_DEVICE static auto ComputeJacobianForGasAndDustDecoupled(
