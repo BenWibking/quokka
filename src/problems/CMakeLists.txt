@@ -42,6 +42,7 @@ add_subdirectory(RadLineCoolingMG)
 
 add_subdirectory(RadhydroShell)
 add_subdirectory(RadhydroShock)
+add_subdirectory(RadhydroShockSuper)
 add_subdirectory(RadhydroShockCGS)
 add_subdirectory(RadhydroShockMultigroup)
 add_subdirectory(RadhydroUniformAdvecting)

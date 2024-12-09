@@ -60,8 +60,8 @@
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
 
-// static constexpr bool use_iRSLA = true;
-static constexpr bool use_iRSLA = false;
+static constexpr bool use_iRSLA = true;
+// static constexpr bool use_iRSLA = false;
 
 // Simulation class should be initialized only once per program (i.e., is a singleton)
 template <typename problem_t> class QuokkaSimulation : public AMRSimulation<problem_t>
