@@ -24,7 +24,10 @@ constexpr bool dust_on = 1;
 constexpr bool PE_on = 1;
 constexpr double gas_dust_coupling_threshold_ = 1.0e-4;
 
+constexpr double stop_time = 0.5;
 constexpr double c = 1.0; // speed of light
+constexpr double c_hat_over_c_ = 0.5;
+constexpr double c_hat_ = c * c_hat_over_c_;
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight
@@ -60,7 +63,7 @@ template <> struct Physics_Traits<MarshakProblem> {
 };
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_hat_over_c = 1.0;
+	static constexpr double c_hat_over_c = c_hat_over_c_;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 1;
 	static constexpr double energy_unit = 1.0;
@@ -212,6 +215,7 @@ auto problem_main() -> int
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
+	sim.stopTime_ = stop_time;
 	sim.plotfileInterval_ = -1;
 
 	// initialize
@@ -243,11 +247,12 @@ auto problem_main() -> int
 			erad.at(i) += erad2.at(i);
 		}
 		const double e_gas = values.at(RadSystem<MarshakProblem>::gasInternalEnergy_index)[i];
-		T.at(i) = quokka::EOS<MarshakProblem>::ComputeTgasFromEint(rho0, e_gas);
-		T_exact.at(i) = x < c * sim.tNew_[0] ? initial_T + PE_rate * (sim.tNew_[0] - x / c) : initial_T;
 
 		erad1_exact.at(i) = 0.0;
-		erad2_exact.at(i) = x < c * sim.tNew_[0] ? EradL : erad_floor;
+		erad2_exact.at(i) = x < c_hat_ * sim.tNew_[0] ? EradL : erad_floor;
+
+		T.at(i) = quokka::EOS<MarshakProblem>::ComputeTgasFromEint(rho0, e_gas);
+		T_exact.at(i) = x < c_hat_ * sim.tNew_[0] ? initial_T + PE_rate * (sim.tNew_[0] - x / c_hat_) : initial_T;
 	}
 
 	double err_norm = 0.;
