@@ -8,7 +8,7 @@ geometry.is_periodic =  1    1    1
 # *****************************************************************
 # RADIATION
 # *****************************************************************
-radiation.cfl = 8.0
+#radiation.cfl = 8.0
 radiation.dust_gas_interaction_coeff = 1.0e6
 radiation.print_iteration_counts = 1
 
