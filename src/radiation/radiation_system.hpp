@@ -201,8 +201,8 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			return c_light_cgs_ / (Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_time);
 		}
 	}();
-	static constexpr double chat0_over_c = RadSystem_Traits<problem_t>::c_hat_over_c;
-	static constexpr double chat0_ = c_light_ * chat0_over_c;
+	// static constexpr double chat0_over_c = RadSystem_Traits<problem_t>::c_hat_over_c;
+	// static constexpr double chat0_ = c_light_ * chat0_over_c;
 
 	static constexpr double radiation_constant_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
@@ -269,7 +269,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	// static functions
 
-	static void ComputeMaxSignalSpeed(amrex::Array4<const amrex::Real> const &cons, array_t &maxSignal, amrex::Box const &indexRange);
+	static void ComputeMaxSignalSpeed(amrex::Real chat_over_c, amrex::Array4<const amrex::Real> const &cons, array_t &maxSignal, amrex::Box const &indexRange);
 	static void ConservedToPrimitive(amrex::Array4<const amrex::Real> const &cons, array_t &primVar, amrex::Box const &indexRange);
 
 	static void PredictStep(arrayconst_t &consVarOld, array_t &consVarNew, amrex::GpuArray<arrayconst_t, AMREX_SPACEDIM> fluxArray,
@@ -663,11 +663,11 @@ void RadSystem<problem_t>::ConservedToPrimitive(amrex::Array4<const amrex::Real>
 }
 
 template <typename problem_t>
-void RadSystem<problem_t>::ComputeMaxSignalSpeed(amrex::Array4<const amrex::Real> const & /*cons*/, array_t &maxSignal, amrex::Box const &indexRange)
+void RadSystem<problem_t>::ComputeMaxSignalSpeed(amrex::Real chat_over_c, amrex::Array4<const amrex::Real> const & /*cons*/, array_t &maxSignal, amrex::Box const &indexRange)
 {
 	// cell-centered kernel
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		const double signal_max = chat0_;
+		const double signal_max = c_light_ * chat_over_c;
 		maxSignal(i, j, k) = signal_max;
 	});
 }

@@ -126,6 +126,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	static constexpr int nstartHyperbolic_ = RadSystem<problem_t>::nstartHyperbolic_;
 
 	amrex::Real radiationCflNumber_ = 0.3;
+	amrex::Real chat_over_c_ = 1.0;
 	int maxSubsteps_ = 10;				// maximum number of radiation subcycles per hydro step
 	amrex::Real dustGasInteractionCoeff_ = 2.5e-34; // erg cm^3 s^−1 K^−3/2
 
@@ -341,7 +342,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 		simulationMetadata_["G"] = Physics_Traits<problem_t>::gravitational_constant;
 		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			simulationMetadata_["c"] = Physics_Traits<problem_t>::c_light;
-			simulationMetadata_["c_hat"] = Physics_Traits<problem_t>::c_light * RadSystem_Traits<problem_t>::c_hat_over_c;
+			// Commented out because chat_over_c_ is not accessible here. 
+			// simulationMetadata_["c_hat"] = Physics_Traits<problem_t>::c_light * RadSystem_Traits<problem_t>::c_hat_over_c;
 			simulationMetadata_["a_rad"] = Physics_Traits<problem_t>::radiation_constant;
 		}
 	} else {
@@ -365,7 +367,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 		simulationMetadata_["G"] = Gconst_;
 		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			simulationMetadata_["c"] = RadSystem<problem_t>::c_light_;
-			simulationMetadata_["c_hat"] = RadSystem<problem_t>::chat0_;
+			// Commented out because chat_over_c_ is not accessible here. 
+			// simulationMetadata_["c_hat"] = RadSystem<problem_t>::c_light_ * chat_over_c_;
 			simulationMetadata_["a_rad"] = RadSystem<problem_t>::radiation_constant_;
 		}
 	}
@@ -439,6 +442,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::readParmParse()
 		amrex::ParmParse rpp("radiation");
 		rpp.query("reconstruction_order", radiationReconstructionOrder_);
 		rpp.query("cfl", radiationCflNumber_);
+		rpp.query("c_hat_over_c", chat_over_c_);
 		rpp.query("dust_gas_interaction_coeff", dustGasInteractionCoeff_);
 		rpp.query("print_iteration_counts", print_rad_counter_);
 	}
@@ -448,7 +452,7 @@ template <typename problem_t> auto QuokkaSimulation<problem_t>::computeNumberOfR
 {
 	// compute radiation timestep
 	auto const &dx = geom[lev].CellSizeArray();
-	amrex::Real c_hat = RadSystem<problem_t>::chat0_;
+	amrex::Real c_hat = RadSystem<problem_t>::c_light_ * chat_over_c_;
 	amrex::Real dx_min = std::min({AMREX_D_DECL(dx[0], dx[1], dx[2])});
 	amrex::Real dtrad_tmp = radiationCflNumber_ * (dx_min / c_hat);
 	int nsubSteps = std::ceil(dt_lev_hydro / dtrad_tmp);
@@ -470,7 +474,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeMaxSignal
 			HydroSystem<problem_t>::ComputeMaxSignalSpeed(stateNew, maxSignal, indexRange);
 		} else if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			// radiation hydro, or radiation only
-			RadSystem<problem_t>::ComputeMaxSignalSpeed(stateNew, maxSignal, indexRange);
+			RadSystem<problem_t>::ComputeMaxSignalSpeed(chat_over_c_, stateNew, maxSignal, indexRange);
 			if constexpr (Physics_Traits<problem_t>::is_hydro_enabled) {
 				auto maxSignalHydroFAB = amrex::FArrayBox(indexRange);
 				auto const &maxSignalHydro = maxSignalHydroFAB.array();
@@ -642,14 +646,14 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeAfterEvol
 	if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 		amrex::Real Erad0 = 0.;
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
-			Erad0 += initSumCons[RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g];
+			Erad0 += initSumCons[RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g] / chat_over_c_; // TODO(cch): make variable chat here
 		}
-		Etot0 = Egas0 + Erad0 / RadSystem<problem_t>::chat0_over_c; // TODO(cch): make variable chat here
+		Etot0 = Egas0 + Erad0;
 		amrex::Real Erad = 0.;
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
-			Erad += state_new_cc_[0].sum(RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g) * vol;
+			Erad += state_new_cc_[0].sum(RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g) * vol / chat_over_c_; // TODO(cch): make variable chat here
 		}
-		Etot = Egas + Erad / RadSystem<problem_t>::chat0_over_c; // TODO(cch): make variable chat here
+		Etot = Egas + Erad;
 	} else {
 		Etot0 = Egas0;
 		Etot = Egas;
@@ -1663,12 +1667,12 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		amrex::MultiFab reducedSpeedOfLightFactor(grids[lev], dmap[lev], RadSystem<problem_t>::nGroups_, 2);
 
 		if constexpr (!use_iRSLA) {
-			reducedSpeedOfLightFactor.setVal(RadSystem<problem_t>::chat0_over_c);
+			reducedSpeedOfLightFactor.setVal(chat_over_c_);
 		} else {
 			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
 				auto const &stateNew = state_new_cc_[lev].array(iter);
 				const amrex::Box &indexRange = amrex::grow(iter.validbox(), 2);
-				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, RadSystem<problem_t>::chat0_over_c, reducedSpeedOfLightFactor.array(iter), indexRange, dx);
+				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, chat_over_c_, reducedSpeedOfLightFactor.array(iter), indexRange, dx);
 			}
 		}
 
