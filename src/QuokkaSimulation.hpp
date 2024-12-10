@@ -60,9 +60,6 @@
 #include "radiation/radiation_system.hpp"
 #include "simulation.hpp"
 
-// static constexpr bool use_iRSLA = true;
-static constexpr bool use_iRSLA = false;
-
 // Simulation class should be initialized only once per program (i.e., is a singleton)
 template <typename problem_t> class QuokkaSimulation : public AMRSimulation<problem_t>
 {
@@ -127,6 +124,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Real radiationCflNumber_ = 0.3;
 	amrex::Real chat_over_c_ = 1.0;
+	bool use_variable_chat_ = false;
 	int maxSubsteps_ = 10;				// maximum number of radiation subcycles per hydro step
 	amrex::Real dustGasInteractionCoeff_ = 2.5e-34; // erg cm^3 s^−1 K^−3/2
 
@@ -443,6 +441,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::readParmParse()
 		rpp.query("reconstruction_order", radiationReconstructionOrder_);
 		rpp.query("cfl", radiationCflNumber_);
 		rpp.query("c_hat_over_c", chat_over_c_);
+		rpp.query("use_variable_chat", use_variable_chat_);
 		rpp.query("dust_gas_interaction_coeff", dustGasInteractionCoeff_);
 		rpp.query("print_iteration_counts", print_rad_counter_);
 	}
@@ -1666,7 +1665,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		// define a MultiFab to store the reduced speed of light
 		amrex::MultiFab reducedSpeedOfLightFactor(grids[lev], dmap[lev], RadSystem<problem_t>::nGroups_, 2);
 
-		if constexpr (!use_iRSLA) {
+		if (!use_variable_chat_) {
 			reducedSpeedOfLightFactor.setVal(chat_over_c_);
 		} else {
 			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {

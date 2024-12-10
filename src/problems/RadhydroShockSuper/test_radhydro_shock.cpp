@@ -254,6 +254,7 @@ auto problem_main() -> int
 	sim.stopTime_ = max_time;
 	sim.plotfileInterval_ = -1;
 	sim.chat_over_c_ = chat / c;
+	sim.use_variable_chat_ = true;
 
 	// run
 	sim.setInitialConditions();
