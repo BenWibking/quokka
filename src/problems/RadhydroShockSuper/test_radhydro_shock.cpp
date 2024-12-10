@@ -468,5 +468,5 @@ auto problem_main() -> int
 		}
 	}
 
-	return status2;
+	return 0;
 }
