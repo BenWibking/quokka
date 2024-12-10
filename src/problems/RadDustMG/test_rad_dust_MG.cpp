@@ -16,6 +16,7 @@ struct DustProblem {
 
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
+constexpr double chat = 0.1 * c;
 constexpr double v0 = 0.0;
 constexpr double chi0 = 10000.0;
 
@@ -55,11 +56,11 @@ template <> struct Physics_Traits<DustProblem> {
 	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gravitational_constant = 1.0;
 	static constexpr double c_light = c;
-	static constexpr double radiation_constant = 1.0;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<DustProblem> {
-	static constexpr double c_hat_over_c = 0.8;
+	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 	static constexpr double energy_unit = 1.;
@@ -92,9 +93,10 @@ AMREX_GPU_HOST_DEVICE auto RadSystem<DustProblem>::ComputeThermalRadiationMultiG
 										     amrex::GpuArray<double, nGroups_ + 1> const &boundaries)
     -> quokka::valarray<amrex::Real, nGroups_>
 {
-	auto radEnergyFractions = ComputePlanckEnergyFractions(boundaries, temperature);
+	quokka::valarray<amrex::Real, nGroups_> Erad_g{};
+	const double radEnergyFractions = 1.0 / nGroups_;
 	const double power = radiation_constant_ * temperature;
-	auto Erad_g = power * radEnergyFractions;
+	Erad_g.fillin(power * radEnergyFractions);
 	return Erad_g;
 }
 
@@ -103,9 +105,10 @@ AMREX_GPU_HOST_DEVICE auto RadSystem<DustProblem>::ComputeThermalRadiationTempDe
 												   amrex::GpuArray<double, nGroups_ + 1> const &boundaries)
     -> quokka::valarray<amrex::Real, nGroups_>
 {
-	auto radEnergyFractions = ComputePlanckEnergyFractions(boundaries, temperature);
-	const double d_power_dt = radiation_constant_;
-	return d_power_dt * radEnergyFractions;
+	quokka::valarray<amrex::Real, nGroups_> d_power_dt{};
+	const double radEnergyFractions = 1.0 / nGroups_;
+	d_power_dt.fillin(radiation_constant_ * radEnergyFractions);
+	return d_power_dt;
 }
 
 template <> void QuokkaSimulation<DustProblem>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
@@ -192,7 +195,7 @@ auto problem_main() -> int
 	std::vector<double> Trad_exact{};
 	std::vector<double> Tgas_exact{};
 
-	std::ifstream fstream("../extern/data/dust/rad_dust_exact_chat0.8.csv", std::ios::in);
+	std::ifstream fstream("../extern/data/dust/rad_dust_exact_chat0.1.csv", std::ios::in);
 	AMREX_ALWAYS_ASSERT(fstream.is_open());
 	std::string header;
 	std::getline(fstream, header);
