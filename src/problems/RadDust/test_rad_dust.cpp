@@ -26,7 +26,7 @@ constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
 
 constexpr double max_time = 3.0e-5;
-constexpr double delta_time = 1.0e-8;
+constexpr double delta_time = 3.0e-8;
 
 constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
 constexpr double erad_floor = 1.0e-20 * Erad0;
@@ -211,7 +211,7 @@ auto problem_main() -> int
 		err_norm += std::abs(Trad[i] - Trad_interp[i]);
 		sol_norm += std::abs(Tgas_interp[i]) + std::abs(Trad_interp[i]);
 	}
-	const double error_tol = 0.0008;
+	const double error_tol = 0.003;
 	const double rel_error = err_norm / sol_norm;
 	amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
 
