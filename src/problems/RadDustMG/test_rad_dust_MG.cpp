@@ -273,5 +273,5 @@ auto problem_main() -> int
 	if ((rel_error > error_tol) || std::isnan(rel_error)) {
 		status = 1;
 	}
-	return 0;
+	return status;
 }
