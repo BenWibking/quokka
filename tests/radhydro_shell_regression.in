@@ -30,3 +30,4 @@ plotfile_interval = 100
 max_timesteps = 5000
 
 shell_problem.filename = "./initial_conditions.txt"
+density_floor = 1.0e-28     # g cm^{-3}
