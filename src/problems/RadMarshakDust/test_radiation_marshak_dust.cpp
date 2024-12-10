@@ -20,6 +20,8 @@ AMREX_GPU_MANAGED double kappa1 = NAN; // dust opacity at IR
 AMREX_GPU_MANAGED double kappa2 = NAN; // dust opacity at FUV
 
 constexpr double c = 1.0; // speed of light
+constexpr double c_hat_over_c_ = 0.5;
+constexpr double c_hat = c * c_hat_over_c_;
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight
@@ -61,7 +63,7 @@ template <> struct Physics_Traits<MarshakProblem> {
 };
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_hat_over_c = 1.0;
+	static constexpr double c_hat_over_c = c_hat_over_c_;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = 1.0;
@@ -73,7 +75,7 @@ template <> struct ISM_Traits<MarshakProblem> {
 	static constexpr bool enable_dust_gas_thermal_coupling_model = true;
 	static constexpr bool enable_photoelectric_heating = false;
 	// 1.0e-5 is the minimum value allowed for this test; smaller values will result in negative T_d.
-	static constexpr double gas_dust_coupling_threshold = 1.0e-5;
+	static constexpr double gas_dust_coupling_threshold = 1.0e-4;
 };
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<MarshakProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
@@ -223,6 +225,8 @@ auto problem_main() -> int
 	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.0);
 	const int nx = static_cast<int>(position.size());
 
+	const double t = sim.tNew_[0];
+
 	// compute error norm
 	std::vector<double> xs(nx);
 	std::vector<double> T(nx);
@@ -245,8 +249,9 @@ auto problem_main() -> int
 		T.at(i) = quokka::EOS<MarshakProblem>::ComputeTgasFromEint(rho0, e_gas);
 		T_exact.at(i) = T_end_exact;
 
-		erad2_exact.at(i) = x < sim.tNew_[0] ? EradL * std::exp(-x * rho0 * kappa2) : erad_floor;
-		erad1_exact.at(i) = x < sim.tNew_[0] ? EradL * std::exp(-x * rho0 * kappa2) * (sim.tNew_[0] - x) : erad_floor;
+		const double E2 = EradL * std::exp(-rho0 * kappa2 * x);
+		erad2_exact.at(i) = x < c_hat * t ? E2 : erad_floor;
+		erad1_exact.at(i) = x < c_hat * t ? c_hat * rho0 * kappa2 * E2 * (t - x / c_hat) : erad_floor;
 	}
 
 	double err_norm = 0.;
