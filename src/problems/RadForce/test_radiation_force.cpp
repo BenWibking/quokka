@@ -65,7 +65,6 @@ template <> struct Physics_Traits<TubeProblem> {
 };
 
 template <> struct RadSystem_Traits<TubeProblem> {
-	static constexpr double c_hat_over_c = 10. * (Mach1 * a0) / C::c_light;
 	static constexpr double Erad_floor = 0.;
 	static constexpr double energy_unit = C::ev2erg;
 	static constexpr int beta_order = 1;
@@ -203,6 +202,7 @@ auto problem_main() -> int
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
 	sim.maxDt_ = max_dt;
+	sim.chat_over_c_ = 10. * (Mach1 * a0) / C::c_light;
 
 	// initialize
 	sim.setInitialConditions();

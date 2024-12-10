@@ -123,7 +123,6 @@ template <> struct Physics_Traits<ExactProblem> {
 };
 
 template <> struct RadSystem_Traits<MGProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr bool compute_v_over_c_terms = true;
 	static constexpr double energy_unit = h_planck;
@@ -132,7 +131,6 @@ template <> struct RadSystem_Traits<MGProblem> {
 	static constexpr OpacityModel opacity_model = opacity_model_;
 };
 template <> struct RadSystem_Traits<ExactProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr bool compute_v_over_c_terms = true;
 	static constexpr int beta_order = 1;

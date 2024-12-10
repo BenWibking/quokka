@@ -39,7 +39,6 @@ template <> struct quokka::EOS_Traits<CouplingProblem> {
 };
 
 template <> struct RadSystem_Traits<CouplingProblem> {
-	static constexpr double c_hat_over_c = chat_over_c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -173,6 +172,7 @@ auto problem_main() -> int
 	sim.maxTimesteps_ = max_timesteps;
 	sim.stopTime_ = max_time;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = chat_over_c;
 
 	// initialize
 	sim.setInitialConditions();

@@ -32,7 +32,6 @@ constexpr double c = 1.0e8;
 constexpr int beta_order_ = 2; // order of beta in the radiation four-force
 constexpr double v0 = 1e-2 * c;
 constexpr double kappa0 = 1.0e5;
-constexpr double chat_over_c = 1.0;
 
 constexpr double T0 = 1.0;   // temperature
 constexpr double rho0 = 1.0; // matter density
@@ -56,7 +55,6 @@ template <> struct quokka::EOS_Traits<PulseProblem> {
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_hat_over_c = chat_over_c;
 	static constexpr double Erad_floor = 0.0;
 	static constexpr int beta_order = beta_order_;
 };

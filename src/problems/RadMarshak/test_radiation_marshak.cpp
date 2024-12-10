@@ -36,7 +36,6 @@ template <> struct quokka::EOS_Traits<SuOlsonProblem> {
 };
 
 template <> struct RadSystem_Traits<SuOlsonProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double radiation_constant = a_rad;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 0;

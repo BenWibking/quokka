@@ -68,7 +68,6 @@ constexpr double shock_position = 0.0;
 // we initialize slightly to the left...)
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -254,6 +253,7 @@ auto problem_main() -> int
 	sim.maxDt_ = max_dt;
 	sim.stopTime_ = max_time;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = chat / c;
 
 	// run
 	sim.setInitialConditions();
@@ -429,7 +429,7 @@ auto problem_main() -> int
 		matplotlibcpp::xlim(-0.04, 0.01);
 		matplotlibcpp::ylim(0., 11.);
 		matplotlibcpp::legend();
-		matplotlibcpp::title(fmt::format("chat = {:.4g} c", RadSystem_Traits<ShockProblem>::c_hat_over_c));
+		matplotlibcpp::title(fmt::format("chat = {:.4g} c", chat / c));
 		matplotlibcpp::save("./radshock_super_temperature.pdf");
 
 		// gas density

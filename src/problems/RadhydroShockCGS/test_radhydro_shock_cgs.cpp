@@ -55,7 +55,6 @@ constexpr double shock_position = 0.01305; // 0.0132; // cm (shock position drif
 constexpr double Lx = 0.01575; // cm
 
 template <> struct RadSystem_Traits<ShockProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -250,6 +249,7 @@ auto problem_main() -> int
 	sim.maxTimesteps_ = max_timesteps;
 	sim.stopTime_ = max_time;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = chat / c;
 
 	// run
 	sim.setInitialConditions();

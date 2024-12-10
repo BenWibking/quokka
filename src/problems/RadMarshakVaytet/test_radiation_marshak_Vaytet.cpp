@@ -116,7 +116,6 @@ template <> struct Physics_Traits<SuOlsonProblemCgs> {
 };
 
 template <> struct RadSystem_Traits<SuOlsonProblemCgs> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = Erad_floor_;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = C::hplanck; // set boundary unit to Hz

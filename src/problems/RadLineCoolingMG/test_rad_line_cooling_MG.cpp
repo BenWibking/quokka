@@ -68,7 +68,6 @@ template <> struct Physics_Traits<CoolingProblemMG> {
 };
 
 template <> struct RadSystem_Traits<CoolingProblemMG> {
-	static constexpr double c_hat_over_c = chat_over_c;
 	static constexpr double Erad_floor = Erad_floor_;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = nu_unit;
@@ -211,6 +210,7 @@ auto problem_main() -> int
 	sim.maxDt_ = the_dt;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = chat_over_c;
 
 	// initialize
 	sim.setInitialConditions();

@@ -42,12 +42,10 @@ template <> struct quokka::EOS_Traits<AdvPulseProblem> {
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
 template <> struct RadSystem_Traits<AdvPulseProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };

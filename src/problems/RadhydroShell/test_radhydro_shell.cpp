@@ -50,7 +50,6 @@ template <> struct quokka::EOS_Traits<ShellProblem> {
 };
 
 template <> struct RadSystem_Traits<ShellProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -414,6 +413,7 @@ auto problem_main() -> int
 	sim.reconstructionOrder_ = 2;
 	sim.radiationReconstructionOrder_ = 2;
 	sim.integratorOrder_ = 2; // RK2
+	sim.chat_over_c_ = chat / c;
 
 	constexpr amrex::Real t0_hydro = r_0 / a0; // seconds
 	sim.stopTime_ = 0.125 * t0_hydro;	   // 0.124 * t0_hydro;
