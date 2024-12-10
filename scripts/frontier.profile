@@ -10,7 +10,7 @@ module load PrgEnv-cray
 module load craype-x86-trento
 module load craype-accel-amd-gfx90a
 
-module load rocm/6.2.4
+module load rocm/6.1.3
 module load cray-mpich
 module load cce/18.0.0  # must be loaded after rocm
 
@@ -33,13 +33,12 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 export AMREX_AMD_ARCH=gfx90a
 
 # compiler environment hints
-export CC=$(which hipcc)
-export CXX=$(which hipcc)
+export CC=$(which cc)
+export CXX=$(which CC)
 export FC=$(which ftn)
 
-#export CFLAGS="-I${ROCM_PATH}/include"
-#export CXXFLAGS="-I${ROCM_PATH}/include"
-#export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64 ${PE_MPICH_GTL_DIR_amd_gfx90a} -lmpi_gtl_hsa"
-
-# this line is critical -- apps will crash without it
-#export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
+# these flags are REQUIRED
+export CFLAGS="-I${ROCM_PATH}/include"
+export CXXFLAGS="-I${ROCM_PATH}/include -Wno-pass-failed"
+export LDFLAGS="-L${ROCM_PATH}/lib -lamdhip64"
+export LD_LIBRARY_PATH=$CRAY_LD_LIBRARY_PATH:$LD_LIBRARY_PATH
