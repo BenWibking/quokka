@@ -16,7 +16,7 @@ template <int Nall, int Nmass> struct HydroState {
 	double Eint;				   // internal energy density
 	double by;				   // transverse bfield component
 	double bz;				   // 2nd transverse bfield density
-        amrex::GpuArray<double, Nall> scalar;	   // passive scalars
+	amrex::GpuArray<double, Nall> scalar;	   // passive scalars
 	amrex::GpuArray<double, Nmass> massScalar; // mass scalars
 };
 
