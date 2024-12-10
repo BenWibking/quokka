@@ -237,12 +237,10 @@ auto problem_main() -> int
 	Texact_args["linestyle"] = "-";
 	Texact_args["color"] = "k";
 	// plot exact solution; skip the first point because it has t = 0
-	matplotlibcpp::plot(std::vector<double>(ts_exact.begin() + 1, ts_exact.end()), 
-	                    std::vector<double>(Tgas_exact.begin() + 1, Tgas_exact.end()), 
-	                    Texact_args);
-	matplotlibcpp::plot(std::vector<double>(ts_exact.begin() + 1, ts_exact.end()), 
-	                    std::vector<double>(Trad_exact.begin() + 1, Trad_exact.end()), 
-	                    Tradexact_args);
+	matplotlibcpp::plot(std::vector<double>(ts_exact.begin() + 1, ts_exact.end()), std::vector<double>(Tgas_exact.begin() + 1, Tgas_exact.end()),
+			    Texact_args);
+	matplotlibcpp::plot(std::vector<double>(ts_exact.begin() + 1, ts_exact.end()), std::vector<double>(Trad_exact.begin() + 1, Trad_exact.end()),
+			    Tradexact_args);
 	matplotlibcpp::plot(t, Tgas, Tgas_args);
 	matplotlibcpp::plot(t, Trad, Trad_args);
 	matplotlibcpp::xlabel("t (dimensionless)");

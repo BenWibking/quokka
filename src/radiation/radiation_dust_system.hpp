@@ -350,7 +350,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 				T_d = T_d0;
 			} else {
 				T_d = T_gas - sum(Rvec) / (coeff_n * std::sqrt(T_gas));
-				AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative! Consider increasing ISM_Traits::gas_dust_coupling_threshold");
+				AMREX_ASSERT_WITH_MESSAGE(T_d >= 0.,
+							  "Dust temperature is negative! Consider increasing ISM_Traits::gas_dust_coupling_threshold");
 			}
 		} else {
 			if (n == 0) {
