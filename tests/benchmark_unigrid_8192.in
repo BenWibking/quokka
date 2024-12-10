@@ -1,0 +1,25 @@
+# *****************************************************************
+# Problem size and geometry
+# *****************************************************************
+geometry.prob_lo     =  0.0  0.0  0.0 
+geometry.prob_hi     =  1.2  1.2  1.2
+geometry.is_periodic =  0    0    0
+
+# *****************************************************************
+# VERBOSITY
+# *****************************************************************
+amr.v              = 0       # verbosity in Amr
+
+# *****************************************************************
+# Resolution and refinement
+# *****************************************************************
+amr.n_cell          = 8192 8192 8192
+amr.max_level       = 0     # number of levels = max_level + 1
+amr.max_grid_size   = 128   # at least 128 for GPUs
+amr.blocking_factor = 128   # grid size must be divisible by this
+amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
+amr.grid_eff        = 0.7   # default
+
+do_reflux = 0
+do_subcycle = 0
+max_timesteps = 1000
