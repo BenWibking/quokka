@@ -28,13 +28,14 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
     -> JacobianResult<problem_t>
 {
 	JacobianResult<problem_t> result;
+	const auto cscale = 1.0 / chat_over_c;
 
 	// compute cooling/heating terms
 	const auto cooling = DefineNetCoolingRate(T_gas, num_den) * dt;
 	const auto cooling_derivative = DefineNetCoolingRateTempDerivative(T_gas, num_den) * dt;
 	const double CR_heating = DefineCosmicRayHeatingRate(num_den) * dt;
 
-	result.F0 = Egas_diff + sum(Rvec / chat_over_c) + sum(cooling) - CR_heating;
+	result.F0 = Egas_diff + sum(Rvec * cscale) + sum(cooling) - CR_heating;
 	result.Fg = Erad_diff - (Rvec + Src);
 	if constexpr (add_line_cooling_to_radiation_in_jac) {
 		result.Fg -= chat_over_c * cooling;
@@ -42,9 +43,9 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
 	result.Fg_abs_sum = 0.0;
 	for (int g = 0; g < nGroups_; ++g) {
 		if (tau[g] > 0.0) {
-			result.Fg_abs_sum += std::abs(result.Fg[g]);
+			result.Fg_abs_sum += std::abs(result.Fg[g] * cscale[g]);
 		} else {
-			result.Fg_abs_sum += std::abs(result.Fg[g] + Rvec[g]);
+			result.Fg_abs_sum += std::abs((result.Fg[g] + Rvec[g]) * cscale[g]);
 		}
 	}
 
@@ -55,11 +56,10 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
 	auto dEg_dT = kappaPoverE * d_fourpiboverc_d_t;
 
 	result.J00 = 1.0 + sum(cooling_derivative) / c_v;
-	result.J0g = 1.0 / chat_over_c;
+	result.J0g = cscale;
 	const double d_Td_d_T = 3. / 2. - T_d / (2. * T_gas);
 	dEg_dT *= d_Td_d_T;
-	const double dTd_dRg = -1.0 / (N_d * std::sqrt(T_gas));
-	const auto rg = kappaPoverE * d_fourpiboverc_d_t * dTd_dRg;
+	const auto rg = -1.0 * kappaPoverE * d_fourpiboverc_d_t / (N_d * std::sqrt(T_gas));
 	result.Jg0 = 1.0 / c_v * dEg_dT - chat_over_c * cooling_derivative - rg * result.J00;
 	// Note that Fg is modified here, but it does not change Fg_abs_sum, which is used to check the convergence.
 	result.Fg = result.Fg - rg * result.F0;
@@ -134,13 +134,14 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
     quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double const num_den, double const dt, quokka::valarray<double, nGroups_> const &chat_over_c) -> JacobianResult<problem_t>
 {
 	JacobianResult<problem_t> result;
+	const auto cscale = 1.0 / chat_over_c;
 
 	// compute cooling/heating terms
 	const auto cooling = DefineNetCoolingRate(T_gas, num_den) * dt;
 	const auto cooling_derivative = DefineNetCoolingRateTempDerivative(T_gas, num_den) * dt;
 	const double CR_heating = DefineCosmicRayHeatingRate(num_den) * dt;
 
-	result.F0 = Egas_diff + sum(Rvec / chat_over_c) + sum(cooling) - PE_heating_energy_derivative * Erad[nGroups_ - 1] - CR_heating;
+	result.F0 = Egas_diff + sum(Rvec * cscale) + sum(cooling) - PE_heating_energy_derivative * Erad[nGroups_ - 1] - CR_heating;
 	result.Fg = Erad - Erad0 - (Rvec + Src);
 	if constexpr (add_line_cooling_to_radiation_in_jac) {
 		result.Fg -= chat_over_c * cooling;
@@ -148,9 +149,9 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
 	result.Fg_abs_sum = 0.0;
 	for (int g = 0; g < nGroups_; ++g) {
 		if (tau[g] > 0.0) {
-			result.Fg_abs_sum += std::abs(result.Fg[g]);
+			result.Fg_abs_sum += std::abs(result.Fg[g] * cscale[g]);
 		} else {
-			result.Fg_abs_sum += std::abs(result.Fg[g] + Rvec[g]);
+			result.Fg_abs_sum += std::abs((result.Fg[g] + Rvec[g]) * cscale[g]);
 		}
 	}
 
@@ -171,11 +172,11 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
 	}
 
 	result.J00 = 1.0 + sum(cooling_derivative) / c_v;
-	result.J0g = 1.0 / chat_over_c;
+	result.J0g = cscale;
 	result.J0g[nGroups_ - 1] -= PE_heating_energy_derivative * d_Eg_d_Rg[nGroups_ - 1];
 	const double d_Td_d_T = 3. / 2. - T_d / (2. * T_gas);
 	const auto dEg_dT = kappaPoverE * d_fourpiboverc_d_t * d_Td_d_T;
-	const double dTd_dRg = -1.0 / (coeff_n * std::sqrt(T_gas));
+	const auto dTd_dRg = -1.0 * cscale / (coeff_n * std::sqrt(T_gas));
 	const auto rg = kappaPoverE * d_fourpiboverc_d_t * dTd_dRg;
 	result.Jg0 = 1.0 / c_v * dEg_dT - chat_over_c * cooling_derivative - rg * result.J00;
 	// Note that Fg is modified here, but it does not change Fg_abs_sum, which is used to check the convergence.

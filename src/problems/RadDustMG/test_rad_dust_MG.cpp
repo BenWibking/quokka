@@ -14,8 +14,11 @@
 struct DustProblem {
 }; // dummy type to allow compile-type polymorphism via template specialization
 
+// In this test, the hydro time step is dt = CFL * dx / (chat / 10) = 0.8 * (1/8) / (1e7 / 10) = 1e-8
+
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
+constexpr double chat_over_c_ = 0.1;
 constexpr double v0 = 0.0;
 constexpr double chi0 = 10000.0;
 
@@ -26,7 +29,6 @@ constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
 
 constexpr double max_time = 3.0e-5;
-constexpr double delta_time = 3.0e-8;
 
 constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
 constexpr double erad_floor = 1.0e-20 * Erad0;
@@ -55,7 +57,7 @@ template <> struct Physics_Traits<DustProblem> {
 	static constexpr double boltzmann_constant = k_B;
 	static constexpr double gravitational_constant = 1.0;
 	static constexpr double c_light = c;
-	static constexpr double radiation_constant = 1.0;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<DustProblem> {
@@ -91,9 +93,10 @@ AMREX_GPU_HOST_DEVICE auto RadSystem<DustProblem>::ComputeThermalRadiationMultiG
 										     amrex::GpuArray<double, nGroups_ + 1> const &boundaries)
     -> quokka::valarray<amrex::Real, nGroups_>
 {
-	auto radEnergyFractions = ComputePlanckEnergyFractions(boundaries, temperature);
+	quokka::valarray<amrex::Real, nGroups_> Erad_g{};
+	const double radEnergyFractions = 1.0 / nGroups_;
 	const double power = radiation_constant_ * temperature;
-	auto Erad_g = power * radEnergyFractions;
+	Erad_g.fillin(power * radEnergyFractions);
 	return Erad_g;
 }
 
@@ -102,9 +105,10 @@ AMREX_GPU_HOST_DEVICE auto RadSystem<DustProblem>::ComputeThermalRadiationTempDe
 												   amrex::GpuArray<double, nGroups_ + 1> const &boundaries)
     -> quokka::valarray<amrex::Real, nGroups_>
 {
-	auto radEnergyFractions = ComputePlanckEnergyFractions(boundaries, temperature);
-	const double d_power_dt = radiation_constant_;
-	return d_power_dt * radEnergyFractions;
+	quokka::valarray<amrex::Real, nGroups_> d_power_dt{};
+	const double radEnergyFractions = 1.0 / nGroups_;
+	d_power_dt.fillin(radiation_constant_ * radEnergyFractions);
+	return d_power_dt;
 }
 
 template <> void QuokkaSimulation<DustProblem>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
@@ -159,6 +163,7 @@ auto problem_main() -> int
 {
 	// Problem parameters
 	const int max_timesteps = 1e6;
+	const double CFL_number_gas = 0.8;
 
 	// Boundary conditions
 	constexpr int nvars = RadSystem<DustProblem>::nvar_;
@@ -175,11 +180,11 @@ auto problem_main() -> int
 
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.stopTime_ = max_time;
+	sim.cflNumber_ = CFL_number_gas;
+	sim.radiationCflNumber_ = CFL_number_gas;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
-	sim.initDt_ = delta_time;
-	sim.maxDt_ = delta_time;
-	sim.chat_over_c_ = 0.8;
+	sim.chat_over_c_ = chat_over_c_;
 
 	// initialize
 	sim.setInitialConditions();
@@ -192,7 +197,7 @@ auto problem_main() -> int
 	std::vector<double> Trad_exact{};
 	std::vector<double> Tgas_exact{};
 
-	std::ifstream fstream("../extern/data/dust/rad_dust_exact_chat0.8.csv", std::ios::in);
+	std::ifstream fstream("../extern/data/dust/rad_dust_exact_chat0.1.csv", std::ios::in);
 	AMREX_ALWAYS_ASSERT(fstream.is_open());
 	std::string header;
 	std::getline(fstream, header);
