@@ -17,7 +17,7 @@ struct MarshakProblem {
 };
 
 AMREX_GPU_MANAGED double kappa1 = 1.0e10; // dust opacity at IR
-AMREX_GPU_MANAGED double kappa2 = 1.0; // dust opacity at FUV
+AMREX_GPU_MANAGED double kappa2 = 1.0;	  // dust opacity at FUV
 
 constexpr double c = 1.0; // speed of light
 constexpr double c_hat_over_c_ = 0.1;
