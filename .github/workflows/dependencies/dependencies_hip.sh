@@ -22,7 +22,7 @@ sudo mkdir --parents --mode=0755 /etc/apt/keyrings
 wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | \
     gpg --dearmor | sudo tee /etc/apt/keyrings/rocm.gpg > /dev/null
 
-for ver in 5.3.3 5.4.3 5.5.1; do
+for ver in 5.7.1 6.3.0; do
 echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/$ver focal main" \
     | sudo tee --append /etc/apt/sources.list.d/rocm.list
 done
@@ -43,11 +43,11 @@ sudo apt-get install -y --no-install-recommends \
     libnuma-dev     \
     libopenmpi-dev  \
     openmpi-bin     \
-    rocm-dev5.4.3        \
-    roctracer-dev5.4.3   \
-    rocprofiler-dev5.4.3 \
-    rocrand-dev5.4.3     \
-    rocprim-dev5.4.3
+    rocm-dev6.3.0        \
+    roctracer-dev6.3.0   \
+    rocprofiler-dev6.3.0 \
+    rocrand-dev6.3.0     \
+    rocprim-dev6.3.0
 
 # activate
 #
