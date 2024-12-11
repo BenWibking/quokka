@@ -32,7 +32,7 @@
 
 using Real = amrex::Real;
 
-static constexpr bool print_chat = true;
+static constexpr bool print_chat = false;
 
 // Hyper parameters for the radiation solver
 static constexpr bool add_line_cooling_to_radiation_in_jac = false;
@@ -408,7 +408,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 							   quokka::valarray<double, nGroups_> const &tau, double c_v,
 							   quokka::valarray<double, nGroups_> const &kappaPoverE,
 							   quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double num_den,
-							   quokka::valarray<double, nGroups_> const &c_over_chat, double dt)
+							   quokka::valarray<double, nGroups_> const &cscale, double dt)
 	    -> JacobianResult<problem_t>;
 
 	AMREX_GPU_DEVICE static auto ComputeJacobianForGasAndDust(double T_gas, double T_d, double Egas_diff,
@@ -431,7 +431,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 	    quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double num_den, double dt, quokka::valarray<double, nGroups_> const &chat_over_c) -> JacobianResult<problem_t>;
 
 	AMREX_GPU_DEVICE static auto
-	SolveGasRadiationEnergyExchange(double Egas0, quokka::valarray<double, nGroups_> const &Erad0Vec, double rho, double dt, quokka::valarray<double, nGroups_> const &c_over_chat,
+	SolveGasRadiationEnergyExchange(double Egas0, quokka::valarray<double, nGroups_> const &Erad0Vec, double rho, double dt, quokka::valarray<double, nGroups_> const &cscale,
 					amrex::GpuArray<Real, nmscalars_> const &massScalars, int n_outer_iter, quokka::valarray<double, nGroups_> const &work,
 					quokka::valarray<double, nGroups_> const &vel_times_F, quokka::valarray<double, nGroups_> const &Src,
 					amrex::GpuArray<double, nGroups_ + 1> const &rad_boundaries, int *p_iteration_counter, int *p_iteration_failure_counter)
@@ -1648,14 +1648,14 @@ AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arr
 
 	if constexpr (print_chat) {
 		// print reducedSpeedOfLightFactor
-		amrex::Print() << "reducedSpeedOfLightFactor: ";
+		amrex::Print() << "reducedSpeedOfLightFactor: \n";
 		for (int g = 0; g < nGroups_; ++g) {
 			amrex::Print() << "group " << g << ": ";
 			// Use indexRange to iterate over valid indices
 			amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
 				amrex::Print() << reducedSpeedOfLightFactor(i, j, k, g) << " ";
 			});
-			amrex::Print() << std::endl;
+			amrex::Print() << "\n";
 		}
 	}
 }
