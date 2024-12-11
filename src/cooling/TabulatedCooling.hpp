@@ -9,6 +9,7 @@
 /// \brief Defines methods for interpolating cooling rates from Cloudy tables.
 ///
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_Extension.H"
 #include "AMReX_GpuQualifiers.H"
 #include "AMReX_iMultiFab.H"

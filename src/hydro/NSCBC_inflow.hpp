@@ -10,6 +10,7 @@
 /// subsonic, continuous inflow. This should NOT be used for a shock boundary
 /// condition.
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_GpuQualifiers.H"
 #include "AMReX_REAL.H"
 #include "hydro/EOS.hpp"

@@ -10,6 +10,7 @@
 /// interpolation.
 ///
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_BLassert.H"
 #include "AMReX_TableData.H"
 

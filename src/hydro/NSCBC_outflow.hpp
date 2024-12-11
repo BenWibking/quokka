@@ -9,6 +9,7 @@
 /// \brief Implements the Navier-Stokes Characteristic Boundary Condition for
 /// subsonic outflows. (This also works trivially for _super_sonic outflows.)
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_GpuQualifiers.H"
 #include "AMReX_REAL.H"
 #include "hydro/EOS.hpp"
