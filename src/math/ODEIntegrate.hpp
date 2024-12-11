@@ -199,7 +199,7 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE void rk_adaptive_integrate(F &&rhs, Rea
 			if (k == 1) {
 				eta = std::min(eta, eta_max_errfail_again);
 			} else if (k > 1) {
-				eta = std::clamp(eta, eta_min_errfail_multiple, eta_max_errfail_again);
+				eta = amrex::Clamp(eta, eta_min_errfail_multiple, eta_max_errfail_again);
 			}
 			dt *= eta; // use new timestep
 			AMREX_ASSERT(!std::isnan(dt));

@@ -198,8 +198,8 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto ComputeTgasFromEgas(double rho, do
 	// compute temperature bounds using physics
 	const Real mu_min = tables.mmw_min;
 	const Real mu_max = tables.mmw_max;
-	const Real T_min = std::clamp(C * mu_min, Tmin_table, Tmax_table);
-	const Real T_max = std::clamp(C * mu_max, Tmin_table, Tmax_table);
+	const Real T_min = amrex::Clamp(C * mu_min, Tmin_table, Tmax_table);
+	const Real T_max = amrex::Clamp(C * mu_max, Tmin_table, Tmax_table);
 
 	// do root-finding
 	quokka::math::eps_tolerance<Real> tol(reltol);
