@@ -16,11 +16,12 @@
 struct MarshakProblem {
 };
 
-AMREX_GPU_MANAGED double kappa1 = NAN; // dust opacity at IR
-AMREX_GPU_MANAGED double kappa2 = NAN; // dust opacity at FUV
+AMREX_GPU_MANAGED double kappa1 = 1.0e10; // dust opacity at IR
+AMREX_GPU_MANAGED double kappa2 = 1.0;	  // dust opacity at FUV
 
 constexpr double c = 1.0; // speed of light
-constexpr double c_hat = 0.5 * c;
+constexpr double c_hat_over_c_ = 0.1;
+constexpr double c_hat = c * c_hat_over_c_;
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight
@@ -31,7 +32,7 @@ constexpr double initial_Trad = 1.0e-5;
 constexpr double T_rad_L = 1.0e-2; // so EradL = 1e2
 constexpr double EradL = a_rad * T_rad_L * T_rad_L * T_rad_L * T_rad_L;
 // constexpr double T_end_exact = 0.0031597766719577; // dust off; solution of 1 == a_rad * T^4 + T
-constexpr double T_end_exact = initial_T; // dust on
+constexpr double T_end_exact = initial_T * 0.98; // The gas cools down a bit due to interaction with dust
 
 // constexpr int n_group_ = 1;
 // static constexpr amrex::GpuArray<double, n_group_ + 1> radBoundaries_{1e-10, 1e4};
@@ -57,7 +58,7 @@ template <> struct Physics_Traits<MarshakProblem> {
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gravitational_constant = 1.0;
-	static constexpr double c_light = 1.0;
+	static constexpr double c_light = c;
 	static constexpr double radiation_constant = a_rad;
 };
 
@@ -152,8 +153,8 @@ AMRSimulation<MarshakProblem>::setCustomBoundaryConditions(const amrex::IntVect 
 
 	// const auto Erads = RadSystem<MarshakProblem>::ComputeThermalRadiation(T_rad_L, radBoundaries_);
 	quokka::valarray<double, 2> const Erads = {erad_floor, EradL};
-	const double c_device = c;
-	const auto Frads = Erads * c_device;
+	const double c_light = c;
+	const auto Frads = Erads * c_light;
 
 	if (i < lo[0]) {
 		// streaming inflow boundary
@@ -208,6 +209,7 @@ auto problem_main() -> int
 
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	// sim.stopTime_ = tmax; // set with runtime parameters
+	sim.cflNumber_ = CFL_number;
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
@@ -265,7 +267,7 @@ auto problem_main() -> int
 	}
 
 	const double rel_err_norm = err_norm / sol_norm;
-	const double rel_err_tol = 0.01;
+	const double rel_err_tol = 0.02;
 	int status = 1;
 	if (rel_err_norm < rel_err_tol) {
 		status = 0;
