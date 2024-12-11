@@ -14,6 +14,8 @@
 struct DustProblem {
 }; // dummy type to allow compile-type polymorphism via template specialization
 
+// In this test, the hydro time step is dt = CFL * dx / (chat / 10) = 0.8 * (1/8) / (1e7 / 10) = 1e-8
+
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
 constexpr double v0 = 0.0;
@@ -26,7 +28,6 @@ constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
 
 constexpr double max_time = 3.0e-5;
-constexpr double delta_time = 3.0e-8;
 
 constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
 constexpr double erad_floor = 1.0e-20 * Erad0;
@@ -156,10 +157,9 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.stopTime_ = max_time;
 	sim.cflNumber_ = CFL_number_gas;
+	sim.radiationCflNumber_ = CFL_number_gas;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
-	sim.initDt_ = delta_time;
-	sim.maxDt_ = delta_time;
 	sim.chat_over_c_ = 0.1;
 
 	// initialize

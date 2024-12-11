@@ -8,7 +8,7 @@ geometry.is_periodic =  1    1    1
 # *****************************************************************
 # RADIATION
 # *****************************************************************
-radiation.cfl = 8.0
+#radiation.cfl = 8.0
 radiation.dust_gas_interaction_coeff = 1.0e6
 radiation.print_iteration_counts = 1
 
@@ -28,5 +28,3 @@ amr.max_grid_size   = 16
 do_reflux = 0
 do_subcycle = 0
 suppress_output = 0
-#checkpoint_interval = 100
-#restartfile = chk00100
