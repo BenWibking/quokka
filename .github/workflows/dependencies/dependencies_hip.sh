@@ -43,11 +43,11 @@ sudo apt-get install -y --no-install-recommends \
     libnuma-dev     \
     libopenmpi-dev  \
     openmpi-bin     \
-    rocm-dev6.3.0        \
-    roctracer-dev6.3.0   \
-    rocprofiler-dev6.3.0 \
-    rocrand-dev6.3.0     \
-    rocprim-dev6.3.0
+    rocm-dev5.7.1        \
+    roctracer-dev5.7.1   \
+    rocprofiler-dev5.7.1 \
+    rocrand-dev5.7.1     \
+    rocprim-dev5.7.1
 
 # activate
 #
