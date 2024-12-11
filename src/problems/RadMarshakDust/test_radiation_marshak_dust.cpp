@@ -267,12 +267,12 @@ auto problem_main() -> int
 	}
 
 	const double rel_err_norm = err_norm / sol_norm;
-	const double rel_err_tol = 0.02;
+	const double rel_err_tol = 0.015;
 	int status = 1;
 	if (rel_err_norm < rel_err_tol) {
 		status = 0;
 	}
-	amrex::Print() << "Relative L1 norm = " << rel_err_norm << std::endl;
+	amrex::Print() << "Relative L1 norm = " << rel_err_norm << "\n";
 
 #ifdef HAVE_PYTHON
 	// Plot erad1

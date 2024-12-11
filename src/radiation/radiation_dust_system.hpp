@@ -515,13 +515,13 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 
 		const double CR_heating = DefineCosmicRayHeatingRate(H_num_den) * dt;
 
-		const double compare = Egas_guess + cscale[0] * lambda_gd_times_dt + sum(abs(cooling_tend)) + CR_heating;
+		const double compare = Egas_guess + lambda_gd_times_dt + sum(abs(cooling_tend)) + CR_heating;
 
 		// RHS of the equation 0 = Egas - Egas0 + cscale * lambda_gd_times_dt + sum(cooling)
 		auto rhs = [=](double Egas_) -> double {
 			const double T_gas_ = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, Egas_, massScalars);
 			const auto cooling_ = DefineNetCoolingRate(T_gas_, H_num_den) * dt;
-			return Egas_ - Egas0 + cscale[0] * lambda_gd_times_dt + sum(cooling_) - CR_heating;
+			return Egas_ - Egas0 + lambda_gd_times_dt + sum(cooling_) - CR_heating;
 		};
 
 		// Jacobian of the RHS of the equation 0 = Egas - Egas0 + cscale * lambda_gd_times_dt + sum(cooling)
@@ -535,7 +535,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 	}
 
 	if constexpr (!add_line_cooling_to_radiation_in_jac) {
-		AMREX_ASSERT_WITH_MESSAGE(min(cooling_tend) >= 0., "add_line_cooling_to_radiation has to be enabled when there is negative cooling rate!");
+		AMREX_ASSERT_WITH_MESSAGE(min(cooling_tend) >= 0., "add_line_cooling_to_radiation_in_jac has to be enabled when there is negative cooling rate!");
 		// TODO(CCH): potential GPU-related issue here.
 		EradVec_guess += cooling_tend / cscale;
 	}
