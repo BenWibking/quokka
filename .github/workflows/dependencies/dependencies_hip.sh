@@ -22,7 +22,7 @@ sudo mkdir --parents --mode=0755 /etc/apt/keyrings
 wget https://repo.radeon.com/rocm/rocm.gpg.key -O - | \
     gpg --dearmor | sudo tee /etc/apt/keyrings/rocm.gpg > /dev/null
 
-for ver in 5.7.1 6.3.0; do
+for ver in 5.7.1 6.3; do
 echo "deb [arch=amd64 signed-by=/etc/apt/keyrings/rocm.gpg] https://repo.radeon.com/rocm/apt/$ver focal main" \
     | sudo tee --append /etc/apt/sources.list.d/rocm.list
 done
