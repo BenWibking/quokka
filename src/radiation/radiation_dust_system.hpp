@@ -277,7 +277,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 	} else {
 		// for dust_model == 2 (decoupled gas and dust), Egas0 is not involved in the iteration
 		const auto fourPiBoverC = ComputeThermalRadiationMultiGroup(T_d0, rad_boundaries);
-		Etot0 = std::abs(lambda_gd_times_dt) + sum((fourPiBoverC + Erad0Vec + Src) * chat_over_c);
+		Etot0 = std::abs(lambda_gd_times_dt) + sum(fourPiBoverC) + sum((Erad0Vec + Src) * cscale);
 	}
 
 	double T_gas = NAN;
@@ -347,7 +347,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 			if (n == 0) {
 				T_d = T_d0;
 			} else {
-				T_d = T_gas - sum(Rvec * chat_over_c) / (N_d * std::sqrt(T_gas));
+				T_d = T_gas - sum(Rvec * cscale) / (N_d * std::sqrt(T_gas));
 			}
 		} else {
 			if (n == 0) {
@@ -874,7 +874,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 		auto rhs = [=](double Egas_) -> double {
 			const double T_gas_ = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, Egas_, massScalars);
 			const auto cooling_ = DefineNetCoolingRate(T_gas_, H_num_den) * dt;
-			return Egas_ - Egas0 + lambda_gd_times_dt + sum(cooling_) - PE_heating_energy_derivative * EradVec_guess[nGroups_ - 1] -
+			return Egas_ - Egas0 + lambda_gd_times_dt + sum(cooling_) - cscale[nGroups_ - 1] * PE_heating_energy_derivative * EradVec_guess[nGroups_ - 1] -
 			       CR_heating;
 		};
 
