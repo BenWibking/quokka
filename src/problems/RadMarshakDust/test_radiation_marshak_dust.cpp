@@ -58,7 +58,7 @@ template <> struct Physics_Traits<MarshakProblem> {
 	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
 	static constexpr double boltzmann_constant = 1.0;
 	static constexpr double gravitational_constant = 1.0;
-	static constexpr double c_light = 1.0;
+	static constexpr double c_light = c;
 	static constexpr double radiation_constant = a_rad;
 };
 
@@ -154,8 +154,8 @@ AMRSimulation<MarshakProblem>::setCustomBoundaryConditions(const amrex::IntVect 
 
 	// const auto Erads = RadSystem<MarshakProblem>::ComputeThermalRadiation(T_rad_L, radBoundaries_);
 	quokka::valarray<double, 2> const Erads = {erad_floor, EradL};
-	const double c_device = c;
-	const auto Frads = Erads * c_device;
+	const double c_light = c;
+	const auto Frads = Erads * c_light;
 
 	if (i < lo[0]) {
 		// streaming inflow boundary
