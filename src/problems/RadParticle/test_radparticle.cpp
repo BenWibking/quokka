@@ -21,6 +21,10 @@ constexpr double chat = 1.0;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-10; // opacity
 constexpr double rho = 1.0;
 
+const double lum1 = 1.0;
+const double lum2 = 0.5;
+const double lum3 = 0.0;
+
 template <> struct quokka::EOS_Traits<ParticleProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
 	static constexpr double gamma = 5. / 3.;
@@ -149,6 +153,7 @@ auto problem_main() -> int
 	// read output variables
 	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.5, true);
 	const int nx = static_cast<int>(position.size());
+	const double dx = sim.Geom(0).CellSize(0);
 
 	// compute error norm
 	std::vector<double> Erad_group0(nx);
@@ -156,6 +161,9 @@ auto problem_main() -> int
 	std::vector<double> Erad_group2(nx);
 	// std::vector<double> erad_exact(nx);
 	std::vector<double> xs(nx);
+	double tot_lum_group0 = 0.0;
+	double tot_lum_group1 = 0.0;
+	double tot_lum_group2 = 0.0;
 	for (int i = 0; i < nx; ++i) {
 		amrex::Real const x = position[i];
 		xs.at(i) = x;
@@ -163,22 +171,26 @@ auto problem_main() -> int
 		Erad_group0.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index)[i];
 		Erad_group1.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index + Physics_NumVars::numRadVars)[i];
 		Erad_group2.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index + 2 * Physics_NumVars::numRadVars)[i];
+		tot_lum_group0 += Erad_group0.at(i) * dx;
+		tot_lum_group1 += Erad_group1.at(i) * dx;
+		tot_lum_group2 += Erad_group2.at(i) * dx;
 	}
 
-	// double err_norm = 0.;
-	// double sol_norm = 0.;
-	// for (int i = 0; i < nx; ++i) {
-	// 	err_norm += std::abs(erad[i] - erad_exact[i]);
-	// 	sol_norm += std::abs(erad_exact[i]);
-	// }
+	const double tmax = sim.tNew_[0];
+	const double lum_exact_group0 = lum1 * tmax;
+	const double lum_exact_group1 = lum2 * tmax;
+	const double lum_exact_group2 = lum3 * tmax;
 
-	// const double rel_err_norm = err_norm / sol_norm;
-	// const double rel_err_tol = 0.05;
-	// int status = 1;
-	// if (rel_err_norm < rel_err_tol) {
-	// 	status = 0;
-	// }
-	// amrex::Print() << "Relative L1 norm = " << rel_err_norm << std::endl;
+	const double err_norm = std::abs(tot_lum_group0 - lum_exact_group0) + std::abs(tot_lum_group1 - lum_exact_group1) + std::abs(tot_lum_group2 - lum_exact_group2);
+	const double sol_norm = lum_exact_group0 + lum_exact_group1 + lum_exact_group2;
+
+	const double rel_err_norm = err_norm / sol_norm;
+	const double rel_err_tol = 0.05;
+	int status = 1;
+	if (rel_err_norm < rel_err_tol) {
+		status = 0;
+	}
+	amrex::Print() << "Relative L1 norm = " << rel_err_norm << std::endl;
 
 #ifdef HAVE_PYTHON
 	// Plot results
@@ -204,5 +216,5 @@ auto problem_main() -> int
 
 	// Cleanup and exit
 	amrex::Print() << "Finished." << std::endl;
-	return 0;
+	return status;
 }
