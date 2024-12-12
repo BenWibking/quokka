@@ -41,7 +41,8 @@
 #include "AMReX_Print.H"
 #include "AMReX_REAL.H"
 #include "AMReX_YAFluxRegister.H"
-#include "particles/RadParticles.hpp"
+// #include "particles/RadParticles.hpp"
+#include "particles/PhysicsParticles.hpp"
 
 #ifdef AMREX_USE_ASCENT
 #include "AMReX_Conduit_Blueprint.H"
