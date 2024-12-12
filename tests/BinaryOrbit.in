@@ -21,7 +21,7 @@ amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
 amr.grid_eff        = 1.0
 
 cfl = 0.3
-max_timesteps = 8000
+max_timesteps = 10
 stop_time = 5.0e7   # s
 
 do_reflux = 1
