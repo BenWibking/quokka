@@ -311,7 +311,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentN
 
 	// add face-centered velocities
 	for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-		componentNames_fc_.push_back({quokka::face_dir_str[idim] + "-velocity"});
+		componentNames_fc_.push_back({quokka::face_dir_str[idim] + "-RiemannSolverVelocity"});
 	}
 	// add mhd state variables
 	if constexpr (Physics_Traits<problem_t>::is_mhd_enabled) {
