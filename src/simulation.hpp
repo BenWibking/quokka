@@ -156,6 +156,7 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	amrex::Real cflNumber_ = 0.3;	      // default
 	amrex::Real dtToleranceFactor_ = 1.1; // default
 	amrex::Long cycleCount_ = 0;
+	int printCycleTiming_ = 0;		    // default: don't print
 	amrex::Long maxTimesteps_ = 1e4;	    // default
 	amrex::Long maxWalltime_ = 0;		    // default: no limit
 	int ascentInterval_ = -1;		    // -1 == no in-situ renders with Ascent
@@ -326,6 +327,7 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	void SetLastCheckpointSymlink(std::string const &checkpointname) const;
 	void ReadCheckpointFile();
 	auto getWalltime() -> amrex::Real;
+	auto getCycleWalltime() -> amrex::Real;
 	void setChkFile(std::string const &chkfile_number);
 	[[nodiscard]] auto getOldMF_fc() const -> amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> const &;
 	[[nodiscard]] auto getNewMF_fc() const -> amrex::Vector<amrex::Array<amrex::MultiFab, AMREX_SPACEDIM>> const &;
@@ -652,6 +654,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	// Default suppress_output = 0
 	pp.query("suppress_output", suppress_output);
 
+	// Default print_cycle_timing = 0
+	pp.query("print_cycle_timing", printCycleTiming_);
+
 	// specify this on the command-line in order to restart from a checkpoint
 	// file
 	pp.query("restartfile", restart_chkfile);
@@ -871,6 +876,15 @@ template <typename problem_t> auto AMRSimulation<problem_t>::getWalltime() -> am
 	return time - start_time;
 }
 
+template <typename problem_t> auto AMRSimulation<problem_t>::getCycleWalltime() -> amrex::Real
+{
+	static amrex::Real start_time = amrex::ParallelDescriptor::second(); // initialized on first call
+	const amrex::Real current_time = amrex::ParallelDescriptor::second();
+	const amrex::Real elapsed_time = current_time - start_time;
+	start_time = current_time;
+	return elapsed_time;
+}
+
 template <typename problem_t> void AMRSimulation<problem_t>::evolve()
 {
 	BL_PROFILE("AMRSimulation::evolve()");
@@ -904,11 +918,19 @@ template <typename problem_t> void AMRSimulation<problem_t>::evolve()
 	for (; step < maxTimesteps_ && cur_time < stopTime_; ++step) {
 
 		if (suppress_output == 0) {
-			amrex::Print() << "\nCoarse STEP " << step + 1 << " at t = " << cur_time << " (" << (cur_time / stopTime_) * 100. << "%) starts ..."
-				       << '\n';
+			amrex::Print() << "\nCoarse STEP " << step + 1 << " at t = " << cur_time << " (" << (cur_time / stopTime_) * 100. << "%) starts ";
 		}
 
 		amrex::ParallelDescriptor::Barrier(); // synchronize all MPI ranks
+
+		// output per-cycle timing
+		if (printCycleTiming_ == 1) {
+			amrex::Real elapsed_sec = getCycleWalltime();
+			amrex::Print() << "(cycle time: " << elapsed_sec << " s) ...\n";
+		} else {
+			amrex::Print() << "...\n";
+		}
+
 		computeTimestep();
 
 		// do user-specified calculations before the level update
