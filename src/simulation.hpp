@@ -1416,7 +1416,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 			redistribute_ngrow = iteration;
 		}
 		// redistribute all particles in particleRegister_
-		particleRegister_->redistribute(lev);
+		particleRegister_->redistribute(lev, redistribute_ngrow);
 	}
 #endif
 }

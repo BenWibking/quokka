@@ -168,6 +168,17 @@ template <typename problem_t> class PhysicsParticleRegister
 		}
 	}
 
+	// Run Redistribute(lev, ngrow) on all particles in particleRegistry_
+	void redistribute(int lev, int ngrow)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->getParticleContainer());
+			if (container != nullptr) {
+				container->Redistribute(lev, container->finestLevel(), ngrow);
+			}
+		}
+	}
+
 	// Run WritePlotFile(plotfilename, name) on all particles in particleRegistry_
 	void writePlotFile(const std::string &plotfilename)
 	{
