@@ -192,7 +192,9 @@ template <typename problem_t> class PhysicsParticleRegister
 		}
 	}
 
-	// Delete copy/move constructors/assignments
+	// Delete copy/move constructors/assignments to prevent accidental copying or moving of objects.
+	// The class has a raw pointer member, neighborParticleContainer_. Copying would be dangerous as multiple objects could end up pointing to the same
+	// memory. The class is meant to be a base class for particle descriptors, and copying base classes can lead to slicing problems
 	PhysicsParticleRegister(const PhysicsParticleRegister &) = delete;
 	PhysicsParticleRegister &operator=(const PhysicsParticleRegister &) = delete;
 	PhysicsParticleRegister(PhysicsParticleRegister &&) = delete;
