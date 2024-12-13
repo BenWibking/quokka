@@ -181,7 +181,8 @@ auto problem_main() -> int
 	const double lum_exact_group1 = lum2 * tmax;
 	const double lum_exact_group2 = lum3 * tmax;
 
-	const double err_norm = std::abs(tot_lum_group0 - lum_exact_group0) + std::abs(tot_lum_group1 - lum_exact_group1) + std::abs(tot_lum_group2 - lum_exact_group2);
+	const double err_norm =
+	    std::abs(tot_lum_group0 - lum_exact_group0) + std::abs(tot_lum_group1 - lum_exact_group1) + std::abs(tot_lum_group2 - lum_exact_group2);
 	const double sol_norm = lum_exact_group0 + lum_exact_group1 + lum_exact_group2;
 
 	const double rel_err_norm = err_norm / sol_norm;
