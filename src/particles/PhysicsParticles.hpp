@@ -16,6 +16,50 @@ template <typename problem_t> constexpr int RadParticleRealComps = 3 + Physics_T
 template <typename problem_t> using RadParticleContainer = amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>;
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
 
+struct MassDeposition {
+	amrex::Real Gconst{};
+	int start_part_comp{};
+	int start_mesh_comp{};
+	int num_comp{};
+
+	template <typename ParticleType>
+	AMREX_GPU_DEVICE AMREX_FORCE_INLINE void operator()(const ParticleType &p,
+							    amrex::Array4<amrex::Real> const &rho,
+							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
+							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
+	{
+		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
+		interp.ParticleToMesh(p, rho, start_part_comp, start_mesh_comp, num_comp,
+				      [=] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
+					      return 4.0 * M_PI * Gconst * part.rdata(comp); // weight by 4 pi G
+				      });
+	}
+};
+
+struct RadDeposition {
+	double current_time{};
+	int start_part_comp{};
+	int start_mesh_comp{};
+	int num_comp{};
+
+	template <typename ParticleType>
+	AMREX_GPU_DEVICE AMREX_FORCE_INLINE void operator()(const ParticleType &p,
+								amrex::Array4<amrex::Real> const &radEnergySource,
+								amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
+								amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
+	{
+		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
+		interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
+							[=] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
+								if (current_time < part.rdata(RadParticleBirthTimeIdx) ||
+							current_time >= part.rdata(RadParticleDeathTimeIdx)) {
+									return 0.0;
+								}
+								return part.rdata(comp) * (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
+							});
+	}
+};
+
 // Forward declarations
 template <typename problem_t> class PhysicsParticleRegister;
 
@@ -75,51 +119,6 @@ template <typename problem_t> class PhysicsParticleRegister
 		return nullptr;
 	}
 
-	// // Deposit gravity from all particles that have mass
-	// void depositGravity(amrex::MultiFab& rhs, int lev) {
-	//     for (const auto& [name, descriptor] : particleRegistry_) {
-	//         if (descriptor->getMassIndex() >= 0) {
-	//             // Get particle container and deposit mass
-	//             auto* container = static_cast<amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>*>(descriptor->getParticleContainer());
-	//             if (container != nullptr) {
-	//                 amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, lev,
-	//                                      [=] AMREX_GPU_DEVICE(const typename amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>::ParticleType&
-	//                                      p,
-	//                                                         amrex::Array4<amrex::Real> const& rhs_arr,
-	//                                                         const amrex::GpuArray<amrex::Real,AMREX_SPACEDIM>& plo,
-	//                                                         const amrex::GpuArray<amrex::Real,AMREX_SPACEDIM>& /*dxi*/) {
-	//                                          // Deposit mass to grid
-	//                                          return p.rdata(descriptor->getMassIndex());
-	//                                      });
-	//             }
-	//         }
-	//     }
-	// }
-
-	struct RadDeposition {
-		double current_time{};
-		int start_part_comp{};
-		int start_mesh_comp{};
-		int num_comp{};
-
-		template <typename ParticleType>
-		AMREX_GPU_DEVICE AMREX_FORCE_INLINE void operator()(const ParticleType &p,
-							    amrex::Array4<amrex::Real> const &radEnergySource,
-							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
-							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
-		{
-			amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
-			interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
-					      [=] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
-						      if (current_time < part.rdata(RadParticleBirthTimeIdx) ||
-							  current_time >= part.rdata(RadParticleDeathTimeIdx)) {
-							      return 0.0;
-						      }
-						      return part.rdata(comp) * (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
-					      });
-		}
-	};
-
 	// Deposit radiation from all particles that have luminosity
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time)
 	{
@@ -131,6 +130,21 @@ template <typename problem_t> class PhysicsParticleRegister
 					amrex::ParticleToMesh(*container, radEnergySource, lev,
 							      RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
 							      false);
+				}
+			}
+		}
+	}
+
+	// Deposit mass from all particles that have mass for gravity calculation
+	void depositMass(amrex::Vector<amrex::MultiFab>& rhs, int finest_lev, amrex::Real Gconst)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (descriptor->getMassIndex() >= 0) {
+				// Get particle container and deposit mass
+				auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->getParticleContainer());
+				if (container != nullptr) {
+					amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, 
+						MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);
 				}
 			}
 		}

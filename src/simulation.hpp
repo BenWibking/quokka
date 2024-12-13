@@ -1104,11 +1104,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::calculateGpotAllLev
 		}
 
 #ifdef AMREX_PARTICLES
-		if (do_cic_particles != 0) {
-			// deposit particles using amrex::ParticleToMesh
-			amrex::ParticleToMesh(*CICParticles, amrex::GetVecOfPtrs(rhs), 0, finest_level,
-					      quokka::CICDeposition{Gconst_, quokka::ParticleMassIdx, 0, 1});
-		}
+		// deposit particle mass from all particles that have mass
+		// TODO(cch): this is working, but I'm not sure if I should use amrex::GetVecOfPtrs(rhs) or rhs directly
+		AMRSimulation<problem_t>::particleRegister_->depositMass(rhs, finest_level, Gconst_);
 #endif
 
 		for (int lev = 0; lev <= finest_level; ++lev) {
