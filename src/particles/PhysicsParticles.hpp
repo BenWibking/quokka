@@ -160,6 +160,17 @@ template <typename problem_t> class PhysicsParticleRegister
 		}
 	}
 
+	// Run Redistribute(lev) on all particles
+	void redistribute(int lev)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->getParticleContainer());
+			if (container != nullptr) {
+				container->Redistribute(lev);
+			}
+		}
+	}
+
 	// Delete copy/move constructors/assignments
 	PhysicsParticleRegister(const PhysicsParticleRegister &) = delete;
 	PhysicsParticleRegister &operator=(const PhysicsParticleRegister &) = delete;

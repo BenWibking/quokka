@@ -1325,9 +1325,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 				if (do_cic_particles != 0) {
 					CICParticles->Redistribute(lev);
 				}
-				if (do_rad_particles != 0) {
-					// RadParticles->Redistribute(lev);
-				}
+				// redistribute all particles in particleRegister_
+				particleRegister_->redistribute(lev);
 #endif
 
 				// do fix-up on all levels that have been re-gridded
@@ -1408,16 +1407,16 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 			CICParticles->Redistribute(lev, CICParticles->finestLevel(), redistribute_ngrow);
 		}
 	}
-	if (do_rad_particles != 0) {
-		int redistribute_ngrow = 0;
-		if ((iteration < nsubsteps[lev]) || (lev == 0)) {
-			if (lev == 0) {
-				redistribute_ngrow = 0;
-			} else {
-				redistribute_ngrow = iteration;
-			}
-			// RadParticles->Redistribute(lev, RadParticles->finestLevel(), redistribute_ngrow);
+
+	int redistribute_ngrow = 0;
+	if ((iteration < nsubsteps[lev]) || (lev == 0)) {
+		if (lev == 0) {
+			redistribute_ngrow = 0;
+		} else {
+			redistribute_ngrow = iteration;
 		}
+		// redistribute all particles in particleRegister_
+		particleRegister_->redistribute(lev);
 	}
 #endif
 }
@@ -2099,6 +2098,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
 template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles() {
     if (do_rad_particles != 0) {
         // Create radiating particle descriptor
+				// the indices are: mass, lum, hydro_interact
         auto radParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(-1, quokka::RadParticleLumIdx, false);
         
         // Create particle container
