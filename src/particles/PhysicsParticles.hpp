@@ -16,28 +16,6 @@ template <typename problem_t> constexpr int RadParticleRealComps = 3 + Physics_T
 template <typename problem_t> using RadParticleContainer = amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>;
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
 
-template <typename problem_t> struct RadDeposition {
-	double current_time{};
-	int start_part_comp{};
-	int start_mesh_comp{};
-	int num_comp{};
-
-	AMREX_GPU_DEVICE AMREX_FORCE_INLINE void operator()(const typename RadParticleContainer<problem_t>::ParticleType &p,
-							    amrex::Array4<amrex::Real> const &radEnergySource,
-							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
-							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
-	{
-		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
-		interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
-				      [=] AMREX_GPU_DEVICE(const typename RadParticleContainer<problem_t>::ParticleType &part, int comp) {
-					      if (current_time < part.rdata(RadParticleBirthTimeIdx) || current_time >= part.rdata(RadParticleDeathTimeIdx)) {
-						      return 0.0;
-					      }
-					      return part.rdata(comp) * (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
-				      });
-	}
-};
-
 // Forward declarations
 template <typename problem_t> class PhysicsParticleRegister;
 
@@ -124,14 +102,15 @@ template <typename problem_t> class PhysicsParticleRegister
 		int start_mesh_comp{};
 		int num_comp{};
 
-		AMREX_GPU_DEVICE AMREX_FORCE_INLINE void operator()(const typename RadParticleContainer<problem_t>::ParticleType &p,
-								    amrex::Array4<amrex::Real> const &radEnergySource,
-								    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
-								    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
+		template <typename ParticleType>
+		AMREX_GPU_DEVICE AMREX_FORCE_INLINE void operator()(const ParticleType &p,
+							    amrex::Array4<amrex::Real> const &radEnergySource,
+							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &plo,
+							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
 		{
 			amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
 			interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
-					      [=] AMREX_GPU_DEVICE(const typename RadParticleContainer<problem_t>::ParticleType &part, int comp) {
+					      [=] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
 						      if (current_time < part.rdata(RadParticleBirthTimeIdx) ||
 							  current_time >= part.rdata(RadParticleDeathTimeIdx)) {
 							      return 0.0;
