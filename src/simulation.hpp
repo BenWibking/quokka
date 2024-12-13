@@ -2095,26 +2095,29 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
 	}
 }
 
-template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles() {
-    if (do_rad_particles != 0) {
-        // Create radiating particle descriptor
-				// the indices are: mass, lum, hydro_interact
-        auto radParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(-1, quokka::RadParticleLumIdx, false);
-        
-        // Create particle container
-        RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
-        RadParticles->SetVerbose(0);
-        
-        // Set container in descriptor
-        radParticleDesc->neighborParticleContainer_ = RadParticles.get();
-        
-        // Register with particle register
-        particleRegister_->registerParticleType("Rad_particles", std::move(radParticleDesc));
-        
-        // Initialize particles through derived class
-        createInitialRadParticles();
-        RadParticles->Redistribute();
-    }
+template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
+{
+	if (do_rad_particles != 0) {
+		AMREX_ASSERT(RadParticles == nullptr);
+
+		// Create radiating particle descriptor
+		// the indices are: mass, lum, hydro_interact
+		auto radParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(-1, quokka::RadParticleLumIdx, false);
+
+		// Create particle container
+		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
+		RadParticles->SetVerbose(0);
+
+		// Set container in descriptor
+		radParticleDesc->neighborParticleContainer_ = RadParticles.get();
+
+		// Register with particle register
+		particleRegister_->registerParticleType("Rad_particles", std::move(radParticleDesc));
+
+		// Initialize particles through derived class
+		createInitialRadParticles();
+		RadParticles->Redistribute();
+	}
 }
 #endif
 
@@ -2855,10 +2858,15 @@ template <typename problem_t> void AMRSimulation<problem_t>::ReadCheckpointFile(
 		CICParticles = std::make_unique<quokka::CICParticleContainer>(this);
 		CICParticles->Restart(restart_chkfile, "CIC_particles");
 	}
+
+	// read all particles in particleRegister_ from checkpoint file
 	if (do_rad_particles != 0) {
-		// AMREX_ASSERT(RadParticles == nullptr);
-		// RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
-		// RadParticles->Restart(restart_chkfile, "Rad_particles");
+		AMREX_ASSERT(RadParticles == nullptr);
+		auto radParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(-1, quokka::RadParticleLumIdx, false);
+		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
+		radParticleDesc->neighborParticleContainer_ = RadParticles.get();
+		particleRegister_->registerParticleType("Rad_particles", std::move(radParticleDesc));
+		RadParticles->Restart(restart_chkfile, "Rad_particles");
 	}
 #endif
 
