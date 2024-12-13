@@ -69,7 +69,6 @@ namespace filesystem = experimental::filesystem;
 
 #ifdef AMREX_PARTICLES
 #include "particles/CICParticles.hpp"
-// #include "particles/RadParticles.hpp"
 #include "particles/PhysicsParticles.hpp"
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
@@ -450,7 +449,6 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 #ifdef AMREX_PARTICLES
 	void InitParticles();	 // create tracer particles
 	void InitCICParticles(); // create CIC particles
-	void InitRadParticles(); // create radiating particles
 	void InitPhyParticles(); // create PhysicsParticles
 	int do_tracers = 0;
 	int do_cic_particles = 0;
@@ -2095,18 +2093,6 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
 		CICParticles->SetVerbose(0);
 		createInitialParticles();
 		CICParticles->Redistribute();
-	}
-}
-
-template <typename problem_t> void AMRSimulation<problem_t>::InitRadParticles()
-{
-	if (do_rad_particles != 0) {
-		AMREX_ASSERT(RadParticles == nullptr);
-		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
-
-		RadParticles->SetVerbose(0);
-		createInitialRadParticles();
-		RadParticles->Redistribute();
 	}
 }
 

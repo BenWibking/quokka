@@ -41,7 +41,6 @@
 #include "AMReX_Print.H"
 #include "AMReX_REAL.H"
 #include "AMReX_YAFluxRegister.H"
-// #include "particles/RadParticles.hpp"
 #include "particles/PhysicsParticles.hpp"
 
 #ifdef AMREX_USE_ASCENT
@@ -1710,11 +1709,6 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				amrex::Print() << "Initial, ";
 				PrintRadEnergySource(radEnergySource);
 
-				// deposit radiation from particles into radEnergySource
-				// amrex::ParticleToMesh(
-				//     *AMRSimulation<problem_t>::RadParticles, radEnergySource, lev,
-				//     quokka::RadDeposition<problem_t>{time_subcycle, quokka::RadParticleLumIdx, 0, Physics_Traits<problem_t>::nGroups}, false);
-
 				// deposit radiation from all particles that have luminosity
 				AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 
@@ -1739,14 +1733,6 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				operatorSplitSourceTerms(stateNew, radEnergySource_arr, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi,
 							 p_iteration_counter, p_iteration_failure_counter);
 			}
-
-#ifdef AMREX_PARTICLES
-			// if (AMRSimulation<problem_t>::do_rad_particles != 0) {
-			// 	// for debugging, print the radEnergySource array
-			// 	amrex::Print() << "after SetRadEnergySource, ";
-			// 	PrintRadEnergySource(radEnergySource);
-			// }
-#endif
 		}
 
 		// Stage 2: advance hyperbolic radiation subsystem using midpoint RK2 method, starting from state_old_cc_ to state_new_cc_
@@ -1760,9 +1746,6 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 #ifdef AMREX_PARTICLES
 		if (AMRSimulation<problem_t>::do_rad_particles != 0) {
 			// deposit radiation from particles into radEnergySource
-			// amrex::ParticleToMesh(*AMRSimulation<problem_t>::RadParticles, radEnergySource, lev,
-			// 		      quokka::RadDeposition<problem_t>{time_subcycle, quokka::RadParticleLumIdx, 0, Physics_Traits<problem_t>::nGroups},
-			// 		      false);
 			AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 		}
 #endif
