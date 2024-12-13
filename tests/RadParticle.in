@@ -26,4 +26,4 @@ do_cic_particles = 0    # turns on CIC particles
 stop_time = 0.45
 plotfile_interval = 100000
 checkpoint_interval = 100000
-restartfile = "chk00086"
+#restartfile = "chk00086"
