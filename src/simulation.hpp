@@ -2109,7 +2109,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles() 
         radParticleDesc->neighborParticleContainer_ = RadParticles.get();
         
         // Register with particle register
-        particleRegister_->registerParticleType("radiating_particles", std::move(radParticleDesc));
+        particleRegister_->registerParticleType("Rad_particles", std::move(radParticleDesc));
         
         // Initialize particles through derived class
         createInitialRadParticles();
@@ -2431,9 +2431,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::WritePlotFile()
 	if (do_cic_particles != 0) {
 		CICParticles->WritePlotFile(plotfilename, "CIC_particles");
 	}
-	if (do_rad_particles != 0) {
-		// RadParticles->WritePlotFile(plotfilename, "Rad_particles");
-	}
+	// write all particles in particleRegister_ to plotfile
+	particleRegister_->writePlotFile(plotfilename);
 #endif // AMREX_PARTICLES
 #endif
 }
