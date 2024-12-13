@@ -13,10 +13,10 @@ amr.v              = 1       # verbosity in Amr
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 32 32 32
+amr.n_cell          = 16 16 16
 amr.max_level       = 0     # number of levels = max_level + 1
-amr.blocking_factor = 32    # grid size must be divisible by this
-amr.max_grid_size   = 32    # at least 128 for GPUs
+amr.blocking_factor = 16    # grid size must be divisible by this
+amr.max_grid_size   = 16    # at least 128 for GPUs
 amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
 amr.grid_eff        = 1.0
 

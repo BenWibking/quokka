@@ -72,7 +72,7 @@ template <> void QuokkaSimulation<BinaryOrbit>::setInitialConditionsOnGrid(quokk
 	});
 }
 
-template <> void QuokkaSimulation<BinaryOrbit>::createInitialParticles()
+template <> void QuokkaSimulation<BinaryOrbit>::createInitialCICParticles()
 {
 	// read particles from ASCII file
 	const int nreal_extra = 4; // mass vx vy vz
