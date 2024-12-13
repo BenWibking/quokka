@@ -23,7 +23,7 @@ suppress_output = 0
 
 do_rad_particles = 1    # turns on radiating particles
 do_cic_particles = 0    # turns on CIC particles
-stop_time = 0.45
+stop_time = 0.4
 plotfile_interval = 100000
 checkpoint_interval = 100000
 #restartfile = "chk00086"

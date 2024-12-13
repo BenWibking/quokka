@@ -12,9 +12,13 @@ namespace quokka
 
 enum RadParticleDataIdx { RadParticleMassIdx = 0, RadParticleBirthTimeIdx, RadParticleDeathTimeIdx, RadParticleLumIdx };
 template <typename problem_t> constexpr int RadParticleRealComps = 3 + Physics_Traits<problem_t>::nGroups;
-
 template <typename problem_t> using RadParticleContainer = amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>;
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
+
+enum CICParticleDataIdx { CICParticleMassIdx = 0, CICParticleVxIdx, CICParticleVyIdx, CICParticleVzIdx };
+constexpr int CICParticleRealComps = 4; // mass vx vy vz
+using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
+using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
 
 struct MassDeposition {
 	amrex::Real Gconst{};

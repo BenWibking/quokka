@@ -68,7 +68,6 @@ namespace filesystem = experimental::filesystem;
 #include <yaml-cpp/yaml.h>
 
 #ifdef AMREX_PARTICLES
-#include "particles/CICParticles.hpp"
 #include "particles/PhysicsParticles.hpp"
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
@@ -1240,7 +1239,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
 					interp.MeshToParticle(
-					    p, accel_arr, 0, quokka::ParticleVxIdx, AMREX_SPACEDIM,
+					    p, accel_arr, 0, quokka::CICParticleVxIdx, AMREX_SPACEDIM,
 					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
 						    return acc(i, j, k, comp); // no weighting
 					    },
@@ -1269,7 +1268,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLe
 					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 					// update particle position
 					for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-						p.pos(i) += dt * p.rdata(quokka::ParticleVxIdx + i);
+						p.pos(i) += dt * p.rdata(quokka::CICParticleVxIdx + i);
 					}
 				});
 			}
