@@ -1711,9 +1711,12 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				PrintRadEnergySource(radEnergySource);
 
 				// deposit radiation from particles into radEnergySource
-				amrex::ParticleToMesh(
-				    *AMRSimulation<problem_t>::RadParticles, radEnergySource, lev,
-				    quokka::RadDeposition<problem_t>{time_subcycle, quokka::RadParticleLumIdx, 0, Physics_Traits<problem_t>::nGroups}, false);
+				// amrex::ParticleToMesh(
+				//     *AMRSimulation<problem_t>::RadParticles, radEnergySource, lev,
+				//     quokka::RadDeposition<problem_t>{time_subcycle, quokka::RadParticleLumIdx, 0, Physics_Traits<problem_t>::nGroups}, false);
+
+				// deposit radiation from all particles that have luminosity
+				AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 
 				// for debugging, print the radEnergySource array
 				amrex::Print() << "after ParticleToMesh, ";
@@ -1738,11 +1741,11 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			}
 
 #ifdef AMREX_PARTICLES
-			if (AMRSimulation<problem_t>::do_rad_particles != 0) {
-				// for debugging, print the radEnergySource array
-				amrex::Print() << "after SetRadEnergySource, ";
-				PrintRadEnergySource(radEnergySource);
-			}
+			// if (AMRSimulation<problem_t>::do_rad_particles != 0) {
+			// 	// for debugging, print the radEnergySource array
+			// 	amrex::Print() << "after SetRadEnergySource, ";
+			// 	PrintRadEnergySource(radEnergySource);
+			// }
 #endif
 		}
 
@@ -1757,9 +1760,10 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 #ifdef AMREX_PARTICLES
 		if (AMRSimulation<problem_t>::do_rad_particles != 0) {
 			// deposit radiation from particles into radEnergySource
-			amrex::ParticleToMesh(*AMRSimulation<problem_t>::RadParticles, radEnergySource, lev,
-					      quokka::RadDeposition<problem_t>{time_subcycle, quokka::RadParticleLumIdx, 0, Physics_Traits<problem_t>::nGroups},
-					      false);
+			// amrex::ParticleToMesh(*AMRSimulation<problem_t>::RadParticles, radEnergySource, lev,
+			// 		      quokka::RadDeposition<problem_t>{time_subcycle, quokka::RadParticleLumIdx, 0, Physics_Traits<problem_t>::nGroups},
+			// 		      false);
+			AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 		}
 #endif
 
