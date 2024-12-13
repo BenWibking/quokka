@@ -50,7 +50,8 @@ class PhysicsParticleDescriptor
 	bool interactsWithHydro_{false}; // whether particles interact with hydro
 
       public:
-	PhysicsParticleDescriptor() = default;
+	PhysicsParticleDescriptor(int mass_idx, int lum_idx, bool hydro_interact)
+	    : massIndex_(mass_idx), lumIndex_(lum_idx), interactsWithHydro_(hydro_interact) {}
 	virtual ~PhysicsParticleDescriptor() = default;
 	void *neighborParticleContainer_{}; // pointer to particle container, type-erased
 

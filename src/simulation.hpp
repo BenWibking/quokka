@@ -2099,8 +2099,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
 template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles() {
     if (do_rad_particles != 0) {
         // Create radiating particle descriptor
-        auto radParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>();
-        radParticleDesc->setLumIndex(quokka::RadParticleLumIdx);
+        auto radParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(-1, quokka::RadParticleLumIdx, false);
         
         // Create particle container
         RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
