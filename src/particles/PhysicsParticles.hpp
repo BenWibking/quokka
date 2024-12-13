@@ -61,9 +61,6 @@ class PhysicsParticleDescriptor
 	[[nodiscard]] auto getInteractsWithHydro() const -> bool { return interactsWithHydro_; }
 	[[nodiscard]] auto getParticleContainer() const -> void * { return neighborParticleContainer_; }
 
-	// Set the luminosity index for radiation particles
-	void setLumIndex(int index) noexcept { lumIndex_ = index; }
-
 	// Virtual methods that can be overridden
 	virtual void hydroInteract() {} // Default no-op
 
