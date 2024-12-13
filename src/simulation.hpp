@@ -1105,7 +1105,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::calculateGpotAllLev
 #ifdef AMREX_PARTICLES
 		// deposit particle mass from all particles that have mass
 		// TODO(cch): this is working, but I'm not sure if I should use amrex::GetVecOfPtrs(rhs) or rhs directly
-		AMRSimulation<problem_t>::particleRegister_->depositMass(rhs, finest_level, Gconst_);
+		particleRegister_->depositMass(rhs, finest_level, Gconst_);
 #endif
 
 		for (int lev = 0; lev <= finest_level; ++lev) {
