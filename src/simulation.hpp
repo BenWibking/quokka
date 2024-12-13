@@ -2685,9 +2685,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::WriteCheckpointFile
 	if (do_cic_particles != 0) {
 		CICParticles->Checkpoint(checkpointname, "CIC_particles", true);
 	}
-	if (do_rad_particles != 0) {
-		// RadParticles->Checkpoint(checkpointname, "Rad_particles", true);
-	}
+	// write all particles in particleRegister_ to checkpoint file
+	particleRegister_->writeCheckpoint(checkpointname, true);
 #endif
 
 	// create symlink and point it at this checkpoint dir

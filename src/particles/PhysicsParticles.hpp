@@ -182,6 +182,17 @@ template <typename problem_t> class PhysicsParticleRegister
 		}
 	}
 
+	// Run Checkpoint(checkpointname, name, true) on all particles in particleRegistry_
+	void writeCheckpoint(const std::string &checkpointname, bool include_header)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->getParticleContainer());
+			if (container != nullptr) {
+				container->Checkpoint(checkpointname, name, include_header);
+			}
+		}
+	}
+
 	// Delete copy/move constructors/assignments
 	PhysicsParticleRegister(const PhysicsParticleRegister &) = delete;
 	PhysicsParticleRegister &operator=(const PhysicsParticleRegister &) = delete;
