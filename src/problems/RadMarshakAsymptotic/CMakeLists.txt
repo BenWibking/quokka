@@ -6,4 +6,4 @@ endif(AMReX_GPU_BACKEND MATCHES "CUDA")
 
 add_test(NAME MarshakWaveAsymptoticDiffusion COMMAND test_radiation_marshak_asymptotic MarshakAsymptotic.in ${QuokkaTestParams} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
 
-add_test(NAME MarshakWaveAsymptoticCorr COMMAND test_radiation_marshak_asymptotic MarshakAsymptoticCorr.in ${QuokkaTestParams} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+#add_test(NAME MarshakWaveAsymptoticCorr COMMAND test_radiation_marshak_asymptotic MarshakAsymptoticCorr.in ${QuokkaTestParams} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)

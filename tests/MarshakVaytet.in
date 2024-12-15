@@ -22,3 +22,6 @@ amr.blocking_factor = 4     # grid size must be divisible by this
 do_reflux = 0
 do_subcycle = 0
 suppress_output = 1
+
+radiation.c_hat_over_c = 0.01
+radiation.use_variable_chat = 1.0

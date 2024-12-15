@@ -9,23 +9,32 @@
 #include "test_radiation_marshak_Vaytet.hpp"
 #include "util/fextract.hpp"
 
+// const double chat_over_c_ = 0.1;
+constexpr bool variable_density_IC = 1;
+constexpr double rho0 = 1.0e-3;	    // g cm^-3
+// variable density
+constexpr double rhoL = rho0;	    // g cm^-3
+constexpr double rhoR = 0.1 * rho0;	    // g cm^-3
+// constant density
+// constexpr double rhoL = rho0;
+// constexpr double rhoR = rho0;
+
 // constexpr int n_groups_ = 2; // Be careful
-constexpr int n_groups_ = 4;
-// constexpr int n_groups_ = 8;
+// constexpr int n_groups_ = 4;
+constexpr int n_groups_ = 8;
 // constexpr int n_groups_ = 16;
 // constexpr int n_groups_ = 64;
-// constexpr int n_groups_ = 128;
-// constexpr int n_groups_ = 256;
-// constexpr OpacityModel opacity_model_ = OpacityModel::piecewise_constant_opacity;
-// constexpr OpacityModel opacity_model_ = OpacityModel::PPL_opacity_fixed_slope_spectrum;
-constexpr OpacityModel opacity_model_ = OpacityModel::PPL_opacity_full_spectrum;
+constexpr OpacityModel the_opacity_model = OpacityModel::piecewise_constant_opacity;
+// constexpr OpacityModel the_opacity_model = OpacityModel::PPL_opacity_fixed_slope_spectrum;
+// constexpr OpacityModel the_opacity_model = OpacityModel::PPL_opacity_full_spectrum;
 
 constexpr double kappa0 = 2000.0;   // cm^2 g^-1 (opacity).
 constexpr double nu_pivot = 4.0e13; // Powerlaw, kappa = kappa0 (nu/nu_pivot)^{-2}
 constexpr int n_coll = 4;	    // number of collections = 6, to align with Vaytet
-constexpr int the_model = 10; // 0: constant opacity (Vaytet et al. Sec 3.2.1), 1: nu-dependent opacity (Vaytet et al. Sec 3.2.2), 2: nu-and-T-dependent opacity
-			      // (Vaytet et al. Sec 3.2.3)
-// 10: bin-centered method with opacities propto nu^-2
+constexpr int the_model = 10; 
+// 0: constant opacity (Vaytet et al. Sec 3.2.1), 1: nu-dependent opacity (Vaytet et al. Sec 3.2.2), 2: nu-and-T-dependent opacity
+// (Vaytet et al. Sec 3.2.3)
+// 10: bin-centered method with opacities propto nu^-2, kappa = kappa0 * (nu_c/nu_pivot)^{-2}, nu_c = sqrt(nu_i * nu_i+1)
 
 // OLD
 // constexpr int the_model = 0; // 0: constant opacity (Vaytet et al. Sec 3.2.1), 1: nu-dependent opacity (Vaytet et al. Sec 3.2.2), 2: nu-and-T-dependent
@@ -59,25 +68,6 @@ constexpr amrex::GpuArray<double, n_groups_ + 1> group_edges_ = []() constexpr {
 		    6.00000000e+13, 6.92869191e+13, 8.00112859e+13, 9.23955916e+13, 1.06696765e+14, 1.23211502e+14, 1.42282422e+14, 1.64305178e+14,
 		    1.89736660e+14, 2.19104476e+14, 2.53017902e+14, 2.92180515e+14, 3.37404795e+14, 3.89628979e+14, 4.49936526e+14, 5.19578594e+14,
 		    6.00000000e+14};
-	} else if constexpr (n_groups_ == 128) {
-		return amrex::GpuArray<double, 129>{
-		    6.00000000e+10, 6.44764697e+10, 6.92869191e+10, 7.44562656e+10, 8.00112859e+10, 8.59807542e+10, 9.23955916e+10, 9.92890260e+10,
-		    1.06696765e+11, 1.14657178e+11, 1.23211502e+11, 1.32404044e+11, 1.42282422e+11, 1.52897805e+11, 1.64305178e+11, 1.76563631e+11,
-		    1.89736660e+11, 2.03892500e+11, 2.19104476e+11, 2.35451386e+11, 2.53017902e+11, 2.71895018e+11, 2.92180515e+11, 3.13979469e+11,
-		    3.37404795e+11, 3.62577834e+11, 3.89628979e+11, 4.18698351e+11, 4.49936526e+11, 4.83505313e+11, 5.19578594e+11, 5.58343225e+11,
-		    6.00000000e+11, 6.44764697e+11, 6.92869191e+11, 7.44562656e+11, 8.00112859e+11, 8.59807542e+11, 9.23955916e+11, 9.92890260e+11,
-		    1.06696765e+12, 1.14657178e+12, 1.23211502e+12, 1.32404044e+12, 1.42282422e+12, 1.52897805e+12, 1.64305178e+12, 1.76563631e+12,
-		    1.89736660e+12, 2.03892500e+12, 2.19104476e+12, 2.35451386e+12, 2.53017902e+12, 2.71895018e+12, 2.92180515e+12, 3.13979469e+12,
-		    3.37404795e+12, 3.62577834e+12, 3.89628979e+12, 4.18698351e+12, 4.49936526e+12, 4.83505313e+12, 5.19578594e+12, 5.58343225e+12,
-		    6.00000000e+12, 6.44764697e+12, 6.92869191e+12, 7.44562656e+12, 8.00112859e+12, 8.59807542e+12, 9.23955916e+12, 9.92890260e+12,
-		    1.06696765e+13, 1.14657178e+13, 1.23211502e+13, 1.32404044e+13, 1.42282422e+13, 1.52897805e+13, 1.64305178e+13, 1.76563631e+13,
-		    1.89736660e+13, 2.03892500e+13, 2.19104476e+13, 2.35451386e+13, 2.53017902e+13, 2.71895018e+13, 2.92180515e+13, 3.13979469e+13,
-		    3.37404795e+13, 3.62577834e+13, 3.89628979e+13, 4.18698351e+13, 4.49936526e+13, 4.83505313e+13, 5.19578594e+13, 5.58343225e+13,
-		    6.00000000e+13, 6.44764697e+13, 6.92869191e+13, 7.44562656e+13, 8.00112859e+13, 8.59807542e+13, 9.23955916e+13, 9.92890260e+13,
-		    1.06696765e+14, 1.14657178e+14, 1.23211502e+14, 1.32404044e+14, 1.42282422e+14, 1.52897805e+14, 1.64305178e+14, 1.76563631e+14,
-		    1.89736660e+14, 2.03892500e+14, 2.19104476e+14, 2.35451386e+14, 2.53017902e+14, 2.71895018e+14, 2.92180515e+14, 3.13979469e+14,
-		    3.37404795e+14, 3.62577834e+14, 3.89628979e+14, 4.18698351e+14, 4.49936526e+14, 4.83505313e+14, 5.19578594e+14, 5.58343225e+14,
-		    6.00000000e+14};
 	}
 }();
 
@@ -87,7 +77,6 @@ struct SuOlsonProblemCgs {
 }; // dummy type to allow compile-type polymorphism via template specialization
 
 constexpr int max_step_ = 1e6;
-constexpr double rho0 = 1.0e-3;	    // g cm^-3
 constexpr double T_initial = 300.0; // K
 constexpr double T_L = 1000.0;	    // K
 constexpr double T_R = 300.0;	    // K
@@ -120,7 +109,7 @@ template <> struct RadSystem_Traits<SuOlsonProblemCgs> {
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = C::hplanck; // set boundary unit to Hz
 	static constexpr amrex::GpuArray<double, n_groups_ + 1> radBoundaries = group_edges_;
-	static constexpr OpacityModel opacity_model = opacity_model_;
+	static constexpr OpacityModel opacity_model = the_opacity_model;
 };
 
 template <>
@@ -149,7 +138,7 @@ RadSystem<SuOlsonProblemCgs>::DefineOpacityExponentsAndLowerValues(amrex::GpuArr
 			exponents_and_values[1][i] = group_opacities_[i] * std::pow(Tgas / T_initial, 3. / 2.);
 		}
 	} else if constexpr (the_model == 10) {
-		if constexpr (opacity_model_ == OpacityModel::piecewise_constant_opacity) {
+		if constexpr (the_opacity_model == OpacityModel::piecewise_constant_opacity) {
 			for (int i = 0; i < nGroups_; ++i) {
 				auto const bin_center = std::sqrt(rad_boundaries[i] * rad_boundaries[i + 1]);
 				exponents_and_values[1][i] = kappa0 * std::pow(bin_center / nu_pivot, -2.);
@@ -190,14 +179,17 @@ AMRSimulation<SuOlsonProblemCgs>::setCustomBoundaryConditions(const amrex::IntVe
 
 	if (i < lo[0] || i >= hi[0]) {
 		double T_H = NAN;
+		double rho_H = NAN;
 		if (i < lo[0]) {
 			T_H = T_L;
+			rho_H = rhoL;
 		} else {
 			T_H = T_R;
+			rho_H = rhoR;
 		}
 
 		auto Erad_g = RadSystem<SuOlsonProblemCgs>::ComputeThermalRadiationMultiGroup(T_H, radBoundaries_g);
-		const double Egas = quokka::EOS<SuOlsonProblemCgs>::ComputeEintFromTgas(rho0, T_initial);
+		const double Egas = quokka::EOS<SuOlsonProblemCgs>::ComputeEintFromTgas(rho_H, T_initial);
 
 		for (int g = 0; g < Physics_Traits<SuOlsonProblemCgs>::nGroups; ++g) {
 			consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_g[g];
@@ -208,7 +200,7 @@ AMRSimulation<SuOlsonProblemCgs>::setCustomBoundaryConditions(const amrex::IntVe
 
 		// gas boundary conditions are the same on both sides
 		consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::gasEnergy_index) = Egas;
-		consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::gasDensity_index) = rho0;
+		consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::gasDensity_index) = rho_H;
 		consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::gasInternalEnergy_index) = Egas;
 		consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::x1GasMomentum_index) = 0.;
 		consVar(i, j, k, RadSystem<SuOlsonProblemCgs>::x2GasMomentum_index) = 0.;
@@ -221,11 +213,21 @@ template <> void QuokkaSimulation<SuOlsonProblemCgs>::setInitialConditionsOnGrid
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
 
+
+	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = grid_elem.dx_;
+	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_lo = grid_elem.prob_lo_;
+	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_hi = grid_elem.prob_hi_;
+
+	const double Lx = prob_hi[0] - prob_lo[0];
+
 	const auto radBoundaries_g = RadSystem<SuOlsonProblemCgs>::radBoundaries_;
 
 	// loop over the grid and set the initial condition
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		const double Egas = quokka::EOS<SuOlsonProblemCgs>::ComputeEintFromTgas(rho0, T_initial);
+		amrex::Real const x = prob_lo[0] + (i + static_cast<amrex::Real>(0.5)) * dx[0];
+
+		const double rho = rhoL + (rhoR - rhoL) * (x / Lx);
+		const double Egas = quokka::EOS<SuOlsonProblemCgs>::ComputeEintFromTgas(rho, T_initial);
 		// const double Erad = a_rad * std::pow(T_initial, 4);
 		auto Erad_g = RadSystem<SuOlsonProblemCgs>::ComputeThermalRadiationMultiGroup(T_initial, radBoundaries_g);
 
@@ -235,7 +237,7 @@ template <> void QuokkaSimulation<SuOlsonProblemCgs>::setInitialConditionsOnGrid
 			state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
 			state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
 		}
-		state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::gasDensity_index) = rho0;
+		state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::gasDensity_index) = rho;
 		state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::gasEnergy_index) = Egas;
 		state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::gasInternalEnergy_index) = Egas;
 		state_cc(i, j, k, RadSystem<SuOlsonProblemCgs>::x1GasMomentum_index) = 0.;
@@ -296,6 +298,7 @@ auto problem_main() -> int
 		std::vector<double> Trad(nx);
 		std::vector<double> Tgas(nx);
 		std::vector<double> vgas(nx);
+		std::vector<double> rho_gas(nx);
 		// define a vector of n_groups_ vectors
 		std::vector<std::vector<double>> Trad_g(n_groups_);
 
@@ -310,6 +313,7 @@ auto problem_main() -> int
 			}
 			const double Egas_t = values.at(RadSystem<SuOlsonProblemCgs>::gasInternalEnergy_index)[i];
 			const double rho = values.at(RadSystem<SuOlsonProblemCgs>::gasDensity_index)[i];
+			rho_gas.at(i) = rho;
 			amrex::Real const x = position[i];
 			xs.at(i) = x;
 			Tgas.at(i) = quokka::EOS<SuOlsonProblemCgs>::ComputeTgasFromEint(rho, Egas_t);
@@ -401,6 +405,7 @@ auto problem_main() -> int
 		fstream.close();
 
 		// save Trad_coll to file
+		// Trad_coll is the effective temperature of the total radiation energy in the n_coll (4) set of groups
 		std::ofstream fstream_coll;
 		fstream_coll.open("marshak_wave_Vaytet_coll.csv");
 		fstream_coll << "# x, Tgas, Trad";
@@ -455,21 +460,29 @@ auto problem_main() -> int
 		// // Tgas_exact_args["marker"] = "x";
 		// matplotlibcpp::plot(xs_exact, Tmat_exact, Tgas_exact_args);
 
-		matplotlibcpp::xlim(0.0, 12.0);	  // cm
+		matplotlibcpp::xlim(0.0, 20.0);	  // cm
 		matplotlibcpp::ylim(0.0, 1000.0); // K
 		matplotlibcpp::xlabel("length x (cm)");
 		matplotlibcpp::ylabel("temperature (K)");
 		matplotlibcpp::legend();
 		// matplotlibcpp::title(fmt::format("time t = {:.4g}", sim.tNew_[0]));
-		if (opacity_model_ == OpacityModel::piecewise_constant_opacity) {
+		if (the_opacity_model == OpacityModel::piecewise_constant_opacity) {
 			matplotlibcpp::title("PC");
-		} else if (opacity_model_ == OpacityModel::PPL_opacity_fixed_slope_spectrum) {
+		} else if (the_opacity_model == OpacityModel::PPL_opacity_fixed_slope_spectrum) {
 			matplotlibcpp::title("PPL-fixed");
-		} else if (opacity_model_ == OpacityModel::PPL_opacity_full_spectrum) {
+		} else if (the_opacity_model == OpacityModel::PPL_opacity_full_spectrum) {
 			matplotlibcpp::title("PPL-free");
 		}
 		matplotlibcpp::tight_layout();
 		matplotlibcpp::save("./marshak_wave_Vaytet.pdf");
+
+		// plot rho_gas
+		matplotlibcpp::clf();
+		matplotlibcpp::plot(xs, rho_gas);
+		matplotlibcpp::xlabel("length x (cm)");
+		matplotlibcpp::ylabel("density (g cm^-3)");
+		matplotlibcpp::tight_layout();
+		matplotlibcpp::save("./marshak_wave_Vaytet_rho.pdf");
 #endif // HAVE_PYTHON
 	}
 
