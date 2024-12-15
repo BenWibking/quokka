@@ -28,11 +28,10 @@
 #include "math/math_impl.hpp"
 #include "physics_info.hpp"
 #include "radiation/planck_integral.hpp"
+#include "util/ArrayView_3d.hpp"
 #include "util/valarray.hpp"
 
 using Real = amrex::Real;
-
-static constexpr bool print_chat = false;
 
 // Hyper parameters for the radiation solver
 static constexpr bool add_line_cooling_to_radiation_in_jac = false;
@@ -474,7 +473,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
 
-	AMREX_GPU_DEVICE static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
+	AMREX_GPU_DEVICE static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double use_variable_chat, double variable_chat_param2, array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
 };
 
 // Compute radiation energy fractions for each photon group from a Planck function, given nGroups, radBoundaries, and temperature
@@ -1562,7 +1561,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 }
 
 template <typename problem_t>
-AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, array_t &reducedSpeedOfLightFactor,
+AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, const double use_variable_chat, const double variable_chat_param2, array_t &reducedSpeedOfLightFactor,
 									 const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
 {
 	// quokka::Array4View<const amrex::Real, FluxDir::X1> consVarX1(consVar_in);
@@ -1634,30 +1633,39 @@ AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arr
 		// const double R_scaled = R / 3.0;
 		// const double R_scaled4 = R_scaled * R_scaled * R_scaled * R_scaled;
 
-		const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
-		const int pow = 1;
-		// const double scaling = 1.0;
-		const double scaling = 3.0;
-		const double max_chat_scaleup = 10.0;
-		for (int g = 0; g < nGroups_; ++g) {
-			const double scaled = std::pow(tau_cell[g] * scaling, pow);
-			const double reduced_speed_of_light_factor = c_hat_over_c * (1.0 + max_chat_scaleup * scaled) / (1.0 + scaled);
-			reducedSpeedOfLightFactor(i, j, k, g) = std::min(reduced_speed_of_light_factor, 1.0);
-		}
-	});
+		// const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
 
-	if constexpr (print_chat) {
-		// print reducedSpeedOfLightFactor
-		amrex::Print() << "reducedSpeedOfLightFactor: \n";
+		quokka::Array4View<const amrex::Real, FluxDir::X1> consVarX1(consVar_in);
+		const auto tau_cell = ComputeCellOpticalDepth<FluxDir::X1>(consVarX1, dx, i, j, k, radBoundaries_); // TODO(cch): this is for 1-D only
+
+		const double max_chat_scaleup = 10.0;
+		const double scaling = use_variable_chat;
+		const double pow = variable_chat_param2;
+		// const double scaling = 0.05;
+
+		// lambda function to compute the reduced speed of light factor
+		const auto model_one = [=](double tau_cell) -> double {
+			const double scaled = std::pow(tau_cell * scaling, pow);
+			return std::min(c_hat_over_c * (1.0 + max_chat_scaleup * scaled) / (1.0 + scaled), 1.0);
+		};
+		const auto model_two = [=](double tau_cell) -> double {
+			const double scaled = std::pow(tau_cell * scaling, pow);
+			return (c_hat_over_c + scaled) / (1.0 + scaled);
+		};
+
 		for (int g = 0; g < nGroups_; ++g) {
-			amrex::Print() << "group " << g << ": ";
-			// Use indexRange to iterate over valid indices
-			amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-				amrex::Print() << reducedSpeedOfLightFactor(i, j, k, g) << " ";
-			});
-			amrex::Print() << "\n";
+			// const double scaled = std::pow(tau_cell[g] * scaling, pow);
+			// const double reduced_speed_of_light_factor = c_hat_over_c * (1.0 + max_chat_scaleup * scaled) / (1.0 + scaled);
+
+	 		// limiting between phi and 10 phi
+			// reducedSpeedOfLightFactor(i, j, k, g) = model_one(tau_cell[g], 1);
+
+			// the original model suggested by Mark, but replacing R with tau_cell and use various powers
+			// const int pow = 4;
+			reducedSpeedOfLightFactor(i, j, k, g) = model_two(tau_cell[g]);
 		}
-	}
+
+	});
 }
 
 #include "radiation/source_terms_multi_group.hpp"  // IWYU pragma: export
