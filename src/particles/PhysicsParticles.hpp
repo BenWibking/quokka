@@ -75,8 +75,8 @@ class PhysicsParticleDescriptor
 	    : massIndex_(mass_idx), lumIndex_(lum_idx), interactsWithHydro_(hydro_interact)
 	{
 	}
-	virtual ~PhysicsParticleDescriptor() = default;
-	void *neighborParticleContainer_{}; // pointer to particle container, type-erased
+	~PhysicsParticleDescriptor() = default;
+	std::unique_ptr<amrex::ParticleContainerBase> neighborParticleContainer_; // pointer to particle container
 
 	// Getters
 	[[nodiscard]] auto getMassIndex() const -> int { return massIndex_; }
@@ -97,7 +97,7 @@ class PhysicsParticleDescriptor
 template <typename problem_t> class PhysicsParticleRegister
 {
       private:
-	std::map<std::string, std::unique_ptr<PhysicsParticleDescriptor>> particleRegistry_;
+	std::map<std::string, PhysicsParticleDescriptor> particleRegistry_;
 
       public:
 	PhysicsParticleRegister() = default;
@@ -125,7 +125,7 @@ template <typename problem_t> class PhysicsParticleRegister
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getLumIndex() >= 0) {
 				// Get particle container and deposit luminosity
-				auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
+				auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 				if (container != nullptr) {
 					amrex::ParticleToMesh(*container, radEnergySource, lev,
 							      RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
@@ -141,7 +141,7 @@ template <typename problem_t> class PhysicsParticleRegister
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getMassIndex() >= 0) {
 				// Get particle container and deposit mass
-				auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
+				auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 				if (container != nullptr) {
 					amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev,
 							      MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);
@@ -154,7 +154,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	void redistribute(int lev)
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
-			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
+			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 			if (container != nullptr) {
 				container->Redistribute(lev);
 			}
@@ -165,7 +165,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	void redistribute(int lev, int ngrow)
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
-			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
+			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 			if (container != nullptr) {
 				container->Redistribute(lev, container->finestLevel(), ngrow);
 			}
@@ -176,7 +176,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	void writePlotFile(const std::string &plotfilename)
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
-			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
+			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 			if (container != nullptr) {
 				container->WritePlotFile(plotfilename, name);
 			}
@@ -187,7 +187,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	void writeCheckpoint(const std::string &checkpointname, bool include_header)
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
-			auto *container = static_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
+			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 			if (container != nullptr) {
 				container->Checkpoint(checkpointname, name, include_header);
 			}

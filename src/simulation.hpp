@@ -2079,7 +2079,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 		RadParticles->SetVerbose(0);
 
 		// Set container in descriptor
-		radParticleDesc->neighborParticleContainer_ = RadParticles.get();
+		radParticleDesc->neighborParticleContainer_ = std::unique_ptr<amrex::ParticleContainerBase>(RadParticles.get()); // RadParticles.get();
 
 		// Register with particle register
 		particleRegister_->registerParticleType("Rad_particles", std::move(radParticleDesc));
