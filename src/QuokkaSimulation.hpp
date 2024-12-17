@@ -41,7 +41,6 @@
 #include "AMReX_Print.H"
 #include "AMReX_REAL.H"
 #include "AMReX_YAFluxRegister.H"
-#include "particles/PhysicsParticles.hpp"
 
 #ifdef AMREX_USE_ASCENT
 #include "AMReX_Conduit_Blueprint.H"
@@ -178,7 +177,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void preCalculateInitialConditions() override;
 	void setInitialConditionsOnGrid(quokka::grid const &grid_elem) override;
 	void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) override;
-	void createInitialParticles() override;
 	void createInitialRadParticles() override;
 	void createInitialCICParticles() override;
 	void advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle) override;
@@ -551,13 +549,6 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::setInitialCondit
 	// default empty implementation
 	// user should implement using problem-specific template specialization
 	// note: an implementation is only required if face-centered vars are used
-}
-
-template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialParticles()
-{
-	// default empty implementation
-	// user should implement using problem-specific template specialization
-	// note: an implementation is only required if particles are used
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialRadParticles()

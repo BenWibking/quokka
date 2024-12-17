@@ -11,7 +11,13 @@ namespace quokka
 {
 
 enum RadParticleDataIdx { RadParticleMassIdx = 0, RadParticleBirthTimeIdx, RadParticleDeathTimeIdx, RadParticleLumIdx };
-template <typename problem_t> constexpr int RadParticleRealComps = 3 + Physics_Traits<problem_t>::nGroups;
+template <typename problem_t> constexpr int RadParticleRealComps = []() constexpr {
+	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
+		return 3 + Physics_Traits<problem_t>::nGroups;
+	} else {
+		return 3;
+	}
+}();
 template <typename problem_t> using RadParticleContainer = amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>;
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
 

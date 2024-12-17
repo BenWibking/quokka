@@ -225,7 +225,6 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	virtual void preCalculateInitialConditions() = 0;
 	virtual void setInitialConditionsOnGrid(quokka::grid const &grid_elem) = 0;
 	virtual void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) = 0;
-	virtual void createInitialParticles() = 0;
 	virtual void createInitialCICParticles() = 0;
 	virtual void createInitialRadParticles() = 0;
 	virtual void computeBeforeTimestep() = 0;
