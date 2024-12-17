@@ -1,10 +1,12 @@
 #ifndef PHYSICS_PARTICLES_HPP_
 #define PHYSICS_PARTICLES_HPP_
 
-#include <AMReX_AmrParticles.H>
-#include <AMReX_ParIter.H>
-#include <AMReX_ParticleInterpolators.H>
-
+#include "AMReX_AmrParticles.H"
+#include "AMReX_Array.H"
+#include "AMReX_Extension.H"
+#include "AMReX_ParIter.H"
+#include "AMReX_ParticleContainerBase.H"
+#include "AMReX_ParticleInterpolators.H"
 #include "physics_info.hpp"
 
 namespace quokka
@@ -39,7 +41,7 @@ struct MassDeposition {
 							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
 	{
 		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
-		interp.ParticleToMesh(p, rho, start_part_comp, start_mesh_comp, num_comp, [=] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
+		interp.ParticleToMesh(p, rho, start_part_comp, start_mesh_comp, num_comp, [this] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
 			return 4.0 * M_PI * Gconst * part.rdata(comp); // weight by 4 pi G
 		});
 	}
@@ -57,12 +59,13 @@ struct RadDeposition {
 							    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dxi) const noexcept
 	{
 		amrex::ParticleInterpolator::Linear interp(p, plo, dxi);
-		interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp, [=] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
-			if (current_time < part.rdata(RadParticleBirthTimeIdx) || current_time >= part.rdata(RadParticleDeathTimeIdx)) {
-				return 0.0;
-			}
-			return part.rdata(comp) * (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
-		});
+		interp.ParticleToMesh(p, radEnergySource, start_part_comp, start_mesh_comp, num_comp,
+				      [this, dxi] AMREX_GPU_DEVICE(const ParticleType &part, int comp) {
+					      if (current_time < part.rdata(RadParticleBirthTimeIdx) || current_time >= part.rdata(RadParticleDeathTimeIdx)) {
+						      return 0.0;
+					      }
+					      return part.rdata(comp) * (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
+				      });
 	}
 };
 
