@@ -75,7 +75,7 @@ class PhysicsParticleDescriptor
 	    : massIndex_(mass_idx), lumIndex_(lum_idx), interactsWithHydro_(hydro_interact)
 	{
 	}
-	virtual ~PhysicsParticleDescriptor() = default;
+	~PhysicsParticleDescriptor() = default;
 	amrex::ParticleContainerBase *neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
 
 	// Getters
@@ -83,8 +83,7 @@ class PhysicsParticleDescriptor
 	[[nodiscard]] auto getLumIndex() const -> int { return lumIndex_; }
 	[[nodiscard]] auto getInteractsWithHydro() const -> bool { return interactsWithHydro_; }
 
-	// Virtual methods that can be overridden
-	virtual void hydroInteract() {} // Default no-op
+	void hydroInteract() {} // Default no-op
 
 	// Delete copy/move constructors/assignments
 	PhysicsParticleDescriptor(const PhysicsParticleDescriptor &) = delete;
