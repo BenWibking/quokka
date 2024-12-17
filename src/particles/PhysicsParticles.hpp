@@ -76,7 +76,7 @@ class PhysicsParticleDescriptor
 	{
 	}
 	virtual ~PhysicsParticleDescriptor() = default;
-	amrex::ParticleContainerBase* neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
+	amrex::ParticleContainerBase *neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
 
 	// Getters
 	[[nodiscard]] auto getMassIndex() const -> int { return massIndex_; }
