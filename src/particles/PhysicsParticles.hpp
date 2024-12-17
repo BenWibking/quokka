@@ -75,8 +75,8 @@ class PhysicsParticleDescriptor
 	    : massIndex_(mass_idx), lumIndex_(lum_idx), interactsWithHydro_(hydro_interact)
 	{
 	}
-	~PhysicsParticleDescriptor() = default;
-	std::unique_ptr<amrex::ParticleContainerBase> neighborParticleContainer_; // pointer to particle container
+	virtual ~PhysicsParticleDescriptor() = default;
+	amrex::ParticleContainerBase* neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
 
 	// Getters
 	[[nodiscard]] auto getMassIndex() const -> int { return massIndex_; }
@@ -97,7 +97,7 @@ class PhysicsParticleDescriptor
 template <typename problem_t> class PhysicsParticleRegister
 {
       private:
-	std::map<std::string, PhysicsParticleDescriptor> particleRegistry_;
+	std::map<std::string, std::unique_ptr<PhysicsParticleDescriptor>> particleRegistry_;
 
       public:
 	PhysicsParticleRegister() = default;
