@@ -11,7 +11,8 @@ namespace quokka
 {
 
 enum RadParticleDataIdx { RadParticleMassIdx = 0, RadParticleBirthTimeIdx, RadParticleDeathTimeIdx, RadParticleLumIdx };
-template <typename problem_t> constexpr int RadParticleRealComps = []() constexpr {
+template <typename problem_t>
+constexpr int RadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
 		return 3 + Physics_Traits<problem_t>::nGroups;
 	} else {
