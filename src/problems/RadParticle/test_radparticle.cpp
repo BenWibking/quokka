@@ -58,7 +58,7 @@ template <> struct RadSystem_Traits<ParticleProblem> {
 template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 {
 	// read particles from ASCII file
-	const int nreal_extra = 3 + nGroups_; // mass birth_time death_time lum1 lum2 lum3
+	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1 lum2 lum3
 	RadParticles->SetVerbose(1);
 	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
 }
