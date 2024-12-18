@@ -13,11 +13,11 @@ constexpr int nGroups_ = 1;
 
 constexpr double erad_floor = 1.0e-15;
 constexpr double initial_Erad = erad_floor;
-constexpr double initial_Egas = erad_floor;
+constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
 constexpr double chat = 1.0;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-20; // opacity
-constexpr double rho = 1.0;
+constexpr double rho = 1.0e-6;
 
 const double lum1 = 1.0;
 
@@ -127,7 +127,7 @@ auto problem_main() -> int
 	const double dz = sim.Geom(0).CellSize(2);
 	const double dvol = dx * dy * dz;
 	const double total_Erad = total_Erad_over_vol * dvol;
-	const double total_Erad_exact = 4.0 * lum1 * sim.tNew_[0];
+	const double total_Erad_exact = 2.0 * lum1 * sim.tNew_[0];
 	const double rel_err = std::abs(total_Erad - total_Erad_exact) / total_Erad_exact;
 	amrex::Print() << "Total radiation energy = " << total_Erad << std::endl;
 
