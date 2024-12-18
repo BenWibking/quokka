@@ -294,7 +294,10 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySo
 		const amrex::Box &indexRange = iter.validbox();
 		auto const &radEnergySource_arr = radEnergySource.array(iter);
 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-			amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
+			// amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
+			if (k == 16) {
+				amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
+			}
 		});
 		amrex::Print() << "\n";
 	}
@@ -1705,7 +1708,8 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		int *p_iteration_counter = iteration_counter.data();
 
 		// Create a MultiFab to hold radEnergySource for the current AMR level
-		amrex::MultiFab radEnergySource(grids[lev], dmap[lev], Physics_Traits<problem_t>::nGroups, 0);
+		int const nghost = 1;  // depositRadiation needs 1 ghost cell
+		amrex::MultiFab radEnergySource(grids[lev], dmap[lev], Physics_Traits<problem_t>::nGroups, nghost);
 
 		if constexpr (IMEX_a22 > 0.0) {
 			// matter-radiation exchange source terms of stage 1
@@ -1714,15 +1718,15 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 
 #ifdef AMREX_PARTICLES
 			// for debugging, print the radEnergySource array
-			// amrex::Print() << "Initial, ";
-			// PrintRadEnergySource(radEnergySource);
+			amrex::Print() << "Initial, ";
+			PrintRadEnergySource(radEnergySource);
 
 			// Deposit radiation from all particles that have luminosity. When there are no particles with luminosity, this will do nothing.
 			AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 
 			// for debugging, print the radEnergySource array
-			// amrex::Print() << "after ParticleToMesh, ";
-			// PrintRadEnergySource(radEnergySource);
+			amrex::Print() << "after ParticleToMesh, ";
+			PrintRadEnergySource(radEnergySource);
 #endif
 
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
