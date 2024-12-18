@@ -1,0 +1,27 @@
+# *****************************************************************
+# Problem size and geometry
+# *****************************************************************
+geometry.prob_lo     =  0.0  0.0  0.0 
+geometry.prob_hi     =  1.0  1.0  1.0
+geometry.is_periodic =  1    1    1
+
+# *****************************************************************
+# VERBOSITY
+# *****************************************************************
+amr.v              = 0       # verbosity in Amr
+
+# *****************************************************************
+# Resolution and refinement
+# *****************************************************************
+amr.n_cell          = 64 64 64
+amr.max_level       = 0     # number of levels = max_level + 1
+amr.blocking_factor = 4     # grid size must be divisible by this
+
+do_reflux = 0
+do_subcycle = 0
+suppress_output = 0
+
+do_rad_particles = 1    # turns on radiating particles
+stop_time = 0.1
+plotfile_interval = 4
+max_timesteps = 1000
