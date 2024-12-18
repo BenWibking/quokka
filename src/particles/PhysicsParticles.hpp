@@ -148,9 +148,12 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getLumIndex() >= 0) {
-				// Get particle container and deposit luminosity
-				auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
-				if (container != nullptr) {
+				// Try each particle container type
+				if (auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_)) {
+					amrex::ParticleToMesh(*container, radEnergySource, lev,
+							  RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
+							  false);
+				} else if (auto *container = dynamic_cast<CICRadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_)) {
 					amrex::ParticleToMesh(*container, radEnergySource, lev,
 							      RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
 							      false);
@@ -164,9 +167,11 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getMassIndex() >= 0) {
-				// Get particle container and deposit mass
-				auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
-				if (container != nullptr) {
+				// Try each particle container type
+				if (auto *container = dynamic_cast<CICRadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_)) {
+					amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev,
+							  MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);
+				} else if (auto *container = dynamic_cast<CICParticleContainer *>(descriptor->neighborParticleContainer_)) {
 					amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev,
 							      MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);
 				}
