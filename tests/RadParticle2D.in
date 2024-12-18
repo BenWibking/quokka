@@ -22,5 +22,6 @@ do_subcycle = 0
 suppress_output = 0
 
 do_rad_particles = 1    # turns on radiating particles
-stop_time = 0.3
+stop_time = 0.2
 plotfile_interval = 4
+max_timesteps = 1000

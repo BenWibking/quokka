@@ -12,12 +12,14 @@ struct ParticleProblem {
 constexpr int nGroups_ = 1;
 
 constexpr double erad_floor = 1.0e-15;
-constexpr double initial_Erad = 1.0e-5;
-constexpr double initial_Egas = 1.0e-5;
+constexpr double initial_Erad = 1.0e-10;
+constexpr double initial_Egas = 1.0e-10;
 constexpr double c = 1.0;	   // speed of light
 constexpr double chat = 1.0;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-10; // opacity
 constexpr double rho = 1.0;
+
+const double lum1 = 1.0;
 
 template <> struct quokka::EOS_Traits<ParticleProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
@@ -53,21 +55,6 @@ template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 	RadParticles->SetVerbose(1);
 	RadParticles->InitFromAsciiFile("RadParticles2D.txt", nreal_extra, nullptr);
 }
-
-// template <>
-// void RadSystem<StreamingProblem>::SetRadEnergySource(array_t &radEnergySource, amrex::Box const &indexRange,
-// 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & dx,
-// 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & /*prob_lo*/,
-// 						   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const & /*prob_hi*/, amrex::Real /*time*/)
-// {
-// 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-// 		if (i == 32) {
-// 			// src = lum / c / (dx[0] * dx[1]);
-// 			const double src = lum1 / c / (dx[0]);
-// 			radEnergySource(i, j, k, 0) += src;
-// 		}
-// 	});
-// }
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ParticleProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
 {
@@ -109,7 +96,6 @@ auto problem_main() -> int
 	// const double Lx = 1.0;
 	const double CFL_number = 0.8;
 	const double dt_max = 1e-2;
-	const int max_timesteps = 5000;
 
 	// Boundary conditions
 	constexpr int nvars = RadSystem<ParticleProblem>::nvar_;
@@ -127,7 +113,6 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
-	sim.maxTimesteps_ = max_timesteps;
 
 	// initialize
 	sim.setInitialConditions();
@@ -135,55 +120,24 @@ auto problem_main() -> int
 	// evolve
 	sim.evolve();
 
-	// read output variables
-	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.25, true);
-	const int nx = static_cast<int>(position.size());
+	// compute total radiation energy
+	const double total_Erad_over_vol = sim.state_new_cc_[0].sum(RadSystem<ParticleProblem>::radEnergy_index);
+	const double dx = sim.Geom(0).CellSize(0);
+	const double dy = sim.Geom(0).CellSize(1);
+	const double dvol = dx * dy;
+	const double total_Erad = total_Erad_over_vol * dvol;
+	const double total_Erad_exact = 4.0 * lum1 * sim.tNew_[0];
+	const double rel_err = std::abs(total_Erad - total_Erad_exact) / total_Erad_exact;
+	amrex::Print() << "Total radiation energy = " << total_Erad << "\n";
 
-	// compute error norm
-	std::vector<double> erad(nx);
-	// std::vector<double> erad_exact(nx);
-	std::vector<double> xs(nx);
-	for (int i = 0; i < nx; ++i) {
-		amrex::Real const x = position[i];
-		xs.at(i) = x;
-		// erad_exact.at(i) = (x <= chat * tmax) ? 1.0 : 0.0;
-		erad.at(i) = values.at(RadSystem<ParticleProblem>::radEnergy_index)[i];
+	int status = 1;
+	const double rel_err_tol = 1.0e-5;
+	if (rel_err < rel_err_tol) {
+		status = 0;
 	}
-
-	// double err_norm = 0.;
-	// double sol_norm = 0.;
-	// for (int i = 0; i < nx; ++i) {
-	// 	err_norm += std::abs(erad[i] - erad_exact[i]);
-	// 	sol_norm += std::abs(erad_exact[i]);
-	// }
-
-	// const double rel_err_norm = err_norm / sol_norm;
-	// const double rel_err_tol = 0.05;
-	// int status = 1;
-	// if (rel_err_norm < rel_err_tol) {
-	// 	status = 0;
-	// }
-	// amrex::Print() << "Relative L1 norm = " << rel_err_norm << std::endl;
-
-#ifdef HAVE_PYTHON
-	// Plot results
-	matplotlibcpp::clf();
-	// matplotlibcpp::ylim(-0.1, 3.1);
-
-	std::map<std::string, std::string> erad_args;
-	std::map<std::string, std::string> erad_exact_args;
-	erad_args["label"] = "numerical solution";
-	erad_exact_args["label"] = "exact solution";
-	erad_exact_args["linestyle"] = "--";
-	matplotlibcpp::plot(xs, erad, erad_args);
-	// matplotlibcpp::plot(xs, erad_exact, erad_exact_args);
-
-	matplotlibcpp::legend();
-	matplotlibcpp::title(fmt::format("t = {:.4f}", sim.tNew_[0]));
-	matplotlibcpp::save("./radparticle_2D.pdf");
-#endif // HAVE_PYTHON
+	amrex::Print() << "Relative L1 norm = " << rel_err << "\n";
 
 	// Cleanup and exit
-	amrex::Print() << "Finished." << std::endl;
-	return 0;
+	amrex::Print() << "Finished." << "\n";
+	return status;
 }
