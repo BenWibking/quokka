@@ -12,23 +12,37 @@
 namespace quokka
 {
 
+// CIC particles
+enum CICParticleDataIdx { CICParticleMassIdx = 0, CICParticleVxIdx, CICParticleVyIdx, CICParticleVzIdx };
+constexpr int CICParticleRealComps = 4; // mass vx vy vz
+using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
+using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
+
 // Radiation particles
 enum RadParticleDataIdx { RadParticleBirthTimeIdx = 0, RadParticleDeathTimeIdx, RadParticleLumIdx};
 template <typename problem_t>
 constexpr int RadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
-		return 2 + Physics_Traits<problem_t>::nGroups;
+		return 2 + Physics_Traits<problem_t>::nGroups; // birth_time death_time lum1 ... lumN
 	} else {
-		return 2;
+		return 2; // birth_time death_time
 	}
 }();
 template <typename problem_t> using RadParticleContainer = amrex::AmrParticleContainer<RadParticleRealComps<problem_t>>;
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
 
-enum CICParticleDataIdx { CICParticleMassIdx = 0, CICParticleVxIdx, CICParticleVyIdx, CICParticleVzIdx };
-constexpr int CICParticleRealComps = 4; // mass vx vy vz
-using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
-using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
+// CICRad particles
+enum CICRadParticleDataIdx { CICRadParticleMassIdx = 0, CICRadParticleVxIdx, CICRadParticleVyIdx, CICRadParticleVzIdx, CICRadParticleBirthTimeIdx, CICRadParticleDeathTimeIdx, CICRadParticleLumIdx };
+template <typename problem_t>
+constexpr int CICRadParticleRealComps = []() constexpr {
+	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
+		return 6 + Physics_Traits<problem_t>::nGroups; // mass vx vy vz birth_time death_time lum1 ... lumN
+	} else {
+		return 6; // mass vx vy vz birth_time death_time
+	}
+}();
+template <typename problem_t> using CICRadParticleContainer = amrex::AmrParticleContainer<CICRadParticleRealComps<problem_t>>;
+template <typename problem_t> using CICRadParticleIterator = amrex::ParIter<CICRadParticleRealComps<problem_t>>;
 
 struct MassDeposition {
 	amrex::Real Gconst{};

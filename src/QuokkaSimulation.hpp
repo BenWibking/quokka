@@ -177,8 +177,9 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void preCalculateInitialConditions() override;
 	void setInitialConditionsOnGrid(quokka::grid const &grid_elem) override;
 	void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) override;
-	void createInitialRadParticles() override;
 	void createInitialCICParticles() override;
+	void createInitialRadParticles() override;
+	void createInitialCICRadParticles() override;
 	void advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle) override;
 	void computeBeforeTimestep() override;
 	void computeAfterTimestep() override;
@@ -285,14 +286,16 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
 };
 
+// For debugging only; will be removed
 template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
 {
 	amrex::Print() << "radEnergySource_arr.data() = ";
 	for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
+		const amrex::Box &indexRange = iter.validbox();
 		auto const &radEnergySource_arr = radEnergySource.array(iter);
-		for (int i = 0; i <= 63; ++i) {
-			amrex::Print() << radEnergySource_arr(i, 0, 0) << ", ";
-		}
+		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+			amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
+		});
 		amrex::Print() << "\n";
 	}
 }
@@ -551,6 +554,13 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::setInitialCondit
 	// note: an implementation is only required if face-centered vars are used
 }
 
+template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialCICParticles()
+{
+	// default empty implementation
+	// user should implement using problem-specific template specialization
+	// note: an implementation is only required if CIC_particles are used
+}
+
 template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialRadParticles()
 {
 	// default empty implementation
@@ -558,11 +568,11 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialRad
 	// note: an implementation is only required if Rad_particles are used
 }
 
-template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialCICParticles()
+template <typename problem_t> void QuokkaSimulation<problem_t>::createInitialCICRadParticles()
 {
 	// default empty implementation
 	// user should implement using problem-specific template specialization
-	// note: an implementation is only required if CIC_particles are used
+	// note: an implementation is only required if CICRad_particles are used
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::computeBeforeTimestep()
@@ -1703,18 +1713,16 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
 
 #ifdef AMREX_PARTICLES
-			if (AMRSimulation<problem_t>::do_rad_particles != 0) {
-				// for debugging, print the radEnergySource array
-				amrex::Print() << "Initial, ";
-				PrintRadEnergySource(radEnergySource);
+			// for debugging, print the radEnergySource array
+			// amrex::Print() << "Initial, ";
+			// PrintRadEnergySource(radEnergySource);
 
-				// deposit radiation from all particles that have luminosity
-				AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
+			// Deposit radiation from all particles that have luminosity. When there are no particles with luminosity, this will do nothing.
+			AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 
-				// for debugging, print the radEnergySource array
-				amrex::Print() << "after ParticleToMesh, ";
-				PrintRadEnergySource(radEnergySource);
-			}
+			// for debugging, print the radEnergySource array
+			// amrex::Print() << "after ParticleToMesh, ";
+			// PrintRadEnergySource(radEnergySource);
 #endif
 
 			for (amrex::MFIter iter(state_new_cc_[lev]); iter.isValid(); ++iter) {
@@ -1743,10 +1751,8 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		radEnergySource.setVal(0.0); // Initialize the MultiFab to zero
 
 #ifdef AMREX_PARTICLES
-		if (AMRSimulation<problem_t>::do_rad_particles != 0) {
-			// deposit radiation from particles into radEnergySource
-			AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
-		}
+		// Deposit radiation from particles into radEnergySource. When there are no particles with luminosity, this will do nothing.
+		AMRSimulation<problem_t>::particleRegister_->depositRadiation(radEnergySource, lev, time_subcycle);
 #endif
 
 		// Add the matter-radiation exchange source terms to the radiation subsystem and evolve by (1 - IMEX_a32) * dt

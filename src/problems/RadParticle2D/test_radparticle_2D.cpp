@@ -3,10 +3,8 @@
 ///
 
 #include "test_radparticle_2D.hpp"
-#include "AMReX.H"
 #include "QuokkaSimulation.hpp"
 #include "util/fextract.hpp"
-#include "util/valarray.hpp"
 
 struct ParticleProblem {
 };
@@ -51,7 +49,7 @@ template <> struct RadSystem_Traits<ParticleProblem> {
 template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 {
 	// read particles from ASCII file
-	const int nreal_extra = 3 + nGroups_; // mass birth_time death_time lum1
+	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1
 	RadParticles->SetVerbose(1);
 	RadParticles->InitFromAsciiFile("RadParticles2D.txt", nreal_extra, nullptr);
 }
