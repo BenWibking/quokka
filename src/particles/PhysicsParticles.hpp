@@ -19,7 +19,7 @@ using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
 using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
 
 // Radiation particles
-enum RadParticleDataIdx { RadParticleBirthTimeIdx = 0, RadParticleDeathTimeIdx, RadParticleLumIdx};
+enum RadParticleDataIdx { RadParticleBirthTimeIdx = 0, RadParticleDeathTimeIdx, RadParticleLumIdx };
 template <typename problem_t>
 constexpr int RadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
@@ -32,7 +32,15 @@ template <typename problem_t> using RadParticleContainer = amrex::AmrParticleCon
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
 
 // CICRad particles
-enum CICRadParticleDataIdx { CICRadParticleMassIdx = 0, CICRadParticleVxIdx, CICRadParticleVyIdx, CICRadParticleVzIdx, CICRadParticleBirthTimeIdx, CICRadParticleDeathTimeIdx, CICRadParticleLumIdx };
+enum CICRadParticleDataIdx {
+	CICRadParticleMassIdx = 0,
+	CICRadParticleVxIdx,
+	CICRadParticleVyIdx,
+	CICRadParticleVzIdx,
+	CICRadParticleBirthTimeIdx,
+	CICRadParticleDeathTimeIdx,
+	CICRadParticleLumIdx
+};
 template <typename problem_t>
 constexpr int CICRadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
@@ -90,55 +98,65 @@ struct RadDeposition {
 template <typename problem_t> class PhysicsParticleRegister;
 
 // Add a virtual interface for particle operations
-class ParticleOperations {
-public:
+class ParticleOperations
+{
+      public:
 	virtual ~ParticleOperations() = default;
 	virtual void redistribute(int lev) = 0;
 	virtual void redistribute(int lev, int ngrow) = 0;
-	virtual void writePlotFile(const std::string& plotfilename, const std::string& name) = 0;
-	virtual void writeCheckpoint(const std::string& checkpointname, const std::string& name, bool include_header) = 0;
-	virtual void depositRadiation(amrex::MultiFab& radEnergySource, int lev, amrex::Real current_time, 
-								int lumIndex, int birthTimeIndex, int nGroups) = 0;
-	virtual void depositMass(amrex::Vector<amrex::MultiFab>& rhs, int finest_lev, amrex::Real Gconst,
-							 int massIndex) = 0;
+	virtual void writePlotFile(const std::string &plotfilename, const std::string &name) = 0;
+	virtual void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) = 0;
+	virtual void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) = 0;
+	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
 };
 
 // Template wrapper that implements the interface for any particle container type
-template<typename ParticleContainerType>
-class ParticleOperationsImpl : public ParticleOperations {
-	ParticleContainerType* container_;
-public:
-	explicit ParticleOperationsImpl(ParticleContainerType* container) : container_(container) {}
+template <typename ParticleContainerType> class ParticleOperationsImpl : public ParticleOperations
+{
+	ParticleContainerType *container_;
 
-	void redistribute(int lev) override {
-		if (container_) { container_->Redistribute(lev); }
-	}
+      public:
+	explicit ParticleOperationsImpl(ParticleContainerType *container) : container_(container) {}
 
-	void redistribute(int lev, int ngrow) override {
-		if (container_) { container_->Redistribute(lev, container_->finestLevel(), ngrow); }
-	}
-
-	void writePlotFile(const std::string& plotfilename, const std::string& name) override {
-		if (container_) { container_->WritePlotFile(plotfilename, name); }
-	}
-
-	void writeCheckpoint(const std::string& checkpointname, const std::string& name, bool include_header) override {
-		if (container_) { container_->Checkpoint(checkpointname, name, include_header); }
-	}
-
-	void depositRadiation(amrex::MultiFab& radEnergySource, int lev, amrex::Real current_time,
-						 int lumIndex, int birthTimeIndex, int nGroups) override {
-		if (container_ && lumIndex >= 0) {
-			amrex::ParticleToMesh(*container_, radEnergySource, lev,
-				RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
+	void redistribute(int lev) override
+	{
+		if (container_) {
+			container_->Redistribute(lev);
 		}
 	}
 
-	void depositMass(amrex::Vector<amrex::MultiFab>& rhs, int finest_lev, amrex::Real Gconst,
-					int massIndex) override {
+	void redistribute(int lev, int ngrow) override
+	{
+		if (container_) {
+			container_->Redistribute(lev, container_->finestLevel(), ngrow);
+		}
+	}
+
+	void writePlotFile(const std::string &plotfilename, const std::string &name) override
+	{
+		if (container_) {
+			container_->WritePlotFile(plotfilename, name);
+		}
+	}
+
+	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
+	{
+		if (container_) {
+			container_->Checkpoint(checkpointname, name, include_header);
+		}
+	}
+
+	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
+	{
+		if (container_ && lumIndex >= 0) {
+			amrex::ParticleToMesh(*container_, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
+		}
+	}
+
+	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
+	{
 		if (container_ && massIndex >= 0) {
-			amrex::ParticleToMesh(*container_, amrex::GetVecOfPtrs(rhs), 0, finest_lev,
-				MassDeposition{Gconst, massIndex, 0, 1}, true);
+			amrex::ParticleToMesh(*container_, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
 };
@@ -147,16 +165,15 @@ public:
 class PhysicsParticleDescriptor
 {
       protected:
-	int massIndex_{-1};		 // index for gravity mass, -1 if not used
-	int lumIndex_{-1};		 // index for radiation luminosity, -1 if not used
-	int birthTimeIndex_{-1};    // index for birth time, -1 if not used
-	bool interactsWithHydro_{false}; // whether particles interact with hydro
-	std::unique_ptr<ParticleOperations> operations_;  // Add this
+	int massIndex_{-1};				 // index for gravity mass, -1 if not used
+	int lumIndex_{-1};				 // index for radiation luminosity, -1 if not used
+	int birthTimeIndex_{-1};			 // index for birth time, -1 if not used
+	bool interactsWithHydro_{false};		 // whether particles interact with hydro
+	std::unique_ptr<ParticleOperations> operations_; // Add this
 
       public:
 	PhysicsParticleDescriptor(int mass_idx, int lum_idx, int birth_time_idx, bool hydro_interact)
-	    : massIndex_(mass_idx), lumIndex_(lum_idx), birthTimeIndex_(birth_time_idx), 
-	      interactsWithHydro_(hydro_interact)
+	    : massIndex_(mass_idx), lumIndex_(lum_idx), birthTimeIndex_(birth_time_idx), interactsWithHydro_(hydro_interact)
 	{
 	}
 	~PhysicsParticleDescriptor() = default;
@@ -177,14 +194,14 @@ class PhysicsParticleDescriptor
 	PhysicsParticleDescriptor &operator=(PhysicsParticleDescriptor &&) = delete;
 
 	// Add setter for operations
-	template<typename ParticleContainerType>
-	void setParticleContainer(ParticleContainerType* container) {
+	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container)
+	{
 		neighborParticleContainer_ = container;
 		operations_ = std::make_unique<ParticleOperationsImpl<ParticleContainerType>>(container);
 	}
 
 	// Add getter for operations
-	ParticleOperations* getOperations() const { return operations_.get(); }
+	ParticleOperations *getOperations() const { return operations_.get(); }
 };
 
 // Registry for physics particles
@@ -214,36 +231,40 @@ template <typename problem_t> class PhysicsParticleRegister
 	}
 
 	// Deposit radiation from all particles that have luminosity
-	void depositRadiation(amrex::MultiFab& radEnergySource, int lev, amrex::Real current_time) {
-		for (const auto& [name, descriptor] : particleRegistry_) {
-			if (auto* ops = descriptor->getOperations()) {
-				ops->depositRadiation(radEnergySource, lev, current_time, 
-					descriptor->getLumIndex(), descriptor->getBirthTimeIndex(), Physics_Traits<problem_t>::nGroups);
+	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
+				ops->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
+						      Physics_Traits<problem_t>::nGroups);
 			}
 		}
 	}
 
 	// Deposit mass from all particles that have mass for gravity calculation
-	void depositMass(amrex::Vector<amrex::MultiFab>& rhs, int finest_lev, amrex::Real Gconst) {
-		for (const auto& [name, descriptor] : particleRegistry_) {
-			if (auto* ops = descriptor->getOperations()) {
+	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
 				ops->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
 			}
 		}
 	}
 
 	// Run Redistribute(lev) on all particles in particleRegistry_
-	void redistribute(int lev) {
-		for (const auto& [name, descriptor] : particleRegistry_) {
-			if (auto* ops = descriptor->getOperations()) {
+	void redistribute(int lev)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
 				ops->redistribute(lev);
 			}
 		}
 	}
 
 	// Run Redistribute(lev, ngrow) on all particles in particleRegistry_
-	void redistribute(int lev, int ngrow) {
-		for (const auto& [name, descriptor] : particleRegistry_) {
+	void redistribute(int lev, int ngrow)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
 			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
 			if (container != nullptr) {
 				container->Redistribute(lev, container->finestLevel(), ngrow);
@@ -252,18 +273,20 @@ template <typename problem_t> class PhysicsParticleRegister
 	}
 
 	// Run WritePlotFile(plotfilename, name) on all particles in particleRegistry_
-	void writePlotFile(const std::string& plotfilename) {
-		for (const auto& [name, descriptor] : particleRegistry_) {
-			if (auto* ops = descriptor->getOperations()) {
+	void writePlotFile(const std::string &plotfilename)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
 				ops->writePlotFile(plotfilename, name);
 			}
 		}
 	}
 
 	// Run Checkpoint(checkpointname, name, true) on all particles in particleRegistry_
-	void writeCheckpoint(const std::string& checkpointname, bool include_header) {
-		for (const auto& [name, descriptor] : particleRegistry_) {
-			if (auto* ops = descriptor->getOperations()) {
+	void writeCheckpoint(const std::string &checkpointname, bool include_header)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
 				ops->writeCheckpoint(checkpointname, name, include_header);
 			}
 		}
