@@ -3,7 +3,7 @@
 # *****************************************************************
 geometry.prob_lo     =  0.0  0.0  0.0 
 geometry.prob_hi     =  1.0  1.0  1.0
-geometry.is_periodic =  1    1    1
+geometry.is_periodic =  0    0    0
 
 # *****************************************************************
 # VERBOSITY
@@ -24,4 +24,4 @@ suppress_output = 0
 do_rad_particles = 1    # turns on radiating particles
 stop_time = 0.05
 plotfile_interval = 1
-max_timesteps = 2
+max_timesteps = 20000

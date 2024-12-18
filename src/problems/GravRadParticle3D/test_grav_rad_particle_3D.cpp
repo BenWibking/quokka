@@ -97,13 +97,40 @@ auto problem_main() -> int
 	const double CFL_number = 0.8;
 	const double dt_max = 1e-2;
 
+	auto isNormalComp = [=](int n, int dim) {
+		if ((n == RadSystem<ParticleProblem>::x1GasMomentum_index) && (dim == 0)) {
+			return true;
+		}
+		if ((n == RadSystem<ParticleProblem>::x2GasMomentum_index) && (dim == 1)) {
+			return true;
+		}
+		if ((n == RadSystem<ParticleProblem>::x3GasMomentum_index) && (dim == 2)) {
+			return true;
+		}
+		if ((n == RadSystem<ParticleProblem>::x1RadFlux_index) && (dim == 0)) {
+			return true;
+		}
+		if ((n == RadSystem<ParticleProblem>::x2RadFlux_index) && (dim == 1)) {
+			return true;
+		}
+		if ((n == RadSystem<ParticleProblem>::x3RadFlux_index) && (dim == 2)) {
+			return true;
+		}
+		return false;
+	};
+
 	// Boundary conditions
 	constexpr int nvars = RadSystem<ParticleProblem>::nvar_;
 	amrex::Vector<amrex::BCRec> BCs_cc(nvars);
 	for (int n = 0; n < nvars; ++n) {
 		for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-			BCs_cc[n].setLo(i, amrex::BCType::int_dir); // periodic
-			BCs_cc[n].setHi(i, amrex::BCType::int_dir); // periodic
+			if (isNormalComp(n, i)) {
+				BCs_cc[n].setLo(i, amrex::BCType::reflect_odd);
+				BCs_cc[n].setHi(i, amrex::BCType::reflect_odd);
+			} else {
+				BCs_cc[n].setLo(i, amrex::BCType::reflect_even);
+				BCs_cc[n].setHi(i, amrex::BCType::reflect_even);
+			}
 		}
 	}
 
@@ -113,6 +140,7 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
+	sim.doPoissonSolve_ = 1; // enable self-gravity
 
 	// initialize
 	sim.setInitialConditions();
@@ -129,16 +157,17 @@ auto problem_main() -> int
 	const double total_Erad = total_Erad_over_vol * dvol;
 	const double total_Erad_exact = 2.0 * lum1 * sim.tNew_[0];
 	const double rel_err = std::abs(total_Erad - total_Erad_exact) / total_Erad_exact;
-	amrex::Print() << "Total radiation energy = " << total_Erad << std::endl;
+	amrex::Print() << "Total radiation energy exact = " << total_Erad_exact << "\n";
+	amrex::Print() << "Total radiation energy = " << total_Erad << "\n";
 
 	int status = 1;
 	const double rel_err_tol = 1.0e-5;
 	if (rel_err < rel_err_tol) {
 		status = 0;
 	}
-	amrex::Print() << "Relative L1 norm = " << rel_err << std::endl;
+	amrex::Print() << "Relative L1 norm = " << rel_err << "\n";
 
 	// Cleanup and exit
-	amrex::Print() << "Finished." << std::endl;
+	amrex::Print() << "Finished." << "\n";
 	return status;
 }
