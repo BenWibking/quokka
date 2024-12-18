@@ -48,12 +48,12 @@ template <> struct RadSystem_Traits<ParticleProblem> {
 	static constexpr int beta_order = 0;
 };
 
-template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
+template <> void QuokkaSimulation<ParticleProblem>::createInitialCICRadParticles()
 {
 	// read particles from ASCII file
-	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1
-	RadParticles->SetVerbose(1);
-	RadParticles->InitFromAsciiFile("GravRadParticles3D.txt", nreal_extra, nullptr);
+	const int nreal_extra = 6 + nGroups_; // mass vx vy vz birth_time death_time lum1
+	CICRadParticles->SetVerbose(1);
+	CICRadParticles->InitFromAsciiFile("GravRadParticles3D.txt", nreal_extra, nullptr);
 }
 
 template <> AMREX_GPU_HOST_DEVICE auto RadSystem<ParticleProblem>::ComputePlanckOpacity(const double /*rho*/, const double /*Tgas*/) -> amrex::Real
@@ -140,7 +140,7 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
-	sim.doPoissonSolve_ = 1; // enable self-gravity
+	sim.doPoissonSolve_ = 0; // enable self-gravity
 
 	// initialize
 	sim.setInitialConditions();
