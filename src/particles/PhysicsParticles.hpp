@@ -184,7 +184,9 @@ class RadParticleDescriptor : public PhysicsParticleDescriptor
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
 	{
-		// RadParticles don't deposit mass
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
+		}
 	}
 };
 
@@ -225,7 +227,9 @@ class CICParticleDescriptor : public PhysicsParticleDescriptor
 
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
 	{
-		// CIC particles don't deposit radiation
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+			amrex::ParticleToMesh(*container, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
+		}
 	}
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
@@ -306,8 +310,10 @@ template <typename problem_t> class PhysicsParticleRegister
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time)
 	{
 		for (const auto &descriptor : particles_) {
-			descriptor->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
-						      Physics_Traits<problem_t>::nGroups);
+			if (descriptor->getLumIndex() >= 0) {
+				descriptor->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
+							      Physics_Traits<problem_t>::nGroups);
+			}
 		}
 	}
 
@@ -315,7 +321,9 @@ template <typename problem_t> class PhysicsParticleRegister
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst)
 	{
 		for (const auto &descriptor : particles_) {
-			descriptor->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
+			if (descriptor->getMassIndex() >= 0) {
+				descriptor->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
+			}
 		}
 	}
 
