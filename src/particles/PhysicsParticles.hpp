@@ -237,7 +237,7 @@ template <typename problem_t> class PhysicsParticleRegister
 			if (auto *ops = descriptor->getOperations()) {
 				if (descriptor->getLumIndex() >= 0) {
 					ops->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
-									Physics_Traits<problem_t>::nGroups);
+							      Physics_Traits<problem_t>::nGroups);
 				}
 			}
 		}
