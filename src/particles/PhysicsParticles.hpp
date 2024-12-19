@@ -98,10 +98,10 @@ struct RadDeposition {
 class PhysicsParticleDescriptor
 {
       protected:
-	int massIndex_{-1};				 // index for gravity mass, -1 if not used
-	int lumIndex_{-1};				 // index for radiation luminosity, -1 if not used
-	int birthTimeIndex_{-1};			 // index for birth time, -1 if not used
-	bool interactsWithHydro_{false};		 // whether particles interact with hydro
+	int massIndex_{-1};						   // index for gravity mass, -1 if not used
+	int lumIndex_{-1};						   // index for radiation luminosity, -1 if not used
+	int birthTimeIndex_{-1};					   // index for birth time, -1 if not used
+	bool interactsWithHydro_{false};				   // whether particles interact with hydro
 	amrex::ParticleContainerBase *neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
 
       public:
@@ -126,10 +126,7 @@ class PhysicsParticleDescriptor
 	PhysicsParticleDescriptor &operator=(PhysicsParticleDescriptor &&) = delete;
 
 	// Setter for particle container
-	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container)
-	{
-		neighborParticleContainer_ = container;
-	}
+	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container) { neighborParticleContainer_ = container; }
 
 	// Virtual operations that will be called on the particle container
 	virtual void redistribute(int lev) = 0;
@@ -141,150 +138,147 @@ class PhysicsParticleDescriptor
 };
 
 // Derived class for Rad particles
-template <typename problem_t>
-class RadParticleDescriptor : public PhysicsParticleDescriptor
+template <typename problem_t> class RadParticleDescriptor : public PhysicsParticleDescriptor
 {
       public:
 	using PhysicsParticleDescriptor::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
-		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->Redistribute(lev);
 		}
 	}
 
 	void redistribute(int lev, int ngrow) override
 	{
-		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->Redistribute(lev, container->finestLevel(), ngrow);
 		}
 	}
 
 	void writePlotFile(const std::string &plotfilename, const std::string &name) override
 	{
-		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->WritePlotFile(plotfilename, name);
 		}
 	}
 
 	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
 	{
-		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->Checkpoint(checkpointname, name, include_header);
 		}
 	}
 
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
 	{
-		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
 		}
 	}
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
 	{
-		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
 };
 
 // Derived class for CIC particles
-template <typename problem_t>
-class CICParticleDescriptor : public PhysicsParticleDescriptor
+template <typename problem_t> class CICParticleDescriptor : public PhysicsParticleDescriptor
 {
       public:
 	using PhysicsParticleDescriptor::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
 			container->Redistribute(lev);
 		}
 	}
 
 	void redistribute(int lev, int ngrow) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
 			container->Redistribute(lev, container->finestLevel(), ngrow);
 		}
 	}
 
 	void writePlotFile(const std::string &plotfilename, const std::string &name) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
 			container->WritePlotFile(plotfilename, name);
 		}
 	}
 
 	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
 			container->Checkpoint(checkpointname, name, include_header);
 		}
 	}
 
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
 		}
 	}
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
 };
 
 // Derived class for CICRad particles
-template <typename problem_t>
-class CICRadParticleDescriptor : public PhysicsParticleDescriptor
+template <typename problem_t> class CICRadParticleDescriptor : public PhysicsParticleDescriptor
 {
       public:
 	using PhysicsParticleDescriptor::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->Redistribute(lev);
 		}
 	}
 
 	void redistribute(int lev, int ngrow) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->Redistribute(lev, container->finestLevel(), ngrow);
 		}
 	}
 
 	void writePlotFile(const std::string &plotfilename, const std::string &name) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->WritePlotFile(plotfilename, name);
 		}
 	}
 
 	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			container->Checkpoint(checkpointname, name, include_header);
 		}
 	}
 
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
 		}
 	}
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
 	{
-		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
@@ -301,7 +295,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	~PhysicsParticleRegister() = default;
 
 	// Register a new particle type
-	template <typename ParticleDescriptor> void registerParticleType(const std::string &/*name*/, std::unique_ptr<ParticleDescriptor> descriptor)
+	template <typename ParticleDescriptor> void registerParticleType(const std::string & /*name*/, std::unique_ptr<ParticleDescriptor> descriptor)
 	{
 		particles_.push_back(std::move(descriptor));
 	}
@@ -312,7 +306,7 @@ template <typename problem_t> class PhysicsParticleRegister
 		for (const auto &descriptor : particles_) {
 			if (descriptor->getLumIndex() >= 0) {
 				descriptor->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
-							      Physics_Traits<problem_t>::nGroups);
+							     Physics_Traits<problem_t>::nGroups);
 			}
 		}
 	}
