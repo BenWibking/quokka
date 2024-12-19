@@ -148,14 +148,14 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
 	{
-		if (container_ && lumIndex >= 0) {
+		if (container_) {
 			amrex::ParticleToMesh(*container_, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
 		}
 	}
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
 	{
-		if (container_ && massIndex >= 0) {
+		if (container_) {
 			amrex::ParticleToMesh(*container_, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
@@ -235,8 +235,10 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (auto *ops = descriptor->getOperations()) {
-				ops->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
-						      Physics_Traits<problem_t>::nGroups);
+				if (descriptor->getLumIndex() >= 0) {
+					ops->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
+									Physics_Traits<problem_t>::nGroups);
+				}
 			}
 		}
 	}
@@ -246,7 +248,9 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (auto *ops = descriptor->getOperations()) {
-				ops->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
+				if (descriptor->getMassIndex() >= 0) {
+					ops->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
+				}
 			}
 		}
 	}
