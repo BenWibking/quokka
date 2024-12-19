@@ -95,7 +95,6 @@ struct RadDeposition {
 };
 
 // Base class for physics particle descriptors
-template <typename problem_t>
 class PhysicsParticleDescriptor
 {
       protected:
@@ -143,10 +142,10 @@ class PhysicsParticleDescriptor
 
 // Derived class for Rad particles
 template <typename problem_t>
-class RadParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
+class RadParticleDescriptor : public PhysicsParticleDescriptor
 {
       public:
-	using PhysicsParticleDescriptor<problem_t>::PhysicsParticleDescriptor;
+	using PhysicsParticleDescriptor::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
@@ -191,10 +190,10 @@ class RadParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
 
 // Derived class for CIC particles
 template <typename problem_t>
-class CICParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
+class CICParticleDescriptor : public PhysicsParticleDescriptor
 {
       public:
-	using PhysicsParticleDescriptor<problem_t>::PhysicsParticleDescriptor;
+	using PhysicsParticleDescriptor::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
@@ -239,10 +238,10 @@ class CICParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
 
 // Derived class for CICRad particles
 template <typename problem_t>
-class CICRadParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
+class CICRadParticleDescriptor : public PhysicsParticleDescriptor
 {
       public:
-	using PhysicsParticleDescriptor<problem_t>::PhysicsParticleDescriptor;
+	using PhysicsParticleDescriptor::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
@@ -291,7 +290,7 @@ class CICRadParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
 template <typename problem_t> class PhysicsParticleRegister
 {
       private:
-	std::vector<std::unique_ptr<PhysicsParticleDescriptor<problem_t>>> particles_;
+	std::vector<std::unique_ptr<PhysicsParticleDescriptor>> particles_;
 
       public:
 	PhysicsParticleRegister() = default;
