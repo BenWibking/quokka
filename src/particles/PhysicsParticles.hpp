@@ -193,14 +193,14 @@ class PhysicsParticleDescriptor
 	PhysicsParticleDescriptor(PhysicsParticleDescriptor &&) = delete;
 	PhysicsParticleDescriptor &operator=(PhysicsParticleDescriptor &&) = delete;
 
-	// Add setter for operations
+	// Setter for operations
 	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container)
 	{
 		neighborParticleContainer_ = container;
 		operations_ = std::make_unique<ParticleOperationsImpl<ParticleContainerType>>(container);
 	}
 
-	// Add getter for operations
+	// Getter for operations
 	ParticleOperations *getOperations() const { return operations_.get(); }
 };
 
