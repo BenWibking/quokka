@@ -294,10 +294,10 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySo
 		const amrex::Box &indexRange = iter.validbox();
 		auto const &radEnergySource_arr = radEnergySource.array(iter);
 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-			// amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
-			if (k == 31 && i == 15 && j == 31) {
-				amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
-			}
+			amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
+			// if (k == 31 && i == 15 && j == 31) {
+			// 	amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
+			// }
 		});
 	}
 }

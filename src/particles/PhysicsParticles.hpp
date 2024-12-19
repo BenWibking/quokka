@@ -94,14 +94,45 @@ struct RadDeposition {
 	}
 };
 
-// Forward declarations
-template <typename problem_t> class PhysicsParticleRegister;
-
-// Add a virtual interface for particle operations
-class ParticleOperations
+// Base class for physics particle descriptors
+template <typename problem_t>
+class PhysicsParticleDescriptor
 {
+      protected:
+	int massIndex_{-1};				 // index for gravity mass, -1 if not used
+	int lumIndex_{-1};				 // index for radiation luminosity, -1 if not used
+	int birthTimeIndex_{-1};			 // index for birth time, -1 if not used
+	bool interactsWithHydro_{false};		 // whether particles interact with hydro
+	amrex::ParticleContainerBase *neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
+
       public:
-	virtual ~ParticleOperations() = default;
+	PhysicsParticleDescriptor(int mass_idx, int lum_idx, int birth_time_idx, bool hydro_interact)
+	    : massIndex_(mass_idx), lumIndex_(lum_idx), birthTimeIndex_(birth_time_idx), interactsWithHydro_(hydro_interact)
+	{
+	}
+	virtual ~PhysicsParticleDescriptor() = default;
+
+	// Getters
+	[[nodiscard]] auto getMassIndex() const -> int { return massIndex_; }
+	[[nodiscard]] auto getLumIndex() const -> int { return lumIndex_; }
+	[[nodiscard]] auto getBirthTimeIndex() const -> int { return birthTimeIndex_; }
+	[[nodiscard]] auto getInteractsWithHydro() const -> bool { return interactsWithHydro_; }
+
+	virtual void hydroInteract() {} // Default no-op
+
+	// Delete copy/move constructors/assignments
+	PhysicsParticleDescriptor(const PhysicsParticleDescriptor &) = delete;
+	PhysicsParticleDescriptor &operator=(const PhysicsParticleDescriptor &) = delete;
+	PhysicsParticleDescriptor(PhysicsParticleDescriptor &&) = delete;
+	PhysicsParticleDescriptor &operator=(PhysicsParticleDescriptor &&) = delete;
+
+	// Setter for particle container
+	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container)
+	{
+		neighborParticleContainer_ = container;
+	}
+
+	// Virtual operations that will be called on the particle container
 	virtual void redistribute(int lev) = 0;
 	virtual void redistribute(int lev, int ngrow) = 0;
 	virtual void writePlotFile(const std::string &plotfilename, const std::string &name) = 0;
@@ -110,191 +141,218 @@ class ParticleOperations
 	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
 };
 
-// Template wrapper that implements the interface for any particle container type
-template <typename ParticleContainerType> class ParticleOperationsImpl : public ParticleOperations
+// Derived class for Rad particles
+template <typename problem_t>
+class RadParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
 {
-	ParticleContainerType *container_;
-
       public:
-	explicit ParticleOperationsImpl(ParticleContainerType *container) : container_(container) {}
+	using PhysicsParticleDescriptor<problem_t>::PhysicsParticleDescriptor;
 
 	void redistribute(int lev) override
 	{
-		if (container_) {
-			container_->Redistribute(lev);
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->Redistribute(lev);
 		}
 	}
 
 	void redistribute(int lev, int ngrow) override
 	{
-		if (container_) {
-			container_->Redistribute(lev, container_->finestLevel(), ngrow);
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->Redistribute(lev, container->finestLevel(), ngrow);
 		}
 	}
 
 	void writePlotFile(const std::string &plotfilename, const std::string &name) override
 	{
-		if (container_) {
-			container_->WritePlotFile(plotfilename, name);
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->WritePlotFile(plotfilename, name);
 		}
 	}
 
 	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
 	{
-		if (container_) {
-			container_->Checkpoint(checkpointname, name, include_header);
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->Checkpoint(checkpointname, name, include_header);
 		}
 	}
 
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
 	{
-		if (container_ && lumIndex >= 0) {
-			amrex::ParticleToMesh(*container_, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
+		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			amrex::ParticleToMesh(*container, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
 		}
 	}
 
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
 	{
-		if (container_ && massIndex >= 0) {
-			amrex::ParticleToMesh(*container_, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
+		// RadParticles don't deposit mass
+	}
+};
+
+// Derived class for CIC particles
+template <typename problem_t>
+class CICParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
+{
+      public:
+	using PhysicsParticleDescriptor<problem_t>::PhysicsParticleDescriptor;
+
+	void redistribute(int lev) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+			container->Redistribute(lev);
+		}
+	}
+
+	void redistribute(int lev, int ngrow) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+			container->Redistribute(lev, container->finestLevel(), ngrow);
+		}
+	}
+
+	void writePlotFile(const std::string &plotfilename, const std::string &name) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+			container->WritePlotFile(plotfilename, name);
+		}
+	}
+
+	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+			container->Checkpoint(checkpointname, name, include_header);
+		}
+	}
+
+	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
+	{
+		// CIC particles don't deposit radiation
+	}
+
+	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer*>(this->neighborParticleContainer_)) {
+			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
 };
 
-// Base class for physics particle descriptors
-class PhysicsParticleDescriptor
+// Derived class for CICRad particles
+template <typename problem_t>
+class CICRadParticleDescriptor : public PhysicsParticleDescriptor<problem_t>
 {
-      protected:
-	int massIndex_{-1};				 // index for gravity mass, -1 if not used
-	int lumIndex_{-1};				 // index for radiation luminosity, -1 if not used
-	int birthTimeIndex_{-1};			 // index for birth time, -1 if not used
-	bool interactsWithHydro_{false};		 // whether particles interact with hydro
-	std::unique_ptr<ParticleOperations> operations_; // Add this
-
       public:
-	PhysicsParticleDescriptor(int mass_idx, int lum_idx, int birth_time_idx, bool hydro_interact)
-	    : massIndex_(mass_idx), lumIndex_(lum_idx), birthTimeIndex_(birth_time_idx), interactsWithHydro_(hydro_interact)
+	using PhysicsParticleDescriptor<problem_t>::PhysicsParticleDescriptor;
+
+	void redistribute(int lev) override
 	{
-	}
-	~PhysicsParticleDescriptor() = default;
-	amrex::ParticleContainerBase *neighborParticleContainer_{nullptr}; // non-owning pointer to particle container
-
-	// Getters
-	[[nodiscard]] auto getMassIndex() const -> int { return massIndex_; }
-	[[nodiscard]] auto getLumIndex() const -> int { return lumIndex_; }
-	[[nodiscard]] auto getBirthTimeIndex() const -> int { return birthTimeIndex_; }
-	[[nodiscard]] auto getInteractsWithHydro() const -> bool { return interactsWithHydro_; }
-
-	void hydroInteract() {} // Default no-op
-
-	// Delete copy/move constructors/assignments
-	PhysicsParticleDescriptor(const PhysicsParticleDescriptor &) = delete;
-	PhysicsParticleDescriptor &operator=(const PhysicsParticleDescriptor &) = delete;
-	PhysicsParticleDescriptor(PhysicsParticleDescriptor &&) = delete;
-	PhysicsParticleDescriptor &operator=(PhysicsParticleDescriptor &&) = delete;
-
-	// Setter for operations
-	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container)
-	{
-		neighborParticleContainer_ = container;
-		operations_ = std::make_unique<ParticleOperationsImpl<ParticleContainerType>>(container);
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->Redistribute(lev);
+		}
 	}
 
-	// Getter for operations
-	ParticleOperations *getOperations() const { return operations_.get(); }
+	void redistribute(int lev, int ngrow) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->Redistribute(lev, container->finestLevel(), ngrow);
+		}
+	}
+
+	void writePlotFile(const std::string &plotfilename, const std::string &name) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->WritePlotFile(plotfilename, name);
+		}
+	}
+
+	void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			container->Checkpoint(checkpointname, name, include_header);
+		}
+	}
+
+	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			amrex::ParticleToMesh(*container, radEnergySource, lev, RadDeposition{current_time, lumIndex, 0, nGroups, birthTimeIndex}, false);
+		}
+	}
+
+	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t>*>(this->neighborParticleContainer_)) {
+			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
+		}
+	}
 };
 
 // Registry for physics particles
 template <typename problem_t> class PhysicsParticleRegister
 {
       private:
-	std::map<std::string, std::unique_ptr<PhysicsParticleDescriptor>> particleRegistry_;
+	std::vector<std::unique_ptr<PhysicsParticleDescriptor<problem_t>>> particles_;
 
       public:
 	PhysicsParticleRegister() = default;
 	~PhysicsParticleRegister() = default;
 
 	// Register a new particle type
-	template <typename ParticleDescriptor> void registerParticleType(const std::string &name, std::unique_ptr<ParticleDescriptor> descriptor)
+	template <typename ParticleDescriptor> void registerParticleType(const std::string &/*name*/, std::unique_ptr<ParticleDescriptor> descriptor)
 	{
-		particleRegistry_[name] = std::move(descriptor);
-	}
-
-	// Get a particle descriptor
-	[[nodiscard]] auto getParticleDescriptor(const std::string &name) const -> const PhysicsParticleDescriptor *
-	{
-		auto it = particleRegistry_.find(name);
-		if (it != particleRegistry_.end()) {
-			return it->second.get();
-		}
-		return nullptr;
+		particles_.push_back(std::move(descriptor));
 	}
 
 	// Deposit radiation from all particles that have luminosity
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time)
 	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			if (auto *ops = descriptor->getOperations()) {
-				ops->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
+		for (const auto &descriptor : particles_) {
+			descriptor->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
 						      Physics_Traits<problem_t>::nGroups);
-			}
 		}
 	}
 
 	// Deposit mass from all particles that have mass for gravity calculation
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst)
 	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			if (auto *ops = descriptor->getOperations()) {
-				ops->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
-			}
+		for (const auto &descriptor : particles_) {
+			descriptor->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
 		}
 	}
 
-	// Run Redistribute(lev) on all particles in particleRegistry_
+	// Run Redistribute(lev) on all particles
 	void redistribute(int lev)
 	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			if (auto *ops = descriptor->getOperations()) {
-				ops->redistribute(lev);
-			}
+		for (const auto &descriptor : particles_) {
+			descriptor->redistribute(lev);
 		}
 	}
 
-	// Run Redistribute(lev, ngrow) on all particles in particleRegistry_
+	// Run Redistribute(lev, ngrow) on all particles
 	void redistribute(int lev, int ngrow)
 	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
-			if (container != nullptr) {
-				container->Redistribute(lev, container->finestLevel(), ngrow);
-			}
+		for (const auto &descriptor : particles_) {
+			descriptor->redistribute(lev, ngrow);
 		}
 	}
 
-	// Run WritePlotFile(plotfilename, name) on all particles in particleRegistry_
+	// Run WritePlotFile(plotfilename, name) on all particles
 	void writePlotFile(const std::string &plotfilename)
 	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			if (auto *ops = descriptor->getOperations()) {
-				ops->writePlotFile(plotfilename, name);
-			}
+		for (const auto &descriptor : particles_) {
+			descriptor->writePlotFile(plotfilename, "particles");
 		}
 	}
 
-	// Run Checkpoint(checkpointname, name, true) on all particles in particleRegistry_
+	// Run Checkpoint(checkpointname, name, true) on all particles
 	void writeCheckpoint(const std::string &checkpointname, bool include_header)
 	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			if (auto *ops = descriptor->getOperations()) {
-				ops->writeCheckpoint(checkpointname, name, include_header);
-			}
+		for (const auto &descriptor : particles_) {
+			descriptor->writeCheckpoint(checkpointname, "particles", include_header);
 		}
 	}
 
-	// Delete copy/move constructors/assignments to prevent accidental copying or moving of objects.
-	// The class has a raw pointer member, neighborParticleContainer_. Copying would be dangerous as multiple objects could end up pointing to the same
-	// memory. The class is meant to be a base class for particle descriptors, and copying base classes can lead to slicing problems
+	// Delete copy/move constructors/assignments
 	PhysicsParticleRegister(const PhysicsParticleRegister &) = delete;
 	PhysicsParticleRegister &operator=(const PhysicsParticleRegister &) = delete;
 	PhysicsParticleRegister(PhysicsParticleRegister &&) = delete;
