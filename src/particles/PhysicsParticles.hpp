@@ -19,7 +19,7 @@ using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
 using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
 
 // Radiation particles
-enum RadParticleDataIdx { RadParticleBirthTimeIdx = 0, RadParticleDeathTimeIdx, RadParticleLumIdx};
+enum RadParticleDataIdx { RadParticleBirthTimeIdx = 0, RadParticleDeathTimeIdx, RadParticleLumIdx };
 template <typename problem_t>
 constexpr int RadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
@@ -32,7 +32,15 @@ template <typename problem_t> using RadParticleContainer = amrex::AmrParticleCon
 template <typename problem_t> using RadParticleIterator = amrex::ParIter<RadParticleRealComps<problem_t>>;
 
 // CICRad particles
-enum CICRadParticleDataIdx { CICRadParticleMassIdx = 0, CICRadParticleVxIdx, CICRadParticleVyIdx, CICRadParticleVzIdx, CICRadParticleBirthTimeIdx, CICRadParticleDeathTimeIdx, CICRadParticleLumIdx };
+enum CICRadParticleDataIdx {
+	CICRadParticleMassIdx = 0,
+	CICRadParticleVxIdx,
+	CICRadParticleVyIdx,
+	CICRadParticleVzIdx,
+	CICRadParticleBirthTimeIdx,
+	CICRadParticleDeathTimeIdx,
+	CICRadParticleLumIdx
+};
 template <typename problem_t>
 constexpr int CICRadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
@@ -151,8 +159,8 @@ template <typename problem_t> class PhysicsParticleRegister
 				// Try each particle container type
 				if (auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_)) {
 					amrex::ParticleToMesh(*container, radEnergySource, lev,
-							  RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
-							  false);
+							      RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
+							      false);
 				} else if (auto *container = dynamic_cast<CICRadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_)) {
 					amrex::ParticleToMesh(*container, radEnergySource, lev,
 							      RadDeposition{current_time, descriptor->getLumIndex(), 0, Physics_Traits<problem_t>::nGroups},
@@ -170,7 +178,7 @@ template <typename problem_t> class PhysicsParticleRegister
 				// Try each particle container type
 				if (auto *container = dynamic_cast<CICRadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_)) {
 					amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev,
-							  MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);
+							      MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);
 				} else if (auto *container = dynamic_cast<CICParticleContainer *>(descriptor->neighborParticleContainer_)) {
 					amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev,
 							      MassDeposition{Gconst, descriptor->getMassIndex(), 0, 1}, true);

@@ -1707,7 +1707,7 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		int *p_iteration_counter = iteration_counter.data();
 
 		// Create a MultiFab to hold radEnergySource for the current AMR level
-		int const nghost = 1;  // depositRadiation needs 1 ghost cell
+		int const nghost = 1; // depositRadiation needs 1 ghost cell
 		amrex::MultiFab radEnergySource(grids[lev], dmap[lev], Physics_Traits<problem_t>::nGroups, nghost);
 
 		if constexpr (IMEX_a22 > 0.0) {

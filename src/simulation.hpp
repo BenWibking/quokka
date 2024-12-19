@@ -2119,7 +2119,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 		AMREX_ASSERT(CICRadParticles == nullptr);
 
 		// Create CIC particle descriptor
-		auto cicRadParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx, false);
+		auto cicRadParticleDesc =
+		    std::make_unique<quokka::PhysicsParticleDescriptor>(quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx, false);
 
 		// Create particle container
 		CICRadParticles = std::make_unique<quokka::CICRadParticleContainer<problem_t>>(this);
@@ -2895,7 +2896,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::ReadCheckpointFile(
 	if (do_cic_rad_particles != 0) {
 		AMREX_ASSERT(CICRadParticles == nullptr);
 		CICRadParticles = std::make_unique<quokka::CICRadParticleContainer<problem_t>>(this);
-		auto cicRadParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx, false);
+		auto cicRadParticleDesc =
+		    std::make_unique<quokka::PhysicsParticleDescriptor>(quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx, false);
 		cicRadParticleDesc->neighborParticleContainer_ = CICRadParticles.get(); // non-owning pointer
 		particleRegister_->registerParticleType("CICRad_particles", std::move(cicRadParticleDesc));
 		CICRadParticles->Restart(restart_chkfile, "CICRad_particles");
