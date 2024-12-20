@@ -288,22 +288,36 @@ template <typename problem_t> class CICRadParticleDescriptor : public PhysicsPar
 template <typename problem_t> class PhysicsParticleRegister
 {
       private:
-	std::vector<std::unique_ptr<PhysicsParticleDescriptor>> particles_;
+	std::map<std::string, std::unique_ptr<PhysicsParticleDescriptor>> particleRegistry_;
 
       public:
 	PhysicsParticleRegister() = default;
 	~PhysicsParticleRegister() = default;
 
 	// Register a new particle type
-	template <typename ParticleDescriptor> void registerParticleType(const std::string & /*name*/, std::unique_ptr<ParticleDescriptor> descriptor)
+	template <typename ParticleDescriptor> void registerParticleType(const std::string &name, std::unique_ptr<ParticleDescriptor> descriptor)
 	{
-		particles_.push_back(std::move(descriptor));
+		// Check if name already exists
+		if (particleRegistry_.find(name) != particleRegistry_.end()) {
+			amrex::Abort("Particle type '" + name + "' already registered!");
+		}
+		particleRegistry_.emplace(name, std::move(descriptor));
+	}
+
+	// Get particle descriptor by name (returns nullptr if not found)
+	[[nodiscard]] auto getParticleDescriptor(const std::string &name) const -> PhysicsParticleDescriptor *
+	{
+		auto it = particleRegistry_.find(name);
+		if (it != particleRegistry_.end()) {
+			return it->second.get();
+		}
+		return nullptr;
 	}
 
 	// Deposit radiation from all particles that have luminosity
 	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time)
 	{
-		for (const auto &descriptor : particles_) {
+		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getLumIndex() >= 0) {
 				descriptor->depositRadiation(radEnergySource, lev, current_time, descriptor->getLumIndex(), descriptor->getBirthTimeIndex(),
 							     Physics_Traits<problem_t>::nGroups);
@@ -314,7 +328,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	// Deposit mass from all particles that have mass for gravity calculation
 	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst)
 	{
-		for (const auto &descriptor : particles_) {
+		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getMassIndex() >= 0) {
 				descriptor->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
 			}
@@ -324,7 +338,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	// Run Redistribute(lev) on all particles
 	void redistribute(int lev)
 	{
-		for (const auto &descriptor : particles_) {
+		for (const auto &[name, descriptor] : particleRegistry_) {
 			descriptor->redistribute(lev);
 		}
 	}
@@ -332,7 +346,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	// Run Redistribute(lev, ngrow) on all particles
 	void redistribute(int lev, int ngrow)
 	{
-		for (const auto &descriptor : particles_) {
+		for (const auto &[name, descriptor] : particleRegistry_) {
 			descriptor->redistribute(lev, ngrow);
 		}
 	}
@@ -340,16 +354,16 @@ template <typename problem_t> class PhysicsParticleRegister
 	// Run WritePlotFile(plotfilename, name) on all particles
 	void writePlotFile(const std::string &plotfilename)
 	{
-		for (const auto &descriptor : particles_) {
-			descriptor->writePlotFile(plotfilename, "particles");
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			descriptor->writePlotFile(plotfilename, name);
 		}
 	}
 
 	// Run Checkpoint(checkpointname, name, true) on all particles
 	void writeCheckpoint(const std::string &checkpointname, bool include_header)
 	{
-		for (const auto &descriptor : particles_) {
-			descriptor->writeCheckpoint(checkpointname, "particles", include_header);
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			descriptor->writeCheckpoint(checkpointname, name, include_header);
 		}
 	}
 
