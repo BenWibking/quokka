@@ -314,8 +314,24 @@ template <typename problem_t> class PhysicsParticleRegister
 		return nullptr;
 	}
 
+	// Run WritePlotFile(plotfilename, name) on all particles
+	void writePlotFile(const std::string &plotfilename) const
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			descriptor->writePlotFile(plotfilename, name);
+		}
+	}
+
+	// Run Checkpoint(checkpointname, name, true) on all particles
+	void writeCheckpoint(const std::string &checkpointname, bool include_header) const
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			descriptor->writeCheckpoint(checkpointname, name, include_header);
+		}
+	}
+
 	// Deposit radiation from all particles that have luminosity
-	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time)
+	void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time) const
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getLumIndex() >= 0) {
@@ -326,7 +342,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	}
 
 	// Deposit mass from all particles that have mass for gravity calculation
-	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst)
+	void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst) const
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (descriptor->getMassIndex() >= 0) {
@@ -348,22 +364,6 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			descriptor->redistribute(lev, ngrow);
-		}
-	}
-
-	// Run WritePlotFile(plotfilename, name) on all particles
-	void writePlotFile(const std::string &plotfilename)
-	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			descriptor->writePlotFile(plotfilename, name);
-		}
-	}
-
-	// Run Checkpoint(checkpointname, name, true) on all particles
-	void writeCheckpoint(const std::string &checkpointname, bool include_header)
-	{
-		for (const auto &[name, descriptor] : particleRegistry_) {
-			descriptor->writeCheckpoint(checkpointname, name, include_header);
 		}
 	}
 
