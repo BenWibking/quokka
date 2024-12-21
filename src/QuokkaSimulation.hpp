@@ -253,11 +253,6 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void subcycleRadiationAtLevel(int lev, amrex::Real time, amrex::Real dt_lev_hydro, amrex::YAFluxRegister *fr_as_crse,
 				      amrex::YAFluxRegister *fr_as_fine);
 
-	void operatorSplitSourceTerms(amrex::Array4<amrex::Real> const &stateNew, amrex::Array4<amrex::Real> const &radEnergySource,
-				      const amrex::Box &indexRange, amrex::Real time, double dt, int stage,
-				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo,
-				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, int *p_iteration_counter, int *p_iteration_failure_counter);
-
 	auto computeRadiationFluxes(amrex::Array4<const amrex::Real> const &consVar, const amrex::Box &indexRange, int nvars,
 				    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx)
 	    -> std::tuple<std::array<amrex::FArrayBox, AMREX_SPACEDIM>, std::array<amrex::FArrayBox, AMREX_SPACEDIM>>;
@@ -1738,11 +1733,14 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				auto const &radEnergySource_arr = radEnergySource.array(iter);
 				RadSystem<problem_t>::SetRadEnergySource(radEnergySource_arr, indexRange, dx, prob_lo, prob_hi, time_subcycle + dt_radiation);
 
-				// update state_new_cc_[lev] in place (updates both radiation and hydro vars)
-				// Note that only a fraction (IMEX_a32) of the matter-radiation exchange source terms are added to hydro. This ensures that the
-				// hydro properties get to t + IMEX_a32 dt in terms of matter-radiation exchange.
-				operatorSplitSourceTerms(stateNew, radEnergySource_arr, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi,
-							 p_iteration_counter, p_iteration_failure_counter);
+				// include cell-centered source terms; will update state_new_cc_[lev] in place (updates both radiation and hydro vars)
+				if constexpr (Physics_Traits<problem_t>::nGroups <= 1) {
+					RadSystem<problem_t>::AddSourceTermsSingleGroup(stateNew, radEnergySource_arr, indexRange, dt_radiation, 1, dustGasInteractionCoeff_, p_iteration_counter,
+											p_iteration_failure_counter);
+				} else {
+					RadSystem<problem_t>::AddSourceTermsMultiGroup(stateNew, radEnergySource_arr, indexRange, dt_radiation, 1, dustGasInteractionCoeff_, p_iteration_counter,
+													p_iteration_failure_counter);
+				}
 			}
 		}
 
@@ -1769,9 +1767,14 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			auto const &radEnergySource_arr = radEnergySource.array(iter);
 			RadSystem<problem_t>::SetRadEnergySource(radEnergySource_arr, indexRange, dx, prob_lo, prob_hi, time_subcycle + dt_radiation);
 
-			// update state_new_cc_[lev] in place (updates both radiation and hydro vars)
-			operatorSplitSourceTerms(stateNew, radEnergySource_arr, indexRange, time_subcycle, dt_radiation, 2, dx, prob_lo, prob_hi,
-						 p_iteration_counter, p_iteration_failure_counter);
+			// include cell-centered source terms; will update state_new_cc_[lev] in place (updates both radiation and hydro vars)
+			if constexpr (Physics_Traits<problem_t>::nGroups <= 1) {
+				RadSystem<problem_t>::AddSourceTermsSingleGroup(stateNew, radEnergySource_arr, indexRange, dt_radiation, 2, dustGasInteractionCoeff_, p_iteration_counter,
+										p_iteration_failure_counter);
+			} else {
+				RadSystem<problem_t>::AddSourceTermsMultiGroup(stateNew, radEnergySource_arr, indexRange, dt_radiation, 2, dustGasInteractionCoeff_, p_iteration_counter,
+												p_iteration_failure_counter);
+			}
 		}
 
 		if (print_rad_counter_) {
@@ -1970,24 +1973,6 @@ void QuokkaSimulation<problem_t>::advanceRadiationMidpointRK2(int lev, amrex::Re
 			auto expandedFluxes = expandFluxArrays(fluxArrays, nstartHyperbolic_, state_new_cc_[lev].nComp());
 			incrementFluxRegisters(iter, fr_as_crse, fr_as_fine, expandedFluxes, lev, 0.5 * dt_radiation);
 		}
-	}
-}
-
-template <typename problem_t>
-void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::Real> const &stateNew, amrex::Array4<amrex::Real> const &radEnergySource,
-							   const amrex::Box &indexRange, const amrex::Real time, const double dt, const int stage,
-							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
-							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo,
-							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, int *p_iteration_counter,
-							   int *p_iteration_failure_counter)
-{
-	// cell-centered source terms
-	if constexpr (Physics_Traits<problem_t>::nGroups <= 1) {
-		RadSystem<problem_t>::AddSourceTermsSingleGroup(stateNew, radEnergySource, indexRange, dt, stage, dustGasInteractionCoeff_, p_iteration_counter,
-								p_iteration_failure_counter);
-	} else {
-		RadSystem<problem_t>::AddSourceTermsMultiGroup(stateNew, radEnergySource, indexRange, dt, stage, dustGasInteractionCoeff_, p_iteration_counter,
-							       p_iteration_failure_counter);
 	}
 }
 
