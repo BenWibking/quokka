@@ -136,6 +136,7 @@ class PhysicsParticleDescriptor
 	virtual void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) = 0;
 	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
 	virtual void driftParticlesAllLevels(amrex::Real dt) = 0;
+	virtual void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev) = 0;
 };
 
 // Derived class for Rad particles
@@ -187,6 +188,11 @@ template <typename problem_t> class RadParticleDescriptor : public PhysicsPartic
 	}
 
 	void driftParticlesAllLevels(amrex::Real dt) override
+	{
+		// Rad particles don't have velocity components, so this is a no-op
+	}
+
+	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev) override
 	{
 		// Rad particles don't have velocity components, so this is a no-op
 	}
@@ -260,6 +266,35 @@ template <typename problem_t> class CICParticleDescriptor : public PhysicsPartic
 			}
 		}
 	}
+
+	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
+			const auto dx_inv = geom[lev].InvCellSizeArray();
+			for (quokka::CICParticleIterator pIter(*container, lev); pIter.isValid(); ++pIter) {
+				auto &particles = pIter.GetArrayOfStructs();
+				quokka::CICParticleContainer::ParticleType *pData = particles().data();
+				const amrex::Long np = pIter.numParticles();
+
+				amrex::Array4<const amrex::Real> const &accel_arr = accel.array(pIter);
+				const auto plo = geom[lev].ProbLoArray();
+
+				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
+					interp.MeshToParticle(
+					    p, accel_arr, 0, quokka::CICParticleVxIdx, AMREX_SPACEDIM,
+					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
+						    return acc(i, j, k, comp); // no weighting
+					    },
+					    [=] AMREX_GPU_DEVICE(quokka::CICParticleContainer::ParticleType & p, int comp, amrex::Real acc_comp) {
+						    // kick particle by updating its velocity
+						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
+					    });
+				});
+			}
+		}
+	}
 };
 
 // Derived class for CICRad particles
@@ -311,6 +346,11 @@ template <typename problem_t> class CICRadParticleDescriptor : public PhysicsPar
 	}
 
 	void driftParticlesAllLevels(amrex::Real dt) override
+	{
+		// keep empty for now
+	}
+
+	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev) override
 	{
 		// keep empty for now
 	}
@@ -404,6 +444,14 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			descriptor->driftParticlesAllLevels(dt);
+		}
+	}
+
+	// Run kickParticles(dt) on all particles
+	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			descriptor->kickParticles(dt, accel, geom, lev);
 		}
 	}
 
