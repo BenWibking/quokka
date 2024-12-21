@@ -15,7 +15,7 @@ constexpr double erad_floor = 1.0e-15;
 constexpr double initial_Erad = erad_floor;
 constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
-constexpr double chat = 1.0;	   // reduced speed of light
+constexpr double chat = 0.1;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-20; // opacity
 constexpr double rho = 1.0e-6;
 
