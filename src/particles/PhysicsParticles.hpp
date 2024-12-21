@@ -135,6 +135,7 @@ class PhysicsParticleDescriptor
 	virtual void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) = 0;
 	virtual void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) = 0;
 	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
+	virtual void driftParticlesAllLevels(amrex::Real dt) = 0;
 };
 
 // Derived class for Rad particles
@@ -183,6 +184,11 @@ template <typename problem_t> class RadParticleDescriptor : public PhysicsPartic
 		if (auto *container = dynamic_cast<quokka::RadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
+	}
+
+	void driftParticlesAllLevels(amrex::Real dt) override
+	{
+		// Rad particles don't have velocity components, so this is a no-op
 	}
 };
 
@@ -233,6 +239,27 @@ template <typename problem_t> class CICParticleDescriptor : public PhysicsPartic
 			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
+
+	void driftParticlesAllLevels(amrex::Real dt) override
+	{
+		if (auto *container = dynamic_cast<quokka::CICParticleContainer *>(this->neighborParticleContainer_)) {
+			for (int lev = 0; lev <= container->finestLevel(); ++lev) {
+				for (quokka::CICParticleIterator pIter(*container, lev); pIter.isValid(); ++pIter) {
+					auto &particles = pIter.GetArrayOfStructs();
+					quokka::CICParticleContainer::ParticleType *pData = particles().data();
+					const amrex::Long np = pIter.numParticles();
+
+					amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+						quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+						// update particle position
+						for (int i = 0; i < AMREX_SPACEDIM; ++i) {
+							p.pos(i) += dt * p.rdata(quokka::CICParticleVxIdx + i);
+						}
+					});
+				}
+			}
+		}
+	}
 };
 
 // Derived class for CICRad particles
@@ -281,6 +308,11 @@ template <typename problem_t> class CICRadParticleDescriptor : public PhysicsPar
 		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
 			amrex::ParticleToMesh(*container, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
+	}
+
+	void driftParticlesAllLevels(amrex::Real dt) override
+	{
+		// keep empty for now
 	}
 };
 
@@ -364,6 +396,14 @@ template <typename problem_t> class PhysicsParticleRegister
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			descriptor->redistribute(lev, ngrow);
+		}
+	}
+
+	// Run driftParticles(dt) on all particles
+	void driftParticlesAllLevels(amrex::Real dt)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			descriptor->driftParticlesAllLevels(dt);
 		}
 	}
 

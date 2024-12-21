@@ -1260,24 +1260,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLevels(const amrex::Real dt)
 {
 	// drift all particles (do: pos[i] += dt * vel[i])
-
-	if (do_cic_particles != 0) {
-		for (int lev = 0; lev <= finest_level; ++lev) {
-			for (quokka::CICParticleIterator pIter(*CICParticles, lev); pIter.isValid(); ++pIter) {
-				auto &particles = pIter.GetArrayOfStructs();
-				quokka::CICParticleContainer::ParticleType *pData = particles().data();
-				const amrex::Long np = pIter.numParticles();
-
-				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-					// update particle position
-					for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-						p.pos(i) += dt * p.rdata(quokka::CICParticleVxIdx + i);
-					}
-				});
-			}
-		}
-	}
+	particleRegister_.driftParticlesAllLevels(dt);
 }
 
 // N.B.: This function actually works for subcycled or not subcycled, as long as
