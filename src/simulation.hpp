@@ -1239,7 +1239,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLevels(const amrex::Real dt)
 {
 	// drift all particles (do: pos[i] += dt * vel[i])
-	particleRegister_.driftParticlesAllLevels(dt);
+	if (do_cic_particles != 0) {
+		particleRegister_.driftParticlesAllLevels(dt);
+	}
 }
 
 // N.B.: This function actually works for subcycled or not subcycled, as long as

@@ -347,12 +347,52 @@ template <typename problem_t> class CICRadParticleDescriptor : public PhysicsPar
 
 	void driftParticlesAllLevels(amrex::Real dt) override
 	{
-		// keep empty for now
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
+			for (int lev = 0; lev <= container->finestLevel(); ++lev) {
+				for (quokka::CICRadParticleIterator<problem_t> pIter(*container, lev); pIter.isValid(); ++pIter) {
+					auto &particles = pIter.GetArrayOfStructs();
+					typename quokka::CICRadParticleContainer<problem_t>::ParticleType *pData = particles().data();
+					const amrex::Long np = pIter.numParticles();
+
+					amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+						typename quokka::CICRadParticleContainer<problem_t>::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+						// update particle position
+						for (int i = 0; i < AMREX_SPACEDIM; ++i) {
+							p.pos(i) += dt * p.rdata(quokka::CICRadParticleVxIdx + i);
+						}
+					});
+				}
+			}
+		}
 	}
 
 	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev) override
 	{
-		// keep empty for now
+		if (auto *container = dynamic_cast<quokka::CICRadParticleContainer<problem_t> *>(this->neighborParticleContainer_)) {
+			const auto dx_inv = geom[lev].InvCellSizeArray();
+			for (quokka::CICRadParticleIterator<problem_t> pIter(*container, lev); pIter.isValid(); ++pIter) {
+				auto &particles = pIter.GetArrayOfStructs();
+				typename quokka::CICRadParticleContainer<problem_t>::ParticleType *pData = particles().data();
+				const amrex::Long np = pIter.numParticles();
+
+				amrex::Array4<const amrex::Real> const &accel_arr = accel.array(pIter);
+				const auto plo = geom[lev].ProbLoArray();
+
+				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+					typename quokka::CICRadParticleContainer<problem_t>::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
+					interp.MeshToParticle(
+					    p, accel_arr, 0, quokka::CICRadParticleVxIdx, AMREX_SPACEDIM,
+					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
+						    return acc(i, j, k, comp); // no weighting
+					    },
+					    [=] AMREX_GPU_DEVICE(typename quokka::CICRadParticleContainer<problem_t>::ParticleType & p, int comp, amrex::Real acc_comp) {
+						    // kick particle by updating its velocity
+						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
+					    });
+				});
+			}
+		}
 	}
 };
 
