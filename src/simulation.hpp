@@ -946,20 +946,19 @@ template <typename problem_t> void AMRSimulation<problem_t>::evolve()
 		// N.B.: MUST be done *before* Poisson solve at new time!
 		driftParticlesAllLevels(dt_[0]);
 
+		// Redistribute particles after movement. This ensures particles are in the correct cells/processors for radiation deposition
+		// TODO(cch): I believe this is needed and missing this in the original code was a bug, but I don't understand why this was not caught earlier.
+		// Maybe the binary_orbit test was the only test for gravity and there was no multiple boxes in that test?
+		for (int lev = 0; lev <= finest_level; ++lev) {
+			// Use ngrow=0 since we only need particles in valid cells for radiation
+			particleRegister_.redistribute(lev, 0);
+		}
+
 		// elliptic solve over entire AMR grid (post-timestep)
 		ellipticSolveAllLevels(dt_[0]);
 
 		// do particle leapfrog (second kick at t + dt)
 		kickParticlesAllLevels(dt_[0]);
-
-		// Redistribute particles after movement
-		// This ensures particles are in the correct cells/processors for radiation deposition
-		// Use ngrow=0 since we only need particles in valid cells for radiation
-		for (int lev = 0; lev <= finest_level; ++lev) {
-			particleRegister_.redistribute(lev, 0);
-		}
-		// TODO(cch): I believe this is needed and missing this in the original code was a bug, but I don't understand why this was not caught earlier.
-		// Maybe the binary_orbit test was the only test for gravity and there was no multiple boxes in that test?
 
 		cur_time += dt_[0];
 		++cycleCount_;
