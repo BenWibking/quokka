@@ -140,7 +140,7 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
-	sim.doPoissonSolve_ = 0; // enable self-gravity
+	sim.doPoissonSolve_ = 1; // enable self-gravity
 
 	// initialize
 	sim.setInitialConditions();

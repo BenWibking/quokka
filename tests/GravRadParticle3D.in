@@ -22,7 +22,7 @@ do_subcycle = 0
 suppress_output = 0
 
 do_cic_rad_particles = 1    # turns on radiating particles
-stop_time = 1.0
+stop_time = 0.1
 plottime_interval = 0.1
 checkpointtime_interval = 100000
-max_timesteps = 100000
+max_timesteps = 10

@@ -1182,7 +1182,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 {
 	// kick particles (do: vel[i] += 0.5 * dt * accel[i])
 
-	if (do_cic_particles != 0) {
+	if (do_cic_particles != 0 || do_cic_rad_particles != 0) {
 		// gravitational acceleration multifabs
 		amrex::Vector<amrex::MultiFab> accel(finest_level + 1);
 
@@ -1248,7 +1248,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLevels(const amrex::Real dt)
 {
 	// drift all particles (do: pos[i] += dt * vel[i])
-	if (do_cic_particles != 0) {
+	if (do_cic_particles != 0 || do_cic_rad_particles != 0) {
 		particleRegister_.driftParticlesAllLevels(dt);
 	}
 }
@@ -2066,7 +2066,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 		createInitialRadParticles();
 
 		// Redistribute particles through register
-		particleRegister_.redistribute(0);
+		// particleRegister_.redistribute(0);
 	}
 
 	if (do_cic_particles != 0) {
@@ -2088,7 +2088,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 		createInitialCICParticles();
 
 		// Redistribute particles through register
-		particleRegister_.redistribute(0);
+		// particleRegister_.redistribute(0);
 	}
 
 	if (do_cic_rad_particles != 0) {
@@ -2111,8 +2111,10 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 		createInitialCICRadParticles();
 
 		// Redistribute particles through register
-		particleRegister_.redistribute(0);
+		// particleRegister_.redistribute(0);
 	}
+
+	particleRegister_.redistribute(0);
 }
 #endif
 
