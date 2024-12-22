@@ -949,6 +949,20 @@ template <typename problem_t> void AMRSimulation<problem_t>::evolve()
 		// N.B.: MUST be done *before* Poisson solve at new time!
 		driftParticlesAllLevels(dt_[0]);
 
+#ifdef AMREX_PARTICLES
+		// Redistribute particles after movement. This ensures particles are in the correct cells/processors for mass deposition in ellipticSolveAllLevels()
+		if (do_tracers != 0) {
+			for (int lev = 0; lev <= finest_level; ++lev) {
+				TracerPC->Redistribute(lev);
+			}
+		}
+		if (do_cic_particles != 0) {
+			for (int lev = 0; lev <= finest_level; ++lev) {
+				CICParticles->Redistribute(lev);
+			}
+		}
+#endif
+
 		// elliptic solve over entire AMR grid (post-timestep)
 		ellipticSolveAllLevels(dt_[0]);
 
