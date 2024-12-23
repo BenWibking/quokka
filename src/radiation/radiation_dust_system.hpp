@@ -874,7 +874,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 		auto rhs = [=](double Egas_) -> double {
 			const double T_gas_ = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, Egas_, massScalars);
 			const auto cooling_ = DefineNetCoolingRate(T_gas_, H_num_den) * dt;
-			return Egas_ - Egas0 + lambda_gd_times_dt + sum(cooling_) - cscale[nGroups_ - 1] * PE_heating_energy_derivative * EradVec_guess[nGroups_ - 1] -
+			// TODO(cch): should we multiply PE_heating_energy_derivative by cscale[nGroups_ - 1] ?
+			return Egas_ - Egas0 + lambda_gd_times_dt + sum(cooling_) - PE_heating_energy_derivative * EradVec_guess[nGroups_ - 1] -
 			       CR_heating;
 		};
 
