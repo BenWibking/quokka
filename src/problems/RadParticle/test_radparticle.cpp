@@ -4,9 +4,13 @@
 
 #include "test_radparticle.hpp"
 #include "AMReX.H"
+#include "AMReX_GpuQualifiers.H"
 #include "QuokkaSimulation.hpp"
+#include "grid.hpp"
+#include "hydro/EOS.hpp"
+#include "physics_info.hpp"
+#include "radiation/radiation_system.hpp"
 #include "util/fextract.hpp"
-#include "util/valarray.hpp"
 
 struct ParticleProblem {
 };
@@ -19,7 +23,7 @@ constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
 constexpr double chat = 1.0;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-10; // opacity
-constexpr double rho = 1.0;
+constexpr double rho0 = 1.0;
 
 const double lum1 = 1.0;
 const double lum2 = 0.5;
@@ -108,7 +112,7 @@ template <> void QuokkaSimulation<ParticleProblem>::setInitialConditionsOnGrid(q
 			state_cc(i, j, k, RadSystem<ParticleProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0;
 		}
 		state_cc(i, j, k, RadSystem<ParticleProblem>::gasEnergy_index) = Egas0;
-		state_cc(i, j, k, RadSystem<ParticleProblem>::gasDensity_index) = rho;
+		state_cc(i, j, k, RadSystem<ParticleProblem>::gasDensity_index) = rho0;
 		state_cc(i, j, k, RadSystem<ParticleProblem>::gasInternalEnergy_index) = Egas0;
 		state_cc(i, j, k, RadSystem<ParticleProblem>::x1GasMomentum_index) = 0.;
 		state_cc(i, j, k, RadSystem<ParticleProblem>::x2GasMomentum_index) = 0.;

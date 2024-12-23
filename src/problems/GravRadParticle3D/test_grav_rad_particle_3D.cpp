@@ -2,9 +2,14 @@
 /// \brief Defines a 3D test problem for radiating particles with gravity.
 ///
 
-#include "test_grav_rad_particle_3D.hpp"
+#include <cstdlib>
+
+#include "AMReX_BCRec.H"
+#include "AMReX_BC_TYPES.H"
+#include "AMReX_Box.H"
+#include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
-#include "util/fextract.hpp"
+#include "test_grav_rad_particle_3D.hpp"
 
 struct ParticleProblem {
 };
@@ -155,7 +160,7 @@ auto problem_main() -> int
 	const double dz = sim.Geom(0).CellSize(2);
 	const double dvol = dx * dy * dz;
 	const double total_Erad = total_Erad_over_vol * dvol;
-	const double t_alive = std::min(0.5, sim.tNew_[0]); // particles only live for 0.5 time units
+	const double t_alive = std::min(0.5, sim.tNew_[0]);		   // particles only live for 0.5 time units
 	const double total_Erad_exact = 2.0 * lum1 * t_alive * (chat / c); // two particles with luminosity lum1
 	const double rel_err = std::abs(total_Erad - total_Erad_exact) / total_Erad_exact;
 	amrex::Print() << "Total radiation energy exact = " << total_Erad_exact << "\n";
@@ -169,6 +174,7 @@ auto problem_main() -> int
 	amrex::Print() << "Relative L1 norm = " << rel_err << "\n";
 
 	// Cleanup and exit
-	amrex::Print() << "Finished." << "\n";
+	amrex::Print() << "Finished."
+		       << "\n";
 	return status;
 }

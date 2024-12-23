@@ -1,12 +1,19 @@
 #ifndef PHYSICS_PARTICLES_HPP_
 #define PHYSICS_PARTICLES_HPP_
 
+#include <map>
+#include <string>
+
 #include "AMReX_AmrParticles.H"
 #include "AMReX_Array.H"
+#include "AMReX_Array4.H"
 #include "AMReX_Extension.H"
+#include "AMReX_MultiFab.H"
 #include "AMReX_ParIter.H"
 #include "AMReX_ParticleContainerBase.H"
 #include "AMReX_ParticleInterpolators.H"
+#include "AMReX_REAL.H"
+#include "AMReX_SPACE.H"
 #include "physics_info.hpp"
 
 namespace quokka
@@ -256,7 +263,8 @@ template <typename problem_t> class CICParticleDescriptor : public PhysicsPartic
 					const amrex::Long np = pIter.numParticles();
 
 					amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-						quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+						quokka::CICParticleContainer::ParticleType &p =
+						    pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 						// update particle position
 						for (int i = 0; i < AMREX_SPACEDIM; ++i) {
 							p.pos(i) += dt * p.rdata(quokka::CICParticleVxIdx + i);
@@ -355,7 +363,8 @@ template <typename problem_t> class CICRadParticleDescriptor : public PhysicsPar
 					const amrex::Long np = pIter.numParticles();
 
 					amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-						typename quokka::CICRadParticleContainer<problem_t>::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+						typename quokka::CICRadParticleContainer<problem_t>::ParticleType &p =
+						    pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 						// update particle position
 						for (int i = 0; i < AMREX_SPACEDIM; ++i) {
 							p.pos(i) += dt * p.rdata(quokka::CICRadParticleVxIdx + i);
@@ -379,14 +388,16 @@ template <typename problem_t> class CICRadParticleDescriptor : public PhysicsPar
 				const auto plo = geom[lev].ProbLoArray();
 
 				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-					typename quokka::CICRadParticleContainer<problem_t>::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+					typename quokka::CICRadParticleContainer<problem_t>::ParticleType &p =
+					    pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
 					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
 					interp.MeshToParticle(
 					    p, accel_arr, 0, quokka::CICRadParticleVxIdx, AMREX_SPACEDIM,
 					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
 						    return acc(i, j, k, comp); // no weighting
 					    },
-					    [=] AMREX_GPU_DEVICE(typename quokka::CICRadParticleContainer<problem_t>::ParticleType & p, int comp, amrex::Real acc_comp) {
+					    [=] AMREX_GPU_DEVICE(typename quokka::CICRadParticleContainer<problem_t>::ParticleType & p, int comp,
+								 amrex::Real acc_comp) {
 						    // kick particle by updating its velocity
 						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
 					    });
