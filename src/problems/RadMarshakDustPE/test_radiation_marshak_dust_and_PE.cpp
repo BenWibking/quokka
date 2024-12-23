@@ -209,7 +209,7 @@ auto problem_main() -> int
 	QuokkaSimulation<MarshakProblem> sim(BCs_cc);
 
 	sim.radiationReconstructionOrder_ = 3; // PPM
-	// sim.stopTime_ = tmax; // set with runtime parameters
+	sim.cflNumber_ = CFL_number;
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
