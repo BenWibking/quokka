@@ -11,16 +11,16 @@
 
 // external headers
 #ifdef HAVE_PYTHON
-#include "matplotlibcpp.h"
+#include "util/matplotlibcpp.h"
 #endif
 #include <cmath>
 #include <fmt/format.h>
 
 // internal headers
 
-#include "RadhydroSimulation.hpp"
-#include "interpolate.hpp"
-#include "radiation_system.hpp"
+#include "QuokkaSimulation.hpp"
+#include "math/interpolate.hpp"
+#include "radiation/radiation_system.hpp"
 
 // function definitions
 

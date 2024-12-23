@@ -11,23 +11,16 @@
 // step 1: make it CGS unit
 
 
-#include <cmath>
-#include <fstream>
-#include <limits>
-
 #include "AMReX_Array.H"
 #include "AMReX_BLassert.H"
 #include "AMReX_ParallelDescriptor.H"
 #include "AMReX_REAL.H"
 #include "AMReX_SPACE.H"
 
-#include "fextract.hpp"
+#include "util/fextract.hpp"
 #include "physics_info.hpp"
-#include "radiation_system.hpp"
+#include "radiation/radiation_system.hpp"
 #include "test_linear_diffusion_multigroup.hpp"
-#ifdef HAVE_PYTHON
-#include "matplotlibcpp.h"
-#endif
 
 struct TheProblem {
 }; // dummy type to allow compile-type polymorphism via template specialization
@@ -76,6 +69,11 @@ template <> struct Physics_Traits<TheProblem> {
 	// face-centred
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int nGroups = n_groups_;
+	static constexpr UnitSystem unit_system = UnitSystem::CONSTANTS;
+	static constexpr double boltzmann_constant = k_B;
+	static constexpr double gravitational_constant = 1.0;
+	static constexpr double c_light = c;
+	static constexpr double radiation_constant = a_rad;
 };
 
 template <> struct RadSystem_Traits<TheProblem> {
@@ -112,7 +110,7 @@ template <> struct RadSystem_Traits<TheProblem> {
 
 // old
 template <>
-AMREX_GPU_HOST_DEVICE auto RadSystem<TheProblem>::ComputeThermalRadiation(amrex::Real temperature, amrex::GpuArray<double, nGroups_ + 1> const &boundaries)
+AMREX_GPU_HOST_DEVICE auto RadSystem<TheProblem>::ComputeThermalRadiationMultiGroup(amrex::Real temperature, amrex::GpuArray<double, nGroups_ + 1> const &boundaries)
     -> quokka::valarray<amrex::Real, nGroups_>
 {
 	quokka::valarray<double, nGroups_> B_g{};
@@ -134,11 +132,11 @@ AMREX_GPU_HOST_DEVICE auto RadSystem<TheProblem>::ComputeThermalRadiation(amrex:
 
 template <>
 AMREX_GPU_HOST_DEVICE auto
-RadSystem<TheProblem>::ComputeThermalRadiationTempDerivative(amrex::Real temperature,
+RadSystem<TheProblem>::ComputeThermalRadiationTempDerivativeMultiGroup(amrex::Real temperature,
 							    amrex::GpuArray<double, nGroups_ + 1> const &boundaries) -> quokka::valarray<amrex::Real, nGroups_>
 {
 	// by default, d emission/dT = 4 emission / T
-	auto erad = ComputeThermalRadiation(temperature, boundaries);
+	auto erad = ComputeThermalRadiationMultiGroup(temperature, boundaries);
 	return 4. * erad / temperature;
 }
 
@@ -177,7 +175,7 @@ template <> AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto RadSystem<TheProblem>:
 	return (1. / 3.); // Eddington approximation
 }
 
-template <> void RadhydroSimulation<TheProblem>::setInitialConditionsOnGrid(quokka::grid grid_elem)
+template <> void QuokkaSimulation<TheProblem>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
 {
 	// extract variables required from the geom object
 	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = grid_elem.dx_;
@@ -187,7 +185,7 @@ template <> void RadhydroSimulation<TheProblem>::setInitialConditionsOnGrid(quok
 
 	// loop over the grid and set the initial condition
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		amrex::Real const x = prob_lo[0] + (i + amrex::Real(0.5)) * dx[0];
+		amrex::Real const x = prob_lo[0] + (i + 0.5) * dx[0];
 
     double const T = std::abs(x) > x0 ? T_floor : T0;
     auto Egas = quokka::EOS<TheProblem>::ComputeEintFromTgas(rho0, T);
@@ -256,7 +254,7 @@ auto problem_main() -> int
 		}
 	}
 
-	RadhydroSimulation<TheProblem> sim(BCs_cc);
+	QuokkaSimulation<TheProblem> sim(BCs_cc);
 
 	// sim.cflNumber_ = CFL_number;
 	// sim.radiationCflNumber_ = CFL_number;

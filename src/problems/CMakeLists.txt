@@ -39,6 +39,7 @@ add_subdirectory(RadMarshakDust)
 add_subdirectory(RadMarshakDustPE)
 add_subdirectory(RadLineCooling)
 add_subdirectory(RadLineCoolingMG)
+add_subdirectory(paper3-linear-diffusion)
 
 add_subdirectory(RadhydroShell)
 add_subdirectory(RadhydroShock)
