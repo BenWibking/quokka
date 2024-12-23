@@ -187,7 +187,8 @@ auto problem_main() -> int
 	amrex::Vector<int> const ranks({0}); // workaround nvcc bug
 	amrex::DistributionMapping const dmap(ranks);
 	analysisPC.Define(geom, dmap, boxArray);
-	auto *container = sim.particleRegister_.getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
+	auto *container =
+	    sim.particleRegister_.getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
 	analysisPC.copyParticles(*container);
 
 	if (amrex::ParallelDescriptor::IOProcessor()) {
@@ -207,8 +208,10 @@ auto problem_main() -> int
 			// amrex::Print() << "Particle 1 position: (" << p1.pos(0) << ", " << p1.pos(1) << ", " << p1.pos(2) << ")\n";
 			// amrex::Print() << "Particle 2 position: (" << p2.pos(0) << ", " << p2.pos(1) << ", " << p2.pos(2) << ")\n";
 			// We don't know which particle is which, so I compute the error for both possible assignments
-			const double position_error_1 = std::abs(p1.pos(0) - x1_exact) + std::abs(p1.pos(1) - y1_exact) + std::abs(p2.pos(0) - x2_exact) + std::abs(p2.pos(1) - y2_exact);
-			const double position_error_2 = std::abs(p1.pos(0) - x2_exact) + std::abs(p1.pos(1) - y2_exact) + std::abs(p2.pos(0) - x1_exact) + std::abs(p2.pos(1) - y1_exact);
+			const double position_error_1 =
+			    std::abs(p1.pos(0) - x1_exact) + std::abs(p1.pos(1) - y1_exact) + std::abs(p2.pos(0) - x2_exact) + std::abs(p2.pos(1) - y2_exact);
+			const double position_error_2 =
+			    std::abs(p1.pos(0) - x2_exact) + std::abs(p1.pos(1) - y2_exact) + std::abs(p2.pos(0) - x1_exact) + std::abs(p2.pos(1) - y1_exact);
 			position_error = std::min(position_error_1, position_error_2);
 			position_norm = std::abs(x1_exact) + std::abs(y1_exact) + std::abs(x2_exact) + std::abs(y2_exact);
 		}

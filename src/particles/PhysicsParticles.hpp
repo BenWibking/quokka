@@ -136,7 +136,10 @@ class PhysicsParticleDescriptor
 	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container) { neighborParticleContainer_ = container; }
 
 	// Getter for particle container
-	template <typename ParticleContainerType> auto getParticleContainer() -> ParticleContainerType * { return dynamic_cast<ParticleContainerType *>(neighborParticleContainer_); }
+	template <typename ParticleContainerType> auto getParticleContainer() -> ParticleContainerType *
+	{
+		return dynamic_cast<ParticleContainerType *>(neighborParticleContainer_);
+	}
 
 	// Virtual operations that will be called on the particle container
 	virtual void redistribute(int lev) = 0;
