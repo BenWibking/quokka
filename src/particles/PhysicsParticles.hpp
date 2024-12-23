@@ -2,18 +2,25 @@
 #define PHYSICS_PARTICLES_HPP_
 
 #include <map>
+#include <math.h>
+#include <memory>
 #include <string>
 
+#include "AMReX.H"
 #include "AMReX_AmrParticles.H"
 #include "AMReX_Array.H"
 #include "AMReX_Array4.H"
 #include "AMReX_Extension.H"
+#include "AMReX_Geometry.H"
+#include "AMReX_GpuQualifiers.H"
+#include "AMReX_INT.H"
 #include "AMReX_MultiFab.H"
 #include "AMReX_ParIter.H"
 #include "AMReX_ParticleContainerBase.H"
 #include "AMReX_ParticleInterpolators.H"
 #include "AMReX_REAL.H"
 #include "AMReX_SPACE.H"
+#include "AMReX_Vector.H"
 #include "physics_info.hpp"
 
 namespace quokka
@@ -30,7 +37,8 @@ enum RadParticleDataIdx { RadParticleBirthTimeIdx = 0, RadParticleDeathTimeIdx, 
 template <typename problem_t>
 constexpr int RadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
-		return 2 + Physics_Traits<problem_t>::nGroups; // birth_time death_time lum1 ... lumN
+		return 2 + Physics_Traits<problem_t>::nGroups; // birth_time death_time lum1
+							       // ... lumN
 	} else {
 		return 2; // birth_time death_time
 	}
@@ -51,7 +59,8 @@ enum CICRadParticleDataIdx {
 template <typename problem_t>
 constexpr int CICRadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
-		return 6 + Physics_Traits<problem_t>::nGroups; // mass vx vy vz birth_time death_time lum1 ... lumN
+		return 6 + Physics_Traits<problem_t>::nGroups; // mass vx vy vz birth_time
+							       // death_time lum1 ... lumN
 	} else {
 		return 6; // mass vx vy vz birth_time death_time
 	}

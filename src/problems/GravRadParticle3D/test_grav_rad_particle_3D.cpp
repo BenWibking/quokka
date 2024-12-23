@@ -166,8 +166,9 @@ auto problem_main() -> int
 	const double rel_err = std::abs(total_Erad - total_Erad_exact) / total_Erad_exact;
 
 	// compute exact location of the particles
-	// the particles are originally at (-0.5, 0) and (0.5, 0) and they move with velocity 1/sqrt(2) in the y/-y direction
-	// the problem is designed such that the particles will move in a circle with radius 0.5
+	// the particles are originally at (-0.5, 0) and (0.5, 0) and they move with
+	// velocity 1/sqrt(2) in the y/-y direction the problem is designed such that
+	// the particles will move in a circle with radius 0.5
 	const double velocity = 1.0 / std::sqrt(2.0);
 	const double radius = 0.5;
 	const double theta = velocity * sim.tNew_[0] / radius;
@@ -199,14 +200,17 @@ auto problem_main() -> int
 			// copy particles from device to host
 			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType *pData = particles().data();
 			amrex::Vector<quokka::CICRadParticleContainer<ParticleProblem>::ParticleType> pData_h(np);
-			amrex::Gpu::copy(amrex::Gpu::deviceToHost, pData, pData + np, pData_h.begin()); // NOLINT
+			amrex::Gpu::copy(amrex::Gpu::deviceToHost, pData, pData + np,
+					 pData_h.begin()); // NOLINT
 			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType &p1 = pData_h[0];
 			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType &p2 = pData_h[1];
-			// Uncomment to print exact particle positions for debugging
+
+			// // Uncomment to print exact particle positions for debugging
 			// amrex::Print() << "Exact particle 1 position: (" << x1_exact << ", " << y1_exact << ", " << 0.0 << ")\n";
 			// amrex::Print() << "Exact particle 2 position: (" << x2_exact << ", " << y2_exact << ", " << 0.0 << ")\n";
 			// amrex::Print() << "Particle 1 position: (" << p1.pos(0) << ", " << p1.pos(1) << ", " << p1.pos(2) << ")\n";
 			// amrex::Print() << "Particle 2 position: (" << p2.pos(0) << ", " << p2.pos(1) << ", " << p2.pos(2) << ")\n";
+
 			// We don't know which particle is which, so I compute the error for both possible assignments
 			const double position_error_1 =
 			    std::abs(p1.pos(0) - x1_exact) + std::abs(p1.pos(1) - y1_exact) + std::abs(p2.pos(0) - x2_exact) + std::abs(p2.pos(1) - y2_exact);
