@@ -314,7 +314,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentN
 
 	// add face-centered velocities
 	for (int idim = 0; idim < AMREX_SPACEDIM; idim++) {
-		componentNames_fc_.push_back({quokka::face_dir_str[idim] + "-velocity"});
+		componentNames_fc_.push_back({quokka::face_dir_str[idim] + "-RiemannSolverVelocity"});
 	}
 	// add mhd state variables
 	if constexpr (Physics_Traits<problem_t>::is_mhd_enabled) {
@@ -702,9 +702,14 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeAfterEvol
 	amrex::Print() << '\n';
 
 	// compute average number of radiation subcycles per timestep
-	double const avg_rad_subcycles = static_cast<double>(radiationCellUpdates_) / static_cast<double>(cellUpdates_);
-	amrex::Print() << "avg. num. of radiation subcycles = " << avg_rad_subcycles << '\n';
-	amrex::Print() << '\n';
+	if (cellUpdates_ > 0) {
+		double const avg_rad_subcycles = static_cast<double>(radiationCellUpdates_) / static_cast<double>(cellUpdates_);
+		amrex::Print() << "avg. num. of radiation subcycles = " << avg_rad_subcycles << '\n';
+		amrex::Print() << '\n';
+	} else {
+		amrex::Print() << "No cell updates performed!\n";
+		amrex::Print() << '\n';
+	}
 }
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int ncycle)

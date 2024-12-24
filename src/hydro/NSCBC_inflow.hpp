@@ -10,6 +10,7 @@
 /// subsonic, continuous inflow. This should NOT be used for a shock boundary
 /// condition.
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_GpuQualifiers.H"
 #include "AMReX_REAL.H"
 #include "hydro/EOS.hpp"
@@ -59,7 +60,7 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto dQ_dx_inflow_x1_lower(quokka::valarray<
 	const Real dP_dx = dQ_dx_data[4];
 
 	const Real c = quokka::EOS<problem_t>::ComputeSoundSpeed(rho, P, massScalars);
-	const amrex::Real M = std::clamp(std::sqrt(u * u + v * v + w * w) / c, 0., 1.);
+	const amrex::Real M = amrex::Clamp(std::sqrt(u * u + v * v + w * w) / c, 0., 1.);
 
 	const Real eta_2 = 2.;
 	const Real eta_3 = 2.;
