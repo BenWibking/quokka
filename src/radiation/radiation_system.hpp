@@ -475,9 +475,9 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
 
-	static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double variable_chat_param1,
-								      double variable_chat_param2, array_t &reducedSpeedOfLightFactor,
-								      const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
+	static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double variable_chat_param1, double variable_chat_param2,
+						     array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange,
+						     const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
 };
 
 // Compute radiation energy fractions for each photon group from a Planck function, given nGroups, radBoundaries, and temperature
@@ -1567,10 +1567,9 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 }
 
 template <typename problem_t>
-void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c,
-									     const double variable_chat_param1, const double variable_chat_param2,
-									     array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange,
-									     const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
+void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, const double variable_chat_param1,
+							    const double variable_chat_param2, array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange,
+							    const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
 {
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
 		const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
