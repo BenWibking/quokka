@@ -200,8 +200,6 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 			return c_light_cgs_ / (Physics_Traits<problem_t>::unit_length / Physics_Traits<problem_t>::unit_time);
 		}
 	}();
-	// static constexpr double chat0_over_c = RadSystem_Traits<problem_t>::c_hat_over_c;
-	// static constexpr double chat0_ = c_light_ * chat0_over_c;
 
 	static constexpr double radiation_constant_ = []() constexpr {
 		if constexpr (Physics_Traits<problem_t>::unit_system == UnitSystem::CGS) {
@@ -473,7 +471,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
 
-	AMREX_GPU_DEVICE static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double use_variable_chat, double variable_chat_param2, array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
+	AMREX_GPU_DEVICE static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double variable_chat_param1, double variable_chat_param2, array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
 };
 
 // Compute radiation energy fractions for each photon group from a Planck function, given nGroups, radBoundaries, and temperature
@@ -1561,108 +1559,20 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 }
 
 template <typename problem_t>
-AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, const double use_variable_chat, const double variable_chat_param2, array_t &reducedSpeedOfLightFactor,
+AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c, const double variable_chat_param1, const double variable_chat_param2, array_t &reducedSpeedOfLightFactor,
 									 const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
 {
-	// quokka::Array4View<const amrex::Real, FluxDir::X1> consVarX1(consVar_in);
-	// quokka::Array4View<const amrex::Real, FluxDir::X2> consVarX2(consVar_in);
-	// quokka::Array4View<const amrex::Real, FluxDir::X3> consVarX3(consVar_in);
-
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-		// debugging: print consVar(i - 1, j, k, radEnergy_index), consVar(i, j, k, radEnergy_index), consVar(i + 1, j, k, radEnergy_index)
-		// amrex::Print() << "consVar(" << i - 1 << ", " << j << ", " << k << ", " << radEnergy_index << ") = " << consVar(i - 1, j, k, radEnergy_index) << std::endl;
-		// amrex::Print() << "consVar(" << i << ", " << j << ", " << k << ", " << radEnergy_index << ") = " << consVar(i, j, k, radEnergy_index) << std::endl;
-		// amrex::Print() << "consVar(" << i + 1 << ", " << j << ", " << k << ", " << radEnergy_index << ") = " << consVar(i + 1, j, k, radEnergy_index) << std::endl;
-		// amrex::Print() << std::endl;
-
-		// // compute kappaP
-		// const double rho = consVar(i, j, k, gasDensity_index);
-		// const double E_gas = consVar(i, j, k, gasInternalEnergy_index);
-		// const auto massScalars = RadSystem<problem_t>::ComputeMassScalars(consVar, i, j, k);
-		// const double T_gas = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, E_gas, massScalars);
-		// const double chi = rho * ComputePlanckOpacity(rho, T_gas);
-
-		// if (chi <= 0.0) {
-		// 	reducedSpeedOfLightFactor(i, j, k) = 1.0;
-		// 	return;
-		// }
-
-// 		// Calculate first derivatives of Erad
-// 		double dEdx = 0.0;
-// 		double dEdy = 0.0;
-// 		double dEdz = 0.0;
-
-// 		// Calculate second derivatives of Erad 
-// 		double d2Edx2 = 0.0;
-// 		double d2Edy2 = 0.0;
-// 		double d2Edz2 = 0.0;
-// 		double Eradc = 0.0;
-
-// 		// Sum over all radiation groups
-// 		for (int g = 0; g < nGroups_; ++g) {
-// 			const int Erad_idx = radEnergy_index + numRadVars_ * g;
-
-// 			Eradc += consVar(i, j, k, Erad_idx);
-
-// 			// First derivatives (central difference)
-// 			dEdx += (consVar(i+1, j, k, Erad_idx) - consVar(i-1, j, k, Erad_idx)) / (2.0 * dx[0]);
-// #if AMREX_SPACEDIM > 1
-// 			dEdy += (consVar(i, j+1, k, Erad_idx) - consVar(i, j-1, k, Erad_idx)) / (2.0 * dx[1]);
-// #endif
-// #if AMREX_SPACEDIM > 2
-// 			dEdz += (consVar(i, j, k+1, Erad_idx) - consVar(i, j, k-1, Erad_idx)) / (2.0 * dx[2]);
-// #endif
-
-// 			// Second derivatives
-// 			d2Edx2 += (consVar(i+1, j, k, Erad_idx) - 2.0*consVar(i, j, k, Erad_idx) + consVar(i-1, j, k, Erad_idx)) / (dx[0] * dx[0]);
-// #if AMREX_SPACEDIM > 1
-// 			d2Edy2 += (consVar(i, j+1, k, Erad_idx) - 2.0*consVar(i, j, k, Erad_idx) + consVar(i, j-1, k, Erad_idx)) / (dx[1] * dx[1]);
-// #endif
-// #if AMREX_SPACEDIM > 2
-// 			d2Edz2 += (consVar(i, j, k+1, Erad_idx) - 2.0*consVar(i, j, k, Erad_idx) + consVar(i, j, k-1, Erad_idx)) / (dx[2] * dx[2]);
-// #endif
-// 		}
-
-// 		// Calculate magnitudes
-// 		const double grad_mag = std::sqrt(dEdx*dEdx + dEdy*dEdy + dEdz*dEdz);
-// 		const double laplacian_mag = std::abs(d2Edx2 + d2Edy2 + d2Edz2);
-
-		// // Avoid division by zero
-		// // const double R = (grad_mag > 0.0) ? laplacian_mag / grad_mag / chi : 0.0;
-		// const double R = 1.0 / chi * laplacian_mag / (grad_mag + 1.0e-3 * Eradc / dx[0]);
-		// const double R_scaled = R / 3.0;
-		// const double R_scaled4 = R_scaled * R_scaled * R_scaled * R_scaled;
-
-		// const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
-
-		quokka::Array4View<const amrex::Real, FluxDir::X1> consVarX1(consVar_in);
-		const auto tau_cell = ComputeCellOpticalDepth<FluxDir::X1>(consVarX1, dx, i, j, k, radBoundaries_); // TODO(cch): this is for 1-D only
+		const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
 
 		const double max_chat_scaleup = 10.0;
-		const double scaling = use_variable_chat;
+		const double scaling = variable_chat_param1;
 		const double pow = variable_chat_param2;
-		// const double scaling = 0.05;
-
-		// lambda function to compute the reduced speed of light factor
-		const auto model_one = [=](double tau_cell) -> double {
-			const double scaled = std::pow(tau_cell * scaling, pow);
-			return std::min(c_hat_over_c * (1.0 + max_chat_scaleup * scaled) / (1.0 + scaled), 1.0);
-		};
-		const auto model_two = [=](double tau_cell) -> double {
-			const double scaled = std::pow(tau_cell * scaling, pow);
-			return (c_hat_over_c + scaled) / (1.0 + scaled);
-		};
 
 		for (int g = 0; g < nGroups_; ++g) {
-			// const double scaled = std::pow(tau_cell[g] * scaling, pow);
-			// const double reduced_speed_of_light_factor = c_hat_over_c * (1.0 + max_chat_scaleup * scaled) / (1.0 + scaled);
-
-	 		// limiting between phi and 10 phi
-			// reducedSpeedOfLightFactor(i, j, k, g) = model_one(tau_cell[g], 1);
-
 			// the original model suggested by Mark, but replacing R with tau_cell and use various powers
-			// const int pow = 4;
-			reducedSpeedOfLightFactor(i, j, k, g) = model_two(tau_cell[g]);
+			const double scaled = std::pow(tau_cell[g] * scaling, pow);
+			reducedSpeedOfLightFactor(i, j, k, g) = (c_hat_over_c + scaled) / (1.0 + scaled);
 		}
 
 	});
