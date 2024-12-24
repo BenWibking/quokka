@@ -1686,20 +1686,21 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			}
 		}
 
-		if (time_subcycle == 0.0) {
-			// print reducedSpeedOfLightFactor
-			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
-				const amrex::Box &indexRange = iter.validbox();
-				auto const &reducedSpeedOfLightFactor_ = reducedSpeedOfLightFactor.const_array(iter);
-				amrex::Print() << "\nreducedSpeedOfLightFactor (" << RadSystem<problem_t>::nGroups_ << " groups): \n";
-				for (int g = 0; g < RadSystem<problem_t>::nGroups_; ++g) {
-					amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-						amrex::Print() << reducedSpeedOfLightFactor_(i, j, k, g) << " ";
-					});
-					amrex::Print() << "\n";
-				}
-			}
-		}
+		// Debug on CPU
+		// if (time_subcycle == 0.0) {
+		// 	// print reducedSpeedOfLightFactor
+		// 	for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
+		// 		const amrex::Box &indexRange = iter.validbox();
+		// 		auto const &reducedSpeedOfLightFactor_ = reducedSpeedOfLightFactor.const_array(iter);
+		// 		amrex::Print() << "\nreducedSpeedOfLightFactor (" << RadSystem<problem_t>::nGroups_ << " groups): \n";
+		// 		for (int g = 0; g < RadSystem<problem_t>::nGroups_; ++g) {
+		// 			amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+		// 				amrex::Print() << reducedSpeedOfLightFactor_(i, j, k, g) << " ";
+		// 			});
+		// 			amrex::Print() << "\n";
+		// 		}
+		// 	}
+		// }
 
 		// We use the IMEX PD-ARS scheme to evolve the radiation subsystem and radiation-matter coupling.
 
