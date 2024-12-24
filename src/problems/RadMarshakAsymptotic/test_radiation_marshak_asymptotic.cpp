@@ -231,7 +231,7 @@ auto problem_main() -> int
 	// sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
 	sim.chat_over_c_ = chat_over_c_;
-	sim.use_variable_chat_ = use_variable_chat_;
+	sim.variable_chat_param1_ = use_variable_chat_;
 
 	bool use_wavespeed_correction = false;
 

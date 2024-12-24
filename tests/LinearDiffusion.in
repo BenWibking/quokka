@@ -24,5 +24,5 @@ do_subcycle = 0
 suppress_output = 0
 
 radiation.c_hat_over_c = 0.01
-radiation.use_variable_chat = 10.0**-0.6
+radiation.variable_chat_param1 = 10.0**-0.6
 radiation.variable_chat_param2 = 0.7

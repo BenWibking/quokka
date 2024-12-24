@@ -124,7 +124,7 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 
 	amrex::Real radiationCflNumber_ = 0.3;
 	amrex::Real chat_over_c_ = 1.0;
-	amrex::Real use_variable_chat_ = -1.0;
+	amrex::Real variable_chat_param1_ = -1.0; // variable_chat_param1_ < 0.0 turns off variable reduced speed of light
 	amrex::Real variable_chat_param2_ = 1.0;
 	int maxSubsteps_ = 10;				// maximum number of radiation subcycles per hydro step
 	amrex::Real dustGasInteractionCoeff_ = 2.5e-34; // erg cm^3 s^−1 K^−3/2
@@ -442,7 +442,7 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::readParmParse()
 		rpp.query("reconstruction_order", radiationReconstructionOrder_);
 		rpp.query("cfl", radiationCflNumber_);
 		rpp.query("c_hat_over_c", chat_over_c_);
-		rpp.query("use_variable_chat", use_variable_chat_);
+		rpp.query("variable_chat_param1", variable_chat_param1_);
 		rpp.query("variable_chat_param2", variable_chat_param2_);
 		rpp.query("dust_gas_interaction_coeff", dustGasInteractionCoeff_);
 		rpp.query("print_iteration_counts", print_rad_counter_);
@@ -1667,13 +1667,13 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 		// define a MultiFab to store the reduced speed of light
 		amrex::MultiFab reducedSpeedOfLightFactor(grids[lev], dmap[lev], RadSystem<problem_t>::nGroups_, 2);
 
-		if (use_variable_chat_ < 0.0) {
+		if (variable_chat_param1_ < 0.0) {
 			reducedSpeedOfLightFactor.setVal(chat_over_c_);
 		} else {
 			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
 				auto const &stateNew = state_new_cc_[lev].array(iter);
 				const amrex::Box &indexRange = amrex::grow(iter.validbox(), 2);
-				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, chat_over_c_, use_variable_chat_, variable_chat_param2_, reducedSpeedOfLightFactor.array(iter), indexRange, dx);
+				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, chat_over_c_, variable_chat_param1_, variable_chat_param2_, reducedSpeedOfLightFactor.array(iter), indexRange, dx);
 			}
 		}
 
