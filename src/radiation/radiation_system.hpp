@@ -475,7 +475,7 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 
 	AMREX_GPU_DEVICE static auto ComputeEddingtonTensor(double fx_L, double fy_L, double fz_L) -> std::array<std::array<double, 3>, 3>;
 
-	AMREX_GPU_DEVICE static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double variable_chat_param1,
+	static void ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar, double c_hat_over_c, double variable_chat_param1,
 								      double variable_chat_param2, array_t &reducedSpeedOfLightFactor,
 								      const amrex::Box &indexRange, const amrex::GpuArray<double, AMREX_SPACEDIM> &dx);
 };
@@ -1567,7 +1567,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeDustTemperatureBateKeto(doubl
 }
 
 template <typename problem_t>
-AMREX_GPU_DEVICE void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c,
+void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVar_in, const double c_hat_over_c,
 									     const double variable_chat_param1, const double variable_chat_param2,
 									     array_t &reducedSpeedOfLightFactor, const amrex::Box &indexRange,
 									     const amrex::GpuArray<double, AMREX_SPACEDIM> &dx)
