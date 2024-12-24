@@ -247,14 +247,15 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 					  amrex::YAFluxRegister *fr_as_fine, amrex::MultiFab const &reducedSpeedOfLightFactor);
 	void advanceRadiationMidpointRK2(int lev, amrex::Real time, amrex::Real dt_radiation, int iter_count, int nsubsteps, amrex::YAFluxRegister *fr_as_crse,
 					 amrex::YAFluxRegister *fr_as_fine, amrex::MultiFab const &reducedSpeedOfLightFactor);
-					 
+
 	void subcycleRadiationAtLevel(int lev, amrex::Real time, amrex::Real dt_lev_hydro, amrex::YAFluxRegister *fr_as_crse,
 				      amrex::YAFluxRegister *fr_as_fine);
 
 	void operatorSplitSourceTerms(amrex::Array4<amrex::Real> const &stateNew, const amrex::Box &indexRange, amrex::Real time, double dt, int stage,
 				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo,
-				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor,
-				      int *p_iteration_counter, int *p_iteration_failure_counter);
+				      amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi,
+				      amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor, int *p_iteration_counter,
+				      int *p_iteration_failure_counter);
 
 	auto computeRadiationFluxes(amrex::Array4<const amrex::Real> const &consVar, const amrex::Box &indexRange, int nvars,
 				    amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor_)
@@ -341,7 +342,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 		simulationMetadata_["G"] = Physics_Traits<problem_t>::gravitational_constant;
 		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			simulationMetadata_["c"] = Physics_Traits<problem_t>::c_light;
-			// Commented out because chat_over_c_ is not accessible here. 
+			// Commented out because chat_over_c_ is not accessible here.
 			// simulationMetadata_["c_hat"] = Physics_Traits<problem_t>::c_light * RadSystem_Traits<problem_t>::c_hat_over_c;
 			simulationMetadata_["a_rad"] = Physics_Traits<problem_t>::radiation_constant;
 		}
@@ -366,7 +367,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::initializeSimulatio
 		simulationMetadata_["G"] = Gconst_;
 		if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 			simulationMetadata_["c"] = RadSystem<problem_t>::c_light_;
-			// Commented out because chat_over_c_ is not accessible here. 
+			// Commented out because chat_over_c_ is not accessible here.
 			// simulationMetadata_["c_hat"] = RadSystem<problem_t>::c_light_ * chat_over_c_;
 			simulationMetadata_["a_rad"] = RadSystem<problem_t>::radiation_constant_;
 		}
@@ -1680,12 +1681,13 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
 				auto const &stateNew = state_new_cc_[lev].array(iter);
 				const amrex::Box &indexRange = amrex::grow(iter.validbox(), 2);
-				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, chat_over_c_, variable_chat_param1_, variable_chat_param2_, reducedSpeedOfLightFactor.array(iter), indexRange, dx);
+				RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(stateNew, chat_over_c_, variable_chat_param1_, variable_chat_param2_,
+										       reducedSpeedOfLightFactor.array(iter), indexRange, dx);
 			}
 		}
 
 		if (time_subcycle == 0.0) {
-			// print reducedSpeedOfLightFactor 
+			// print reducedSpeedOfLightFactor
 			for (amrex::MFIter iter(reducedSpeedOfLightFactor); iter.isValid(); ++iter) {
 				const amrex::Box &indexRange = iter.validbox();
 				auto const &reducedSpeedOfLightFactor_ = reducedSpeedOfLightFactor.const_array(iter);
@@ -1725,8 +1727,8 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 				// update state_new_cc_[lev] in place (updates both radiation and hydro vars)
 				// Note that only a fraction (IMEX_a32) of the matter-radiation exchange source terms are added to hydro. This ensures that the
 				// hydro properties get to t + IMEX_a32 dt in terms of matter-radiation exchange.
-				operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi, reducedSpeedOfLightFactor.array(iter),
-							p_iteration_counter, p_iteration_failure_counter);
+				operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 1, dx, prob_lo, prob_hi,
+							 reducedSpeedOfLightFactor.array(iter), p_iteration_counter, p_iteration_failure_counter);
 			}
 		}
 
@@ -1743,8 +1745,8 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 			auto const &prob_lo = geom[lev].ProbLoArray();
 			auto const &prob_hi = geom[lev].ProbHiArray();
 			// update state_new_cc_[lev] in place (updates both radiation and hydro vars)
-			operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 2, dx, prob_lo, prob_hi, reducedSpeedOfLightFactor.array(iter),
-						 p_iteration_counter, p_iteration_failure_counter);
+			operatorSplitSourceTerms(stateNew, indexRange, time_subcycle, dt_radiation, 2, dx, prob_lo, prob_hi,
+						 reducedSpeedOfLightFactor.array(iter), p_iteration_counter, p_iteration_failure_counter);
 		}
 
 		if (print_rad_counter_) {
@@ -1888,8 +1890,9 @@ template <typename problem_t>
 void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::Real> const &stateNew, const amrex::Box &indexRange, const amrex::Real time,
 							   const double dt, const int stage, amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &dx,
 							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_lo,
-							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi, amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor,
-							   int *p_iteration_counter, int *p_iteration_failure_counter)
+							   amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> const &prob_hi,
+							   amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor, int *p_iteration_counter,
+							   int *p_iteration_failure_counter)
 {
 	amrex::FArrayBox radEnergySource(indexRange, Physics_Traits<problem_t>::nGroups,
 					 amrex::The_Async_Arena()); // cell-centered scalar
@@ -1905,13 +1908,14 @@ void QuokkaSimulation<problem_t>::operatorSplitSourceTerms(amrex::Array4<amrex::
 								reducedSpeedOfLightFactor, p_iteration_counter, p_iteration_failure_counter);
 	} else {
 		RadSystem<problem_t>::AddSourceTermsMultiGroup(stateNew, radEnergySource.const_array(), indexRange, dt, stage, dustGasInteractionCoeff_,
-								reducedSpeedOfLightFactor, p_iteration_counter, p_iteration_failure_counter);
+							       reducedSpeedOfLightFactor, p_iteration_counter, p_iteration_failure_counter);
 	}
 }
 
 template <typename problem_t>
 auto QuokkaSimulation<problem_t>::computeRadiationFluxes(amrex::Array4<const amrex::Real> const &consVar, const amrex::Box &indexRange, const int nvars,
-							 amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx, amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor)
+							 amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx,
+							 amrex::Array4<const amrex::Real> const &reducedSpeedOfLightFactor)
     -> std::tuple<std::array<amrex::FArrayBox, AMREX_SPACEDIM>, std::array<amrex::FArrayBox, AMREX_SPACEDIM>>
 {
 	amrex::Box const &x1FluxRange = amrex::surroundingNodes(indexRange, 0);
@@ -1986,7 +1990,8 @@ void QuokkaSimulation<problem_t>::fluxFunction(amrex::Array4<const amrex::Real> 
 	// interface-centered kernel
 	amrex::Box const &x1FluxRange = amrex::surroundingNodes(indexRange, dir);
 	RadSystem<problem_t>::template ComputeFluxes<DIR>(x1Flux.array(), x1FluxDiffusive.array(), x1LeftState.array(), x1RightState.array(), x1FluxRange,
-							  consState, dx, use_wavespeed_correction_, reducedSpeedOfLightFactor); // watch out for argument order!!
+							  consState, dx, use_wavespeed_correction_,
+							  reducedSpeedOfLightFactor); // watch out for argument order!!
 }
 
 #endif // RADIATION_SIMULATION_HPP_

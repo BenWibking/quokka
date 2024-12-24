@@ -108,7 +108,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGas(double /*T_d*/
 								  quokka::valarray<double, nGroups_> const &tau, double c_v,
 								  quokka::valarray<double, nGroups_> const &kappaPoverE,
 								  quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double const num_den,
-									quokka::valarray<double, nGroups_> const &cscale, double const dt) -> JacobianResult<problem_t>
+								  quokka::valarray<double, nGroups_> const &cscale, double const dt)
+    -> JacobianResult<problem_t>
 {
 	JacobianResult<problem_t> result;
 
@@ -405,7 +406,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 // Update radiation flux and gas momentum. Returns FluxUpdateResult struct. The function also updates energy.Egas and energy.work.
 template <typename problem_t>
 AMREX_GPU_DEVICE auto RadSystem<problem_t>::UpdateFlux(int const i, int const j, int const k, arrayconst_t &consPrev, NewtonIterationResult<problem_t> &energy,
-						       double const dt, double const gas_update_factor, double const Ekin0, quokka::valarray<double, nGroups_> const &chat) -> FluxUpdateResult<problem_t>
+						       double const dt, double const gas_update_factor, double const Ekin0,
+						       quokka::valarray<double, nGroups_> const &chat) -> FluxUpdateResult<problem_t>
 {
 	amrex::GpuArray<amrex::Real, 3> Frad_t0{};
 	amrex::GpuArray<amrex::Real, 3> dMomentum{0., 0., 0.};

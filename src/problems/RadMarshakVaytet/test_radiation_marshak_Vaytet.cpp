@@ -11,10 +11,10 @@
 
 // const double chat_over_c_ = 0.1;
 constexpr bool variable_density_IC = 1;
-constexpr double rho0 = 1.0e-3;	    // g cm^-3
+constexpr double rho0 = 1.0e-3; // g cm^-3
 // variable density
 constexpr double rhoL = rho0;	    // g cm^-3
-constexpr double rhoR = 0.1 * rho0;	    // g cm^-3
+constexpr double rhoR = 0.1 * rho0; // g cm^-3
 // constant density
 // constexpr double rhoL = rho0;
 // constexpr double rhoR = rho0;
@@ -31,7 +31,7 @@ constexpr OpacityModel the_opacity_model = OpacityModel::piecewise_constant_opac
 constexpr double kappa0 = 2000.0;   // cm^2 g^-1 (opacity).
 constexpr double nu_pivot = 4.0e13; // Powerlaw, kappa = kappa0 (nu/nu_pivot)^{-2}
 constexpr int n_coll = 4;	    // number of collections = 6, to align with Vaytet
-constexpr int the_model = 10; 
+constexpr int the_model = 10;
 // 0: constant opacity (Vaytet et al. Sec 3.2.1), 1: nu-dependent opacity (Vaytet et al. Sec 3.2.2), 2: nu-and-T-dependent opacity
 // (Vaytet et al. Sec 3.2.3)
 // 10: bin-centered method with opacities propto nu^-2, kappa = kappa0 * (nu_c/nu_pivot)^{-2}, nu_c = sqrt(nu_i * nu_i+1)
@@ -212,7 +212,6 @@ template <> void QuokkaSimulation<SuOlsonProblemCgs>::setInitialConditionsOnGrid
 {
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
-
 
 	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = grid_elem.dx_;
 	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_lo = grid_elem.prob_lo_;

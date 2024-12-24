@@ -168,8 +168,8 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					} else {
 						const quokka::valarray<double, 1> Erad_guess_vec{Erad_guess};
 						if (n == 0) {
-						T_d = ComputeDustTemperatureBateKeto(T_gas, T_gas, rho, Erad_guess_vec, N_d, dt, R, n);
-						AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
+							T_d = ComputeDustTemperatureBateKeto(T_gas, T_gas, rho, Erad_guess_vec, N_d, dt, R, n);
+							AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");
 						} else {
 							T_d = T_gas - (R * cscale) / (N_d * std::sqrt(T_gas));
 							AMREX_ASSERT_WITH_MESSAGE(T_d >= 0., "Dust temperature is negative!");

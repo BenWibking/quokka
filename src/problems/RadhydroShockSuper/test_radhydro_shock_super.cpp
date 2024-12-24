@@ -58,8 +58,8 @@ constexpr double Egas1 = rho1 * c_v * T1;
 
 constexpr double shock_position = 0.0;
 // constexpr double shock_position = 0.0130; // 0.0132; // cm
-					  // (shock position drifts to the right
-					  // slightly during the simulation, so
+// (shock position drifts to the right
+// slightly during the simulation, so
 // we initialize slightly to the left...)
 
 template <> struct RadSystem_Traits<ShockProblem> {
@@ -333,7 +333,8 @@ auto problem_main() -> int
 		// amrex::Print() << "xs min/max = " << xs[0] << ", " << xs[xs.size() - 1] << std::endl;
 		// amrex::Print() << "xs_exact min/max = " << xs_exact[0] << ", " << xs_exact[xs_exact.size() - 1] << std::endl;
 
-		// interpolate_arrays(xs_exact.data(), Trad_interp.data(), static_cast<int>(xs_exact.size()), xs.data(), Trad.data(), static_cast<int>(xs.size()));
+		// interpolate_arrays(xs_exact.data(), Trad_interp.data(), static_cast<int>(xs_exact.size()), xs.data(), Trad.data(),
+		// static_cast<int>(xs.size()));
 
 		// double err_norm = 0.;
 		// double sol_norm = 0.;
