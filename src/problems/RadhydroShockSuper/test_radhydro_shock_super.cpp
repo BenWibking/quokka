@@ -1,10 +1,5 @@
-//==============================================================================
-// TwoMomentRad - a radiation transport library for patch-based AMR codes
-// Copyright 2020 Benjamin Wibking.
-// Released under the MIT license. See LICENSE file included in the GitHub repo.
-//==============================================================================
-/// \file test_radhydro_shock.cpp
-/// \brief Defines a test problem for a radiative shock.
+/// \file test_radhydro_shock_super.cpp
+/// \brief Defines a test problem for a supercritical radiative shock.
 ///
 
 #include <cmath>
@@ -13,7 +8,7 @@
 #include "AMReX_ParallelDescriptor.H"
 #include "QuokkaSimulation.hpp"
 #include "hydro/hydro_system.hpp"
-#include "test_radhydro_shock.hpp"
+#include "test_radhydro_shock_super.hpp"
 #include "util/fextract.hpp"
 
 struct ShockProblem {

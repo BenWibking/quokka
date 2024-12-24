@@ -1,4 +1,4 @@
-add_executable(test_radhydro_shock_super test_radhydro_shock.cpp ../../util/fextract.cpp ../../math/interpolate.cpp ${QuokkaObjSources})
+add_executable(test_radhydro_shock_super test_radhydro_shock_super.cpp ../../util/fextract.cpp ../../math/interpolate.cpp ${QuokkaObjSources})
 
 if(AMReX_GPU_BACKEND MATCHES "CUDA")
     setup_target_for_cuda_compilation(test_radhydro_shock_super)
