@@ -47,10 +47,10 @@ constexpr double v0 = (Mach0 * c_s0);
 constexpr double v1 = v0 * rho0 / rho1;
 
 // constexpr double chat = 10.0 * (v0 + c_s0); // reduced speed of light
-// constexpr double chat = c / 10.0;
+constexpr double chat = c / 10.0;
 // constexpr double chat = c / 10.0 / 3.0;
 // constexpr double chat = c / 100.0;
-constexpr double chat = c / 100.0 * 2.5;
+// constexpr double chat = c / 100.0 * 2.5;
 // constexpr double chat = 4.0 * (v0 + c_s0); // reduced speed of light
 // constexpr double chat = c;
 
@@ -254,7 +254,8 @@ auto problem_main() -> int
 	sim.stopTime_ = max_time;
 	sim.plotfileInterval_ = -1;
 	sim.chat_over_c_ = chat / c;
-	sim.variable_chat_param1_ = true;
+	sim.variable_chat_param1_ = 3.0;
+	sim.variable_chat_param2_ = 1.0;
 
 	// run
 	sim.setInitialConditions();
