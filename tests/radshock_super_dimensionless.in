@@ -30,3 +30,6 @@ suppress_output = 0
 
 cfl = 0.4
 radiation.cfl = 0.4
+radiation.c_hat_over_c = 0.025
+radiation.variable_chat_param1 = 0.01
+radiation.variable_chat_param2 = 0.5

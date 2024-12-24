@@ -42,12 +42,6 @@ constexpr double v0 = (Mach0 * c_s0);
 constexpr double v1 = v0 * rho0 / rho1;
 
 // constexpr double chat = 10.0 * (v0 + c_s0); // reduced speed of light
-constexpr double chat = c / 10.0;
-// constexpr double chat = c / 10.0 / 3.0;
-// constexpr double chat = c / 100.0;
-// constexpr double chat = c / 100.0 * 2.5;
-// constexpr double chat = 4.0 * (v0 + c_s0); // reduced speed of light
-// constexpr double chat = c;
 
 constexpr double Ggrav = 1.0; // dimensionless gravitational constant; arbitrary
 
@@ -248,9 +242,6 @@ auto problem_main() -> int
 	sim.maxDt_ = max_dt;
 	sim.stopTime_ = max_time;
 	sim.plotfileInterval_ = -1;
-	sim.chat_over_c_ = chat / c;
-	sim.variable_chat_param1_ = 3.0;
-	sim.variable_chat_param2_ = 1.0;
 
 	// run
 	sim.setInitialConditions();
@@ -259,8 +250,7 @@ auto problem_main() -> int
 	// read output variables
 	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.0);
 	int nx = static_cast<int>(position.size());
-	int status = 0;
-	int status2 = 0;
+	int status = 1;
 
 	const double x_left = position.at(0);
 
@@ -295,64 +285,6 @@ auto problem_main() -> int
 			gasDensity.at(i) = rho;
 			gasVelocity.at(i) = x1GasMom / rho;
 		}
-
-		// // read in exact solution
-		// std::vector<double> xs_exact;
-		// std::vector<double> Trad_exact;
-		// std::vector<double> Tmat_exact;
-		// std::vector<double> Frad_over_c_exact;
-
-		// std::string filename = "../extern/LowrieEdwards/shock.txt";
-		// std::ifstream fstream(filename, std::ios::in);
-		// AMREX_ALWAYS_ASSERT(fstream.is_open());
-		// std::string header;
-		// std::getline(fstream, header);
-
-		// for (std::string line; std::getline(fstream, line);) {
-		// 	std::istringstream iss(line);
-		// 	std::vector<double> values;
-
-		// 	for (double value = NAN; iss >> value;) {
-		// 		values.push_back(value);
-		// 	}
-		// 	auto x_val = values.at(0);
-		// 	auto Tmat_val = values.at(3);
-		// 	auto Trad_val = values.at(4);
-		// 	auto Frad_over_c_val = values.at(5);
-
-		// 	if ((x_val > 0.0) && (x_val < Lx)) {
-		// 		xs_exact.push_back(x_val + x_left);
-		// 		Tmat_exact.push_back(Tmat_val);
-		// 		Trad_exact.push_back(Trad_val);
-		// 		Frad_over_c_exact.push_back(Frad_over_c_val);
-		// 	}
-		// }
-
-		// // compute error norm
-		// std::vector<double> Trad_interp(xs_exact.size());
-		// amrex::Print() << "xs min/max = " << xs[0] << ", " << xs[xs.size() - 1] << std::endl;
-		// amrex::Print() << "xs_exact min/max = " << xs_exact[0] << ", " << xs_exact[xs_exact.size() - 1] << std::endl;
-
-		// interpolate_arrays(xs_exact.data(), Trad_interp.data(), static_cast<int>(xs_exact.size()), xs.data(), Trad.data(),
-		// static_cast<int>(xs.size()));
-
-		// double err_norm = 0.;
-		// double sol_norm = 0.;
-		// for (size_t i = 0; i < xs_exact.size(); ++i) {
-		// 	err_norm += std::abs(Trad_interp[i] - Trad_exact[i]);
-		// 	sol_norm += std::abs(Trad_exact[i]);
-		// }
-
-		// const double error_tol = 0.01;
-		// double rel_error = NAN;
-		// rel_error = err_norm / sol_norm;
-		// amrex::Print() << "Error norm = " << err_norm << std::endl;
-		// amrex::Print() << "Solution norm = " << sol_norm << std::endl;
-		// amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
-
-		// if ((rel_error > error_tol) || std::isnan(rel_error)) {
-		// 	status = 1;
-		// }
 
 		// export to file
 		std::ofstream file;
@@ -427,7 +359,7 @@ auto problem_main() -> int
 		matplotlibcpp::xlim(-0.04, 0.01);
 		matplotlibcpp::ylim(0., 11.);
 		matplotlibcpp::legend();
-		matplotlibcpp::title(fmt::format("chat = {:.4g} c", chat / c));
+		matplotlibcpp::title(fmt::format("chat = {:.4g} c", sim.chat_over_c_));
 		matplotlibcpp::save("./radshock_super_temperature.pdf");
 
 		// gas density
@@ -458,13 +390,13 @@ auto problem_main() -> int
 			sol_norm2 += std::abs(Tmat_exact2.at(i));
 		}
 
-		const double error_tol2 = 0.003;
+		const double error_tol2 = 0.01;
 		const double rel_error2 = err_norm2 / sol_norm2;
-		amrex::Print() << "L1 relative error norm = " << rel_error2 << std::endl;
-		if ((rel_error2 > error_tol2) || std::isnan(rel_error2)) {
-			status2 = 1;
+		amrex::Print() << "L1 relative error norm = " << rel_error2 << "\n";
+		if (rel_error2 < error_tol2) {
+			status = 0;
 		}
 	}
 
-	return 0;
+	return status;
 }
