@@ -413,19 +413,19 @@ template <typename problem_t> class RadSystem : public HyperbolicSystem<problem_
 								  quokka::valarray<double, nGroups_> const &Rvec, quokka::valarray<double, nGroups_> const &Src,
 								  double N_d, quokka::valarray<double, nGroups_> const &tau, double c_v,
 								  double lambda_gd_time_dt, quokka::valarray<double, nGroups_> const &kappaPoverE,
-								  quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &chat_over_c, double num_den, double dt)
+								  quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &cscale, double num_den, double dt)
 	    -> JacobianResult<problem_t>;
 
 	AMREX_GPU_DEVICE static auto ComputeJacobianForGasAndDustDecoupled(
 	    double T_gas, double T_d, double Egas_diff, quokka::valarray<double, nGroups_> const &Erad_diff, quokka::valarray<double, nGroups_> const &Rvec,
 	    quokka::valarray<double, nGroups_> const &Src, double N_d, quokka::valarray<double, nGroups_> const &tau, double c_v, double lambda_gd_time_dt,
-	    quokka::valarray<double, nGroups_> const &kappaPoverE, quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &chat_over_c) -> JacobianResult<problem_t>;
+	    quokka::valarray<double, nGroups_> const &kappaPoverE, quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &cscale) -> JacobianResult<problem_t>;
 
 	AMREX_GPU_DEVICE static auto ComputeJacobianForGasAndDustWithPE(
 	    double T_gas, double T_d, double Egas_diff, quokka::valarray<double, nGroups_> const &Erad, quokka::valarray<double, nGroups_> const &Erad0,
 	    double PE_heating_energy_derivative, quokka::valarray<double, nGroups_> const &Rvec, quokka::valarray<double, nGroups_> const &Src, double N_d,
 	    quokka::valarray<double, nGroups_> const &tau, double c_v, double lambda_gd_time_dt, quokka::valarray<double, nGroups_> const &kappaPoverE,
-	    quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double num_den, double dt, quokka::valarray<double, nGroups_> const &chat_over_c) -> JacobianResult<problem_t>;
+	    quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double num_den, double dt, quokka::valarray<double, nGroups_> const &cscale) -> JacobianResult<problem_t>;
 
 	AMREX_GPU_DEVICE static auto
 	SolveGasRadiationEnergyExchange(double Egas0, quokka::valarray<double, nGroups_> const &Erad0Vec, double rho, double dt, quokka::valarray<double, nGroups_> const &cscale,

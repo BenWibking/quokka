@@ -24,11 +24,10 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
     double T_gas, double T_d, double Egas_diff, quokka::valarray<double, nGroups_> const &Erad_diff, quokka::valarray<double, nGroups_> const &Rvec,
     quokka::valarray<double, nGroups_> const &Src, double N_d, quokka::valarray<double, nGroups_> const &tau, double c_v, double /*lambda_gd_time_dt*/,
     quokka::valarray<double, nGroups_> const &kappaPoverE, quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t,
-		quokka::valarray<double, nGroups_> const &chat_over_c, const double num_den, const double dt)
+		quokka::valarray<double, nGroups_> const &cscale, const double num_den, const double dt)
     -> JacobianResult<problem_t>
 {
 	JacobianResult<problem_t> result;
-	const auto cscale = 1.0 / chat_over_c;
 
 	// compute cooling/heating terms
 	const auto cooling = DefineNetCoolingRate(T_gas, num_den) * dt;
@@ -38,7 +37,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
 	result.F0 = Egas_diff + sum(Rvec * cscale) + sum(cooling) - CR_heating;
 	result.Fg = Erad_diff - (Rvec + Src);
 	if constexpr (add_line_cooling_to_radiation_in_jac) {
-		result.Fg -= chat_over_c * cooling;
+		result.Fg -= cooling / cscale;
 	}
 	result.Fg_abs_sum = 0.0;
 	for (int g = 0; g < nGroups_; ++g) {
@@ -60,7 +59,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDust(
 	const double d_Td_d_T = 3. / 2. - T_d / (2. * T_gas);
 	dEg_dT *= d_Td_d_T;
 	const auto rg = -1.0 * kappaPoverE * d_fourpiboverc_d_t / (N_d * std::sqrt(T_gas));
-	result.Jg0 = 1.0 / c_v * dEg_dT - chat_over_c * cooling_derivative - rg * result.J00;
+	result.Jg0 = 1.0 / c_v * dEg_dT - cooling_derivative / cscale - rg * result.J00;
 	// Note that Fg is modified here, but it does not change Fg_abs_sum, which is used to check the convergence.
 	result.Fg = result.Fg - rg * result.F0;
 	for (int g = 0; g < nGroups_; ++g) {
@@ -85,16 +84,16 @@ template <typename problem_t>
 AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustDecoupled(
     double /*T_gas*/, double /*T_d*/, double /*Egas_diff*/, quokka::valarray<double, nGroups_> const &Erad_diff, quokka::valarray<double, nGroups_> const &Rvec,
     quokka::valarray<double, nGroups_> const &Src, double /*N_d*/, quokka::valarray<double, nGroups_> const &tau, double /*c_v*/, double lambda_gd_time_dt,
-    quokka::valarray<double, nGroups_> const &kappaPoverE, quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &chat_over_c) -> JacobianResult<problem_t>
+    quokka::valarray<double, nGroups_> const &kappaPoverE, quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, quokka::valarray<double, nGroups_> const &cscale) -> JacobianResult<problem_t>
 {
 	JacobianResult<problem_t> result;
 
-	result.F0 = -lambda_gd_time_dt + sum(Rvec / chat_over_c);
+	result.F0 = -lambda_gd_time_dt + sum(Rvec * cscale);
 	result.Fg = Erad_diff - (Rvec + Src);
 	result.Fg_abs_sum = 0.0;
 	for (int g = 0; g < nGroups_; ++g) {
 		if (tau[g] > 0.0) {
-			result.Fg_abs_sum += std::abs(result.Fg[g] / chat_over_c[g]);
+			result.Fg_abs_sum += std::abs(result.Fg[g] * cscale[g]);
 		}
 	}
 
@@ -105,7 +104,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustDecouple
 	auto dEg_dT = kappaPoverE * d_fourpiboverc_d_t;
 
 	result.J00 = 0.0;
-	result.J0g = 1.0 / chat_over_c;
+	result.J0g = cscale;
 	result.Jg0 = dEg_dT;
 	for (int g = 0; g < nGroups_; ++g) {
 		if (tau[g] <= 0.0) {
@@ -131,10 +130,9 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
     double T_gas, double T_d, double Egas_diff, quokka::valarray<double, nGroups_> const &Erad, quokka::valarray<double, nGroups_> const &Erad0,
     double PE_heating_energy_derivative, quokka::valarray<double, nGroups_> const &Rvec, quokka::valarray<double, nGroups_> const &Src, double N_d,
     quokka::valarray<double, nGroups_> const &tau, double c_v, double /*lambda_gd_time_dt*/, quokka::valarray<double, nGroups_> const &kappaPoverE,
-    quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double const num_den, double const dt, quokka::valarray<double, nGroups_> const &chat_over_c) -> JacobianResult<problem_t>
+    quokka::valarray<double, nGroups_> const &d_fourpiboverc_d_t, double const num_den, double const dt, quokka::valarray<double, nGroups_> const &cscale) -> JacobianResult<problem_t>
 {
 	JacobianResult<problem_t> result;
-	const auto cscale = 1.0 / chat_over_c;
 
 	// compute cooling/heating terms
 	const auto cooling = DefineNetCoolingRate(T_gas, num_den) * dt;
@@ -144,7 +142,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
 	result.F0 = Egas_diff + sum(Rvec * cscale) + sum(cooling) - PE_heating_energy_derivative * Erad[nGroups_ - 1] - CR_heating;
 	result.Fg = Erad - Erad0 - (Rvec + Src);
 	if constexpr (add_line_cooling_to_radiation_in_jac) {
-		result.Fg -= chat_over_c * cooling;
+		result.Fg -= cooling / cscale;
 	}
 	result.Fg_abs_sum = 0.0;
 	for (int g = 0; g < nGroups_; ++g) {
@@ -178,11 +176,11 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::ComputeJacobianForGasAndDustWithPE(
 	const auto dEg_dT = kappaPoverE * d_fourpiboverc_d_t * d_Td_d_T;
 	const auto dTd_dRg = -1.0 * cscale / (N_d * std::sqrt(T_gas));
 	const auto rg = kappaPoverE * d_fourpiboverc_d_t * dTd_dRg;
-	result.Jg0 = 1.0 / c_v * dEg_dT - chat_over_c * cooling_derivative - rg * result.J00;
+	result.Jg0 = 1.0 / c_v * dEg_dT - cooling_derivative / cscale - rg * result.J00;
 	// Note that Fg is modified here, but it does not change Fg_abs_sum, which is used to check the convergence.
 	result.Fg = result.Fg - rg * result.F0;
 	result.Jgg = d_Eg_d_Rg + (-1.0);
-	result.Jgg[nGroups_ - 1] += rg[nGroups_ - 1] - (rg[nGroups_ - 1] * (chat_over_c[nGroups_ - 1])) * PE_heating_energy_derivative * d_Eg_d_Rg[nGroups_ - 1];
+	result.Jgg[nGroups_ - 1] += rg[nGroups_ - 1] - (rg[nGroups_ - 1] / cscale[nGroups_ - 1]) * PE_heating_energy_derivative * d_Eg_d_Rg[nGroups_ - 1];
 	result.Jg1 = rg - rg * result.J0g[nGroups_ - 1]; // note that this is the (nGroups_ - 1)th column, except for the (nGroups_ - 1)th row. TODO(cch): double check this
 
 	return result;
@@ -435,10 +433,10 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 
 		if (dust_model == 1) {
 			jacobian = ComputeJacobianForGasAndDust(T_gas, T_d, Egas_diff, Erad_diff, Rvec, Src, N_d, tau, c_v, lambda_gd_times_dt,
-								opacity_terms.kappaPoverE, d_fourpiboverc_d_t, chat_over_c, H_num_den, dt);
+								opacity_terms.kappaPoverE, d_fourpiboverc_d_t, cscale, H_num_den, dt);
 		} else {
 			jacobian = ComputeJacobianForGasAndDustDecoupled(T_gas, T_d, Egas_diff, Erad_diff, Rvec, Src, N_d, tau, c_v, lambda_gd_times_dt,
-									 opacity_terms.kappaPoverE, d_fourpiboverc_d_t, chat_over_c);
+									 opacity_terms.kappaPoverE, d_fourpiboverc_d_t, cscale);
 		}
 
 		if constexpr (use_D_as_base) {
@@ -790,7 +788,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 							       tau, c_v, lambda_gd_times_dt, opacity_terms.kappaPoverE, d_fourpiboverc_d_t, H_num_den, dt, chat_over_c);
 		} else {
 			jacobian = ComputeJacobianForGasAndDustDecoupled(T_gas, T_d, Egas_diff, Erad_diff, Rvec, Src, N_d, tau, c_v, lambda_gd_times_dt,
-									 opacity_terms.kappaPoverE, d_fourpiboverc_d_t, chat_over_c);
+									 opacity_terms.kappaPoverE, d_fourpiboverc_d_t, cscale);
 		}
 
 		if constexpr (use_D_as_base) {
