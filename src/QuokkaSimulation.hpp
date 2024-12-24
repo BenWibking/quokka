@@ -647,12 +647,14 @@ template <typename problem_t> void QuokkaSimulation<problem_t>::computeAfterEvol
 	if constexpr (Physics_Traits<problem_t>::is_radiation_enabled) {
 		amrex::Real Erad0 = 0.;
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
-			Erad0 += initSumCons[RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g] / chat_over_c_; // TODO(cch): make variable chat here
+			// We don't multiply by c_over_chat here because we're using variable c_hat and E_gas + E_rad * (chat / c) is no longer conserved
+			Erad0 += initSumCons[RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g];
 		}
 		Etot0 = Egas0 + Erad0;
 		amrex::Real Erad = 0.;
 		for (int g = 0; g < Physics_Traits<problem_t>::nGroups; ++g) {
-			Erad += state_new_cc_[0].sum(RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g) * vol / chat_over_c_; // TODO(cch): make variable chat here
+			// We don't multiply by c_over_chat here because we're using variable c_hat and E_gas + E_rad * (chat / c) is no longer conserved
+			Erad += state_new_cc_[0].sum(RadSystem<problem_t>::radEnergy_index + Physics_NumVars::numRadVars * g) * vol;
 		}
 		Etot = Egas + Erad;
 	} else {
