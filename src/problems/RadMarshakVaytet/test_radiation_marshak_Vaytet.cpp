@@ -5,12 +5,16 @@
 #include "AMReX_BLassert.H"
 
 #include "QuokkaSimulation.hpp"
+#include "hydro/EOS.hpp"
 #include "radiation/radiation_system.hpp"
 #include "test_radiation_marshak_Vaytet.hpp"
 #include "util/fextract.hpp"
+#ifdef HAVE_PYTHON
+#include "util/matplotlibcpp.h"
+#endif
 
 // const double chat_over_c_ = 0.1;
-constexpr bool variable_density_IC = 1;
+constexpr bool variable_density_IC = true;
 constexpr double rho0 = 1.0e-3; // g cm^-3
 // variable density
 constexpr double rhoL = rho0;	    // g cm^-3
@@ -213,9 +217,9 @@ template <> void QuokkaSimulation<SuOlsonProblemCgs>::setInitialConditionsOnGrid
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
 
-	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = grid_elem.dx_;
-	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_lo = grid_elem.prob_lo_;
-	amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_hi = grid_elem.prob_hi_;
+	const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> dx = grid_elem.dx_;
+	const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_lo = grid_elem.prob_lo_;
+	const amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> prob_hi = grid_elem.prob_hi_;
 
 	const double Lx = prob_hi[0] - prob_lo[0];
 
@@ -392,7 +396,8 @@ auto problem_main() -> int
 		fstream.open("marshak_wave_Vaytet.csv");
 		fstream << "# x, Tgas, Trad";
 		for (int i = 0; i < n_groups_; ++i) {
-			fstream << ", " << "Trad_" << i;
+			fstream << ", "
+				<< "Trad_" << i;
 		}
 		for (int i = 0; i < nx; ++i) {
 			fstream << std::endl;
@@ -409,7 +414,8 @@ auto problem_main() -> int
 		fstream_coll.open("marshak_wave_Vaytet_coll.csv");
 		fstream_coll << "# x, Tgas, Trad";
 		for (int i = 0; i < n_coll; ++i) {
-			fstream_coll << ", " << "Trad_" << i;
+			fstream_coll << ", "
+				     << "Trad_" << i;
 		}
 		for (int i = 0; i < nx; ++i) {
 			fstream_coll << std::endl;
