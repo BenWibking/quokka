@@ -10,7 +10,6 @@
 #include "AMReX_BCRec.H"
 #include "AMReX_BC_TYPES.H"
 #include "AMReX_Box.H"
-#include "AMReX_GpuLaunchFunctsC.H"
 #include "AMReX_REAL.H"
 #include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
