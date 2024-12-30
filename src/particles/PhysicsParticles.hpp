@@ -2,7 +2,6 @@
 #define PHYSICS_PARTICLES_HPP_
 
 #include <map>
-#include <math.h>
 #include <memory>
 #include <string>
 

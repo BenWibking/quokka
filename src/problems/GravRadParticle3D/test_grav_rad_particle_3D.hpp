@@ -9,8 +9,6 @@
 
 // internal headers
 
-#include "radiation/radiation_system.hpp"
-
 // function definitions
 
 #endif // TEST_GRAV_RAD_PARTICLE_3D_HPP_

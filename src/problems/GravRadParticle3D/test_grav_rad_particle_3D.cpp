@@ -2,14 +2,21 @@
 /// \brief Defines a 3D test problem for radiating particles with gravity.
 ///
 
+#include <algorithm>
+#include <cmath>
 #include <cstdlib>
 
 #include "AMReX.H"
 #include "AMReX_BCRec.H"
 #include "AMReX_BC_TYPES.H"
 #include "AMReX_Box.H"
+#include "AMReX_GpuLaunchFunctsC.H"
+#include "AMReX_REAL.H"
 #include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
+#include "hydro/EOS.hpp"
+#include "particles/PhysicsParticles.hpp"
+#include "radiation/radiation_system.hpp"
 #include "test_grav_rad_particle_3D.hpp"
 
 struct ParticleProblem {
