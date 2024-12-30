@@ -194,7 +194,7 @@ auto problem_main() -> int
 	amrex::DistributionMapping const dmap(ranks);
 	analysisPC.Define(geom, dmap, boxArray);
 	auto *container =
-	    sim.particleRegister_->getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
+	    sim.particleRegister_.getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
 	analysisPC.copyParticles(*container);
 
 	if (amrex::ParallelDescriptor::IOProcessor()) {
