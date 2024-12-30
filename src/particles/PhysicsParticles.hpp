@@ -203,11 +203,11 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 					interp.MeshToParticle(
 					    p, accel_arr, 0, massIndex + 1, AMREX_SPACEDIM,
 					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
-								return acc(i, j, k, comp); // no weighting
+						    return acc(i, j, k, comp); // no weighting
 					    },
 					    [=] AMREX_GPU_DEVICE(typename ParticleContainerType::ParticleType & p, int comp, amrex::Real acc_comp) {
-								// kick particle by updating its velocity
-								p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
+						    // kick particle by updating its velocity
+						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
 					    });
 				});
 			}
