@@ -4,7 +4,6 @@
 
 #include "test_radparticle_2D.hpp"
 #include "QuokkaSimulation.hpp"
-#include "util/fextract.hpp"
 
 struct ParticleProblem {
 };
