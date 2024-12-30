@@ -109,6 +109,7 @@ class ParticleOperations
 	virtual void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) = 0;
 	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
 	virtual void driftParticlesAllLevels(amrex::Real dt, int massIndex) = 0;
+	virtual void kickParticles(amrex::Real dt, amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev, int massIndex) = 0;
 };
 
 // Template wrapper that implements the interface for any particle container type
@@ -184,6 +185,34 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 		}
 	}
 
+	void kickParticles(amrex::Real dt, amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev, int massIndex) override
+	{
+		if (container_) {
+			const auto dx_inv = geom[lev].InvCellSizeArray();
+			for (typename ParticleContainerType::ParIterType pti(*container_, lev); pti.isValid(); ++pti) {
+				auto &particles = pti.GetArrayOfStructs();
+				typename ParticleContainerType::ParticleType *pData = particles().data();
+				const amrex::Long np = pti.numParticles();
+
+				amrex::Array4<const amrex::Real> const &accel_arr = accel.array(pti);
+				const auto plo = geom[lev].ProbLoArray(); // TODO(cch): later, pass geom[lev] as amrex::Geometry
+
+				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+					typename ParticleContainerType::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
+					interp.MeshToParticle(
+					    p, accel_arr, 0, massIndex + 1, AMREX_SPACEDIM,
+					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
+								return acc(i, j, k, comp); // no weighting
+					    },
+					    [=] AMREX_GPU_DEVICE(typename ParticleContainerType::ParticleType & p, int comp, amrex::Real acc_comp) {
+								// kick particle by updating its velocity
+								p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
+					    });
+				});
+			}
+		}
+	}
 };
 
 // Base class for physics particle descriptors
@@ -293,6 +322,18 @@ template <typename problem_t> class PhysicsParticleRegister
 			if (auto *ops = descriptor->getOperations()) {
 				if (descriptor->getMassIndex() >= 0) {
 					ops->driftParticlesAllLevels(dt, descriptor->getMassIndex());
+				}
+			}
+		}
+	}
+
+	// Kick particles
+	void kickParticles(amrex::Real dt, amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
+				if (descriptor->getMassIndex() >= 0) {
+					ops->kickParticles(dt, accel, geom, lev, descriptor->getMassIndex());
 				}
 			}
 		}

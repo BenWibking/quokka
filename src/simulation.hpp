@@ -1230,29 +1230,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 			AMREX_ALWAYS_ASSERT(!accel[lev].contains_nan(0, AMREX_SPACEDIM));
 			AMREX_ALWAYS_ASSERT(!accel[lev].contains_nan());
 
-			// loop over boxes of particles on this level
-			for (quokka::CICParticleIterator pIter(*CICParticles, lev); pIter.isValid(); ++pIter) {
-				auto &particles = pIter.GetArrayOfStructs();
-				quokka::CICParticleContainer::ParticleType *pData = particles().data();
-				const amrex::Long np = pIter.numParticles();
-
-				amrex::Array4<const amrex::Real> const &accel_arr = accel[lev].array(pIter);
-				const auto plo = geom[lev].ProbLoArray();
-
-				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
-					interp.MeshToParticle(
-					    p, accel_arr, 0, quokka::CICParticleVxIdx, AMREX_SPACEDIM,
-					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
-						    return acc(i, j, k, comp); // no weighting
-					    },
-					    [=] AMREX_GPU_DEVICE(quokka::CICParticleContainer::ParticleType & p, int comp, amrex::Real acc_comp) {
-						    // kick particle by updating its velocity
-						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
-					    });
-				});
-			}
+			// kick all particles on this level
+			particleRegister_->kickParticles(dt, accel[lev], geom, lev);
 		}
 	}
 }
