@@ -4,6 +4,8 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <cmath>
+#include <cstdint>
 
 #include "AMReX.H"
 #include "AMReX_AmrParticles.H"
