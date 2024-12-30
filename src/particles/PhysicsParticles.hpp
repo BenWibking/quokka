@@ -108,11 +108,13 @@ class ParticleOperations
 	virtual void writeCheckpoint(const std::string &checkpointname, const std::string &name, bool include_header) = 0;
 	virtual void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) = 0;
 	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
+	virtual void driftParticlesAllLevels(amrex::Real dt, int massIndex) = 0;
 };
 
 // Template wrapper that implements the interface for any particle container type
 template <typename ParticleContainerType> class ParticleOperationsImpl : public ParticleOperations
 {
+
 	ParticleContainerType *container_;
 
       public:
@@ -159,6 +161,29 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 			amrex::ParticleToMesh(*container_, amrex::GetVecOfPtrs(rhs), 0, finest_lev, MassDeposition{Gconst, massIndex, 0, 1}, true);
 		}
 	}
+
+	void driftParticlesAllLevels(amrex::Real dt, int massIndex) override
+	{
+		if (container_) {
+			for (int lev = 0; lev <= container_->finestLevel(); ++lev) {
+				for (typename ParticleContainerType::ParIterType pti(*container_, lev); pti.isValid(); ++pti) {
+					auto &particles = pti.GetArrayOfStructs();
+					typename ParticleContainerType::ParticleType *pData = particles().data();
+					const amrex::Long np = pti.numParticles();
+
+					amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
+						typename ParticleContainerType::ParticleType &p =
+						    pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
+						// update particle position
+						for (int i = 0; i < AMREX_SPACEDIM; ++i) {
+							p.pos(i) += dt * p.rdata(massIndex + 1 + i);
+						}
+					});
+				}
+			}
+		}
+	}
+
 };
 
 // Base class for physics particle descriptors
@@ -198,6 +223,12 @@ class PhysicsParticleDescriptor
 	{
 		neighborParticleContainer_ = container;
 		operations_ = std::make_unique<ParticleOperationsImpl<ParticleContainerType>>(container);
+	}
+
+	// Getter for particle container
+	template <typename ParticleContainerType> ParticleContainerType *getParticleContainer() const
+	{
+		return dynamic_cast<ParticleContainerType *>(neighborParticleContainer_);
 	}
 
 	// Getter for operations
@@ -250,6 +281,18 @@ template <typename problem_t> class PhysicsParticleRegister
 			if (auto *ops = descriptor->getOperations()) {
 				if (descriptor->getMassIndex() >= 0) {
 					ops->depositMass(rhs, finest_lev, Gconst, descriptor->getMassIndex());
+				}
+			}
+		}
+	}
+
+	// Drift particles
+	void driftParticlesAllLevels(amrex::Real dt)
+	{
+		for (const auto &[name, descriptor] : particleRegistry_) {
+			if (auto *ops = descriptor->getOperations()) {
+				if (descriptor->getMassIndex() >= 0) {
+					ops->driftParticlesAllLevels(dt, descriptor->getMassIndex());
 				}
 			}
 		}
