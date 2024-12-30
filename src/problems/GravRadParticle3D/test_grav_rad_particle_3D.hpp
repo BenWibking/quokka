@@ -5,14 +5,9 @@
 ///
 
 // external headers
-#ifdef HAVE_PYTHON
-#include "util/matplotlibcpp.h"
-#endif
 #include <fmt/format.h>
 
 // internal headers
-
-#include "radiation/radiation_system.hpp"
 
 // function definitions
 

@@ -2,9 +2,22 @@
 /// \brief Defines a 3D test problem for radiating particles with gravity.
 ///
 
-#include "test_grav_rad_particle_3D.hpp"
+#include <algorithm>
+#include <cmath>
+#include <cstdlib>
+
+#include "AMReX.H"
+#include "AMReX_BCRec.H"
+#include "AMReX_BC_TYPES.H"
+#include "AMReX_Box.H"
+#include "AMReX_GpuLaunchFunctsC.H"
+#include "AMReX_REAL.H"
+#include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
-#include "util/fextract.hpp"
+#include "hydro/EOS.hpp"
+#include "particles/PhysicsParticles.hpp"
+#include "radiation/radiation_system.hpp"
+#include "test_grav_rad_particle_3D.hpp"
 
 struct ParticleProblem {
 };
@@ -15,7 +28,7 @@ constexpr double erad_floor = 1.0e-15;
 constexpr double initial_Erad = erad_floor;
 constexpr double initial_Egas = 1.0e-5;
 constexpr double c = 1.0;	   // speed of light
-constexpr double chat = 1.0;	   // reduced speed of light
+constexpr double chat = 0.1;	   // reduced speed of light
 constexpr double kappa0 = 1.0e-20; // opacity
 constexpr double rho = 1.0e-6;
 
@@ -140,7 +153,7 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
-	sim.doPoissonSolve_ = 0; // enable self-gravity
+	sim.doPoissonSolve_ = 1; // enable self-gravity
 
 	// initialize
 	sim.setInitialConditions();
@@ -155,19 +168,79 @@ auto problem_main() -> int
 	const double dz = sim.Geom(0).CellSize(2);
 	const double dvol = dx * dy * dz;
 	const double total_Erad = total_Erad_over_vol * dvol;
-	const double total_Erad_exact = 2.0 * lum1 * sim.tNew_[0];
+	const double t_alive = std::min(0.5, sim.tNew_[0]);		   // particles only live for 0.5 time units
+	const double total_Erad_exact = 2.0 * lum1 * t_alive * (chat / c); // two particles with luminosity lum1
 	const double rel_err = std::abs(total_Erad - total_Erad_exact) / total_Erad_exact;
-	amrex::Print() << "Total radiation energy exact = " << total_Erad_exact << "\n";
-	amrex::Print() << "Total radiation energy = " << total_Erad << "\n";
+
+	// compute exact location of the particles
+	// the particles are originally at (-0.5, 0) and (0.5, 0) and they move with
+	// velocity 1/sqrt(2) in the y/-y direction the problem is designed such that
+	// the particles will move in a circle with radius 0.5
+	const double velocity = 1.0 / std::sqrt(2.0);
+	const double radius = 0.5;
+	const double theta = velocity * sim.tNew_[0] / radius;
+	const double x1_exact = radius * std::cos(theta);
+	const double y1_exact = radius * std::sin(theta);
+	const double x2_exact = -x1_exact;
+	const double y2_exact = -y1_exact;
+
+	double position_error = NAN;
+	double position_norm = NAN;
+
+	// get particle positions
+	quokka::CICRadParticleContainer<ParticleProblem> analysisPC{};
+	amrex::Box const box(amrex::IntVect{AMREX_D_DECL(0, 0, 0)}, amrex::IntVect{AMREX_D_DECL(1, 1, 1)});
+	amrex::Geometry const geom(box);
+	amrex::BoxArray const boxArray(box);
+	amrex::Vector<int> const ranks({0}); // workaround nvcc bug
+	amrex::DistributionMapping const dmap(ranks);
+	analysisPC.Define(geom, dmap, boxArray);
+	auto *container =
+	    sim.particleRegister_.getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
+	analysisPC.copyParticles(*container);
+
+	if (amrex::ParallelDescriptor::IOProcessor()) {
+		quokka::CICRadParticleIterator<ParticleProblem> const pIter(analysisPC, 0);
+		if (pIter.isValid()) {
+			const amrex::Long np = pIter.numParticles();
+			auto &particles = pIter.GetArrayOfStructs();
+			// copy particles from device to host
+			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType *pData = particles().data();
+			amrex::Vector<quokka::CICRadParticleContainer<ParticleProblem>::ParticleType> pData_h(np);
+			amrex::Gpu::copy(amrex::Gpu::deviceToHost, pData, pData + np,
+					 pData_h.begin()); // NOLINT
+			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType &p1 = pData_h[0];
+			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType &p2 = pData_h[1];
+
+			// // Uncomment to print exact particle positions for debugging
+			// amrex::Print() << "Exact particle 1 position: (" << x1_exact << ", " << y1_exact << ", " << 0.0 << ")\n";
+			// amrex::Print() << "Exact particle 2 position: (" << x2_exact << ", " << y2_exact << ", " << 0.0 << ")\n";
+			// amrex::Print() << "Particle 1 position: (" << p1.pos(0) << ", " << p1.pos(1) << ", " << p1.pos(2) << ")\n";
+			// amrex::Print() << "Particle 2 position: (" << p2.pos(0) << ", " << p2.pos(1) << ", " << p2.pos(2) << ")\n";
+
+			// We don't know which particle is which, so I compute the error for both possible assignments
+			const double position_error_1 =
+			    std::abs(p1.pos(0) - x1_exact) + std::abs(p1.pos(1) - y1_exact) + std::abs(p2.pos(0) - x2_exact) + std::abs(p2.pos(1) - y2_exact);
+			const double position_error_2 =
+			    std::abs(p1.pos(0) - x2_exact) + std::abs(p1.pos(1) - y2_exact) + std::abs(p2.pos(0) - x1_exact) + std::abs(p2.pos(1) - y1_exact);
+			position_error = std::min(position_error_1, position_error_2);
+			position_norm = std::abs(x1_exact) + std::abs(y1_exact) + std::abs(x2_exact) + std::abs(y2_exact);
+		}
+	}
+
+	const double rel_position_error = position_error / position_norm;
 
 	int status = 1;
-	const double rel_err_tol = 1.0e-5;
-	if (rel_err < rel_err_tol) {
+	const double rel_err_tol = 1.0e-7;
+	const double rel_position_error_tol = 1.0e-3;
+	if (rel_err < rel_err_tol && rel_position_error < rel_position_error_tol) {
 		status = 0;
 	}
-	amrex::Print() << "Relative L1 norm = " << rel_err << "\n";
+	amrex::Print() << "Relative L1 norm on radiation energy = " << rel_err << "\n";
+	amrex::Print() << "Relative L1 norm on particle positions = " << rel_position_error << "\n";
 
 	// Cleanup and exit
-	amrex::Print() << "Finished." << "\n";
+	amrex::Print() << "Finished."
+		       << "\n";
 	return status;
 }
