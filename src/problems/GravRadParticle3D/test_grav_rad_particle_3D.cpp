@@ -10,8 +10,6 @@
 #include "AMReX_BCRec.H"
 #include "AMReX_BC_TYPES.H"
 #include "AMReX_Box.H"
-#include "AMReX_GpuLaunchFunctsC.H"
-#include "AMReX_REAL.H"
 #include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
 #include "hydro/EOS.hpp"
@@ -196,7 +194,7 @@ auto problem_main() -> int
 	amrex::DistributionMapping const dmap(ranks);
 	analysisPC.Define(geom, dmap, boxArray);
 	auto *container =
-	    sim.particleRegister_.getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
+	    sim.particleRegister_->getParticleDescriptor("CICRad_particles")->getParticleContainer<quokka::CICRadParticleContainer<ParticleProblem>>();
 	analysisPC.copyParticles(*container);
 
 	if (amrex::ParallelDescriptor::IOProcessor()) {
