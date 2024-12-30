@@ -1,11 +1,11 @@
 #ifndef PHYSICS_PARTICLES_HPP_
 #define PHYSICS_PARTICLES_HPP_
 
+#include <cmath>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <string>
-#include <cmath>
-#include <cstdint>
 
 #include "AMReX.H"
 #include "AMReX_AmrParticles.H"
