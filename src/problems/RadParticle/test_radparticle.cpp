@@ -66,7 +66,7 @@ template <> void QuokkaSimulation<ParticleProblem>::createInitialRadParticles()
 	// read particles from ASCII file
 	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1 lum2 lum3
 	RadParticles->SetVerbose(1);
-	RadParticles->InitFromAsciiFile("RadParticles.txt", nreal_extra, nullptr);
+	RadParticles->InitFromAsciiFile("RadParticles1D.txt", nreal_extra, nullptr);
 }
 
 // template <>
