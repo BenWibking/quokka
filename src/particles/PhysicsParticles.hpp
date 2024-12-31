@@ -120,7 +120,7 @@ class ParticleOperations
 	virtual void depositRadiation(amrex::MultiFab &radEnergySource, int lev, amrex::Real current_time, int lumIndex, int birthTimeIndex, int nGroups) = 0;
 	virtual void depositMass(amrex::Vector<amrex::MultiFab> &rhs, int finest_lev, amrex::Real Gconst, int massIndex) = 0;
 	virtual void driftParticlesAllLevels(amrex::Real dt, int massIndex) = 0;
-	virtual void kickParticles(amrex::Real dt, amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev, int massIndex) = 0;
+	virtual void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev, int massIndex) = 0;
 };
 
 // Template wrapper that implements the interface for any particle container type
@@ -196,7 +196,7 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 		}
 	}
 
-	void kickParticles(amrex::Real dt, amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev, int massIndex) override
+	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev, int massIndex) override
 	{
 		if (container_) {
 			const auto dx_inv = geom[lev].InvCellSizeArray();
@@ -339,7 +339,7 @@ template <typename problem_t> class PhysicsParticleRegister
 	}
 
 	// Kick particles
-	void kickParticles(amrex::Real dt, amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev)
+	void kickParticles(amrex::Real dt, const amrex::MultiFab &accel, const amrex::Vector<amrex::Geometry> &geom, int lev)
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
 			if (auto *ops = descriptor->getOperations()) {
