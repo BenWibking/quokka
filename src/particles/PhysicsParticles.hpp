@@ -218,7 +218,7 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 					    },
 					    [=] AMREX_GPU_DEVICE(typename ParticleContainerType::ParticleType & p, int comp, amrex::Real acc_comp) {
 						    // kick particle by updating its velocity
-						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
+						    p.rdata(comp) += 0.5 * dt * acc_comp;
 					    });
 				});
 			}
