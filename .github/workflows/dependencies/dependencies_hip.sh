@@ -47,7 +47,8 @@ sudo apt-get install -y --no-install-recommends \
     roctracer-dev5.7.1   \
     rocprofiler-dev5.7.1 \
     rocrand-dev5.7.1     \
-    rocprim-dev5.7.1
+    rocprim-dev5.7.1     \
+    rocsparse-dev5.7.1
 
 # activate
 #
