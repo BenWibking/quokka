@@ -2084,6 +2084,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 		AMREX_ASSERT(CICRadParticles == nullptr);
 
 		// Create CIC particle descriptor
+		// TODO(cch): note here I am assuming AMREX_SPACEDIM == 3, otherwise the indices are wrong
 		auto cicRadParticleDesc = std::make_unique<quokka::PhysicsParticleDescriptor>(quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx,
 											      quokka::CICRadParticleBirthTimeIdx, false);
 

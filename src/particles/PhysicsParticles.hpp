@@ -25,7 +25,13 @@ namespace quokka
 
 // CIC particles
 enum CICParticleDataIdx { CICParticleMassIdx = 0, CICParticleVxIdx, CICParticleVyIdx, CICParticleVzIdx };
+#if AMREX_SPACEDIM == 1
+constexpr int CICParticleRealComps = 2; // mass vx
+#elif AMREX_SPACEDIM == 2
+constexpr int CICParticleRealComps = 3; // mass vx vy
+#elif AMREX_SPACEDIM == 3
 constexpr int CICParticleRealComps = 4; // mass vx vy vz
+#endif
 using CICParticleContainer = amrex::AmrParticleContainer<CICParticleRealComps>;
 using CICParticleIterator = amrex::ParIter<CICParticleRealComps>;
 
@@ -52,12 +58,25 @@ enum CICRadParticleDataIdx {
 	CICRadParticleDeathTimeIdx,
 	CICRadParticleLumIdx
 };
+// CICRadParticleRealComps has to be defined when radiation is disabled to avoid compilation errors
 template <typename problem_t>
 constexpr int CICRadParticleRealComps = []() constexpr {
 	if constexpr (Physics_Traits<problem_t>::is_hydro_enabled || Physics_Traits<problem_t>::is_radiation_enabled) {
+#if AMREX_SPACEDIM == 1
+		return 4 + Physics_Traits<problem_t>::nGroups; // mass vx birth_time death_time lum1 ... lumN
+#elif AMREX_SPACEDIM == 2
+		return 5 + Physics_Traits<problem_t>::nGroups; // mass vx vy birth_time death_time lum1 ... lumN
+#elif AMREX_SPACEDIM == 3
 		return 6 + Physics_Traits<problem_t>::nGroups; // mass vx vy vz birth_time death_time lum1 ... lumN
+#endif
 	} else {
+#if AMREX_SPACEDIM == 1
+		return 4; // mass vx birth_time death_time
+#elif AMREX_SPACEDIM == 2
+		return 5; // mass vx vy birth_time death_time
+#elif AMREX_SPACEDIM == 3
 		return 6; // mass vx vy vz birth_time death_time
+#endif
 	}
 }();
 template <typename problem_t> using CICRadParticleContainer = amrex::AmrParticleContainer<CICRadParticleRealComps<problem_t>>;
