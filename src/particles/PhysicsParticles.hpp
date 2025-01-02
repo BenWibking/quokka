@@ -237,6 +237,7 @@ template <typename ParticleContainerType> class ParticleOperationsImpl : public 
 					    },
 					    [=] AMREX_GPU_DEVICE(typename ParticleContainerType::ParticleType & p, int comp, amrex::Real acc_comp) {
 						    // kick particle by updating its velocity
+								// AMREX_ASSERT(comp >= massIndex + 1 && comp < massIndex + 1 + AMREX_SPACEDIM);
 						    p.rdata(comp) += 0.5 * dt * acc_comp;
 					    });
 				});
@@ -383,9 +384,8 @@ template <typename problem_t> class PhysicsParticleRegister
 	void redistribute(int lev, int ngrow)
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
-			auto *container = dynamic_cast<RadParticleContainer<problem_t> *>(descriptor->neighborParticleContainer_);
-			if (container != nullptr) {
-				container->Redistribute(lev, container->finestLevel(), ngrow);
+			if (auto *ops = descriptor->getOperations()) {
+				ops->redistribute(lev, ngrow);
 			}
 		}
 	}

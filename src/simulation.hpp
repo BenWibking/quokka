@@ -58,19 +58,19 @@ namespace filesystem = experimental::filesystem;
 #include "AMReX_Vector.H"
 #include "AMReX_VisMF.H"
 #include "AMReX_YAFluxRegister.H"
-#include <AMReX_Geometry.H>
-#include <AMReX_MultiFab.H>
-#include <AMReX_ParmParse.H>
-#include <AMReX_PlotFileUtil.H>
-#include <AMReX_Print.H>
-#include <AMReX_Utility.H>
+#include "AMReX_Geometry.H"
+#include "AMReX_MultiFab.H"
+#include "AMReX_ParmParse.H"
+#include "AMReX_PlotFileUtil.H"
+#include "AMReX_Print.H"
+#include "AMReX_Utility.H"
 #include <fmt/core.h>
 #include <yaml-cpp/yaml.h>
 
 #ifdef AMREX_PARTICLES
 #include "particles/PhysicsParticles.hpp"
-#include <AMReX_AmrParticles.H>
-#include <AMReX_Particles.H>
+#include "AMReX_AmrParticles.H"
+#include "AMReX_Particles.H"
 #endif
 
 #if AMREX_SPACEDIM == 3
@@ -1245,7 +1245,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLevels(const amrex::Real dt)
 {
 	// drift all particles (do: pos[i] += dt * vel[i])
-	particleRegister_.driftParticlesAllLevels(dt);
+	if (do_cic_particles != 0 || do_cic_rad_particles != 0) {
+		particleRegister_.driftParticlesAllLevels(dt);
+	}
 }
 
 // N.B.: This function actually works for subcycled or not subcycled, as long as
