@@ -404,9 +404,10 @@ template <typename problem_t> class PhysicsParticleRegister
 	void writeCheckpoint(const std::string &checkpointname, bool include_header) const
 	{
 		for (const auto &[name, descriptor] : particleRegistry_) {
-			if (auto *ops = descriptor->getOperations()) {
-				ops->writeCheckpoint(checkpointname, name, include_header);
-			}
+			descriptor->WriteCheckpoint(checkpointname, name, include_header);
+			// if (auto *ops = descriptor->getOperations()) {
+			// 	ops->writeCheckpoint(checkpointname, name, include_header);
+			// }
 		}
 	}
 
