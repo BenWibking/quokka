@@ -206,8 +206,7 @@ auto problem_main() -> int
 			// copy particles from device to host
 			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType *pData = particles().data();
 			amrex::Vector<quokka::CICRadParticleContainer<ParticleProblem>::ParticleType> pData_h(np);
-			amrex::Gpu::copy(amrex::Gpu::deviceToHost, pData, pData + np,
-					 pData_h.begin()); // NOLINT
+			amrex::Gpu::copy(amrex::Gpu::deviceToHost, pData, std::next(pData, np), pData_h.begin()); // NOLINT
 			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType &p1 = pData_h[0];
 			quokka::CICRadParticleContainer<ParticleProblem>::ParticleType &p2 = pData_h[1];
 

@@ -1,9 +1,9 @@
 #ifndef PHYSICS_PARTICLES_HPP_
 #define PHYSICS_PARTICLES_HPP_
 
-#include <cmath>
 #include <cstdint>
 #include <map>
+#include <math.h>
 #include <memory>
 #include <string>
 
@@ -13,6 +13,7 @@
 #include "AMReX_Array4.H"
 #include "AMReX_Extension.H"
 #include "AMReX_Geometry.H"
+#include "AMReX_GpuQualifiers.H"
 #include "AMReX_INT.H"
 #include "AMReX_MultiFab.H"
 #include "AMReX_ParIter.H"
@@ -137,9 +138,9 @@ class PhysicsParticleDescriptor
 
 	// Delete copy/move constructors/assignments
 	PhysicsParticleDescriptor(const PhysicsParticleDescriptor &) = delete;
-	PhysicsParticleDescriptor &operator=(const PhysicsParticleDescriptor &) = delete;
+	auto operator=(const PhysicsParticleDescriptor &) -> PhysicsParticleDescriptor & = delete;
 	PhysicsParticleDescriptor(PhysicsParticleDescriptor &&) = delete;
-	PhysicsParticleDescriptor &operator=(PhysicsParticleDescriptor &&) = delete;
+	auto operator=(PhysicsParticleDescriptor &&) -> PhysicsParticleDescriptor & = delete;
 
 	// Setter for particle container
 	template <typename ParticleContainerType> void setParticleContainer(ParticleContainerType *container) { neighborParticleContainer_ = container; }
@@ -523,9 +524,9 @@ template <typename problem_t> class PhysicsParticleRegister
 
 	// Delete copy/move constructors/assignments
 	PhysicsParticleRegister(const PhysicsParticleRegister &) = delete;
-	PhysicsParticleRegister &operator=(const PhysicsParticleRegister &) = delete;
+	auto operator=(const PhysicsParticleRegister &) -> PhysicsParticleRegister & = delete;
 	PhysicsParticleRegister(PhysicsParticleRegister &&) = delete;
-	PhysicsParticleRegister &operator=(PhysicsParticleRegister &&) = delete;
+	auto operator=(PhysicsParticleRegister &&) -> PhysicsParticleRegister & = delete;
 };
 
 } // namespace quokka
