@@ -1,36 +1,32 @@
 # *****************************************************************
 # Problem size and geometry
 # *****************************************************************
-geometry.prob_lo     =  -2.5e13 -2.5e13 -2.5e13
-geometry.prob_hi     =   2.5e13  2.5e13  2.5e13
+geometry.prob_lo     =  -1.0  -1.0  -1.0 
+geometry.prob_hi     =  1.0  1.0  1.0
 geometry.is_periodic =  0    0    0
 
 # *****************************************************************
 # VERBOSITY
 # *****************************************************************
-amr.v              = 1       # verbosity in Amr
+amr.v              = 0       # verbosity in Amr
 
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 16 16 16
+amr.n_cell          = 64 64 64
 amr.max_level       = 0     # number of levels = max_level + 1
-amr.blocking_factor = 16    # grid size must be divisible by this
-amr.max_grid_size   = 16    # at least 128 for GPUs
+amr.blocking_factor = 32     # grid size must be divisible by this
+amr.max_grid_size   = 32    # at least 128 for GPUs
 amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
 amr.grid_eff        = 1.0
 
-cfl = 0.3
-max_timesteps = 10
-stop_time = 5.0e7   # s
-
-do_reflux = 1
+do_reflux = 0
 do_subcycle = 0
-do_cic_particles = 1    # turns on CIC particles
+suppress_output = 0
 
-ascent_interval = -1
-derived_vars = gpot
-
-plotfile_interval = 100000
-checkpoint_interval = 100000
-#restartfile = "chk00010"
+do_cic_rad_particles = 1    # turns on radiating particles
+stop_time = 1.0
+plottime_interval = 0.1
+#plot_interval = 1
+checkpointtime_interval = 100000
+max_timesteps = 100000

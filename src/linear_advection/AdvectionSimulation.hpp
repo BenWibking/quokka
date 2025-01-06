@@ -65,7 +65,9 @@ template <typename problem_t> class AdvectionSimulation : public AMRSimulation<p
 	void preCalculateInitialConditions() override;
 	void setInitialConditionsOnGrid(quokka::grid const &grid_elem) override;
 	void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) override;
-	void createInitialParticles() override;
+	void createInitialCICParticles() override;
+	void createInitialRadParticles() override;
+	void createInitialCICRadParticles() override;
 	void advanceSingleTimestepAtLevel(int lev, amrex::Real time, amrex::Real dt_lev, int /*ncycle*/) override;
 	void computeBeforeTimestep() override;
 	void computeAfterTimestep() override;
@@ -78,7 +80,7 @@ template <typename problem_t> class AdvectionSimulation : public AMRSimulation<p
 	// compute derived variables
 	void ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const override;
 	// compute projected vars
-	[[nodiscard]] auto ComputeProjections(int dir) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> override;
+	[[nodiscard]] auto ComputeProjections(const amrex::Direction dir) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> override;
 
 	// compute statistics
 	auto ComputeStatistics() -> std::map<std::string, amrex::Real> override;
@@ -150,7 +152,21 @@ template <typename problem_t> void AdvectionSimulation<problem_t>::setInitialCon
 	// note: an implementation is only required if face-centered vars are used
 }
 
-template <typename problem_t> void AdvectionSimulation<problem_t>::createInitialParticles()
+template <typename problem_t> void AdvectionSimulation<problem_t>::createInitialCICParticles()
+{
+	// default empty implementation
+	// user should implement using problem-specific template specialization
+	// note: an implementation is only required if particles are used
+}
+
+template <typename problem_t> void AdvectionSimulation<problem_t>::createInitialRadParticles()
+{
+	// default empty implementation
+	// user should implement using problem-specific template specialization
+	// note: an implementation is only required if particles are used
+}
+
+template <typename problem_t> void AdvectionSimulation<problem_t>::createInitialCICRadParticles()
 {
 	// default empty implementation
 	// user should implement using problem-specific template specialization
@@ -173,7 +189,7 @@ template <typename problem_t> void AdvectionSimulation<problem_t>::ComputeDerive
 }
 
 template <typename problem_t>
-auto AdvectionSimulation<problem_t>::ComputeProjections(int /*dir*/) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>>
+auto AdvectionSimulation<problem_t>::ComputeProjections(const amrex::Direction /*dir*/) const -> std::unordered_map<std::string, amrex::BaseFab<amrex::Real>>
 {
 	// user should implement
 	return std::unordered_map<std::string, amrex::BaseFab<amrex::Real>>{};
