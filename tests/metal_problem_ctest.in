@@ -36,3 +36,5 @@ cooling.hdf5_data_file = "../extern/grackle_data_files/input/CloudyData_UVB=HM20
 
 projection_interval = 500
 projection.dirs = y
+
+derived_vars = temperature
