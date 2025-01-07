@@ -502,6 +502,23 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<NewProblem>::setCustomBou
 	consVar(i, j, k, HydroSystem<NewProblem>::scalar0_index) = pscalar_edge;
 }
 
+template <> void QuokkaSimulation<NewProblem>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const
+{
+	if (dname == "temperature") {
+		auto const &state = state_new_cc_[lev].const_arrays();
+		auto output = mf.arrays();
+
+		amrex::ParallelFor(mf, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
+			Real const rho = state[bx](i, j, k, HydroSystem<NewProblem>::density_index);
+			amrex::Real const Eint = state[bx](i, j, k, HydroSystem<NewProblem>::internalEnergy_index);
+
+			amrex::GpuArray<Real, Physics_Traits<NewProblem>::numMassScalars> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state[bx], i, j, k);
+
+			output[bx](i, j, k, ncomp) = quokka::EOS<NewProblem>::ComputeTgasFromEint(rho, Eint, massScalars);
+		});
+	}
+}
+
 auto problem_main() -> int
 {
 
