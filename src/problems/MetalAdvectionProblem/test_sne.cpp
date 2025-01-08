@@ -22,10 +22,19 @@
 #include "AMReX_TableData.H"
 
 #include "QuokkaSimulation.hpp"
+#include "fundamental_constants.H"
 #include "hydro/hydro_system.hpp"
 #include "io/projection.hpp"
+#include "physics_numVars.hpp"
 #include "radiation/radiation_system.hpp"
 #include "test_sne.hpp"
+
+constexpr int nGroups_ = 2;
+constexpr amrex::GpuArray<double, 3> group_edges_{1e-3, 5.6, 1e2}; // eV
+constexpr double Erad_floor_ = C::a_rad * 1e-16;
+constexpr double v_max = 1000.0 * 1.e5; // km/s
+// constexpr double v_hat_over_c_ = 10. * v_max / C::c_light;
+constexpr double v_hat_over_c_ = 0.03;
 
 // global variables needed for Dirichlet boundary condition and initial conditions
 
@@ -93,9 +102,19 @@ template <> struct Physics_Traits<NewProblem> {
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int numMassScalars = 0;    // number of mass scalars
 	static constexpr int numPassiveScalars = 1; // number of passive scalars
-	static constexpr int nGroups = 1;	    // number of radiation groups
+	static constexpr int nGroups = nGroups_;	    // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
+
+template <> struct RadSystem_Traits<NewProblem> {
+	static constexpr double c_hat_over_c = v_hat_over_c_;
+	static constexpr double Erad_floor = Erad_floor_;
+	static constexpr int beta_order = 1;
+	static constexpr double energy_unit = C::ev2erg;
+	static constexpr amrex::GpuArray<double, nGroups_ + 1> radBoundaries = group_edges_;
+	static constexpr OpacityModel opacity_model = OpacityModel::piecewise_constant_opacity;
+};
+
 
 template <> struct SimulationData<NewProblem> {
 
@@ -110,6 +129,25 @@ template <> struct SimulationData<NewProblem> {
 	Real M_ejecta = 5.0 * Msun;  // 5.0 * Msun; // g
 	Real refine_threshold = 1.0; // gradient refinement threshold
 };
+
+// template <> void QuokkaSimulation<NewProblem>::createInitialCICRadParticles()
+// {
+// 	// generate random particles
+// 	const int nreal_extra = 6 + nGroups_; // mass vx vy vz birth_time death_time lum1
+// }
+
+template <>
+AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto
+RadSystem<NewProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, nGroups_ + 1> /*rad_boundaries*/, const double /*rho*/,
+								   const double /*Tgas*/) -> amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2>
+{
+	amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2> exponents_and_values{};
+	for (int i = 0; i < nGroups_ + 1; ++i) {
+		exponents_and_values[0][i] = 0.0;
+		exponents_and_values[1][i] = 0.0;
+	}
+	return exponents_and_values;
+}
 
 template <> void QuokkaSimulation<NewProblem>::setInitialConditionsOnGrid(quokka::grid const &grid_elem)
 {
@@ -213,9 +251,9 @@ void AddSupernova(amrex::MultiFab &mf, amrex::GpuArray<Real, AMREX_SPACEDIM> pro
 					state(i, j, k, HydroSystem<NewProblem>::internalEnergy_index) += rho_eint_blast;
 					state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex) += scalar_blast;
 
-					printf("The total number of SN gone off=%d\n", cum_sn);
-					Real Rpds = 14. * std::pow(state(i, j, k, HydroSystem<NewProblem>::density_index) / Const_mH, -3. / 7.);
-					printf("Rpds = %.2e pc\n", Rpds);
+					// printf("The total number of SN gone off=%d\n", cum_sn);
+					// Real Rpds = 14. * std::pow(state(i, j, k, HydroSystem<NewProblem>::density_index) / Const_mH, -3. / 7.);
+					// printf("Rpds = %.2e pc\n", Rpds);
 				}
 			}
 		});
@@ -549,7 +587,9 @@ auto problem_main() -> int
 	QuokkaSimulation<NewProblem> sim(BCs_cc);
 
 	sim.reconstructionOrder_ = 3; // 2=PLM, 3=PPM
+	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.cflNumber_ = 0.3;	      // *must* be less than 1/3 in 3D!
+	sim.radiationCflNumber_ = 0.3; // Same as hydro CFL
 
 	sim.setInitialConditions();
 
