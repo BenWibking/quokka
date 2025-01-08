@@ -38,3 +38,5 @@ projection_interval = 1
 projection.dirs = y
 
 derived_vars = temperature
+
+suppress_output = 0
