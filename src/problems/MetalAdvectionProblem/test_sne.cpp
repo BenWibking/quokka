@@ -202,14 +202,14 @@ template <> void QuokkaSimulation<NewProblem>::setInitialConditionsOnGrid(quokka
 
 		AMREX_ASSERT(!std::isnan(rho));
 
-		const auto gamma = HydroSystem<NewProblem>::gamma_;
+		const auto gamma = RadSystem<NewProblem>::gamma_;
 
-		state_cc(i, j, k, HydroSystem<NewProblem>::density_index) = rho;
-		state_cc(i, j, k, HydroSystem<NewProblem>::x1Momentum_index) = 0.0;
-		state_cc(i, j, k, HydroSystem<NewProblem>::x2Momentum_index) = 0.0;
-		state_cc(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) = 0.0;
-		state_cc(i, j, k, HydroSystem<NewProblem>::internalEnergy_index) = P / (gamma - 1.);
-		state_cc(i, j, k, HydroSystem<NewProblem>::energy_index) = P / (gamma - 1.);
+		state_cc(i, j, k, RadSystem<NewProblem>::gasDensity_index) = rho;
+		state_cc(i, j, k, RadSystem<NewProblem>::x1GasMomentum_index) = 0.0;
+		state_cc(i, j, k, RadSystem<NewProblem>::x2GasMomentum_index) = 0.0;
+		state_cc(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) = 0.0;
+		state_cc(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index) = P / (gamma - 1.);
+		state_cc(i, j, k, RadSystem<NewProblem>::gasEnergy_index) = P / (gamma - 1.);
 		state_cc(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex) = 1.e-5 / vol; // Injected tracer
 	});
 }
@@ -246,9 +246,9 @@ void AddSupernova(amrex::MultiFab &mf, amrex::GpuArray<Real, AMREX_SPACEDIM> pro
 				Real z0 = std::abs(zc - pz(n));
 
 				if (x0 < 0.5 * dx[0] && y0 < 0.5 * dx[1] && z0 < 0.5 * dx[2]) {
-					state(i, j, k, HydroSystem<NewProblem>::density_index) += rho_blast;
-					state(i, j, k, HydroSystem<NewProblem>::energy_index) += rho_eint_blast;
-					state(i, j, k, HydroSystem<NewProblem>::internalEnergy_index) += rho_eint_blast;
+					state(i, j, k, RadSystem<NewProblem>::gasDensity_index) += rho_blast;
+					state(i, j, k, RadSystem<NewProblem>::gasEnergy_index) += rho_eint_blast;
+					state(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index) += rho_eint_blast;
 					state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex) += scalar_blast;
 
 					// printf("The total number of SN gone off=%d\n", cum_sn);
@@ -351,11 +351,11 @@ template <> void QuokkaSimulation<NewProblem>::addStrangSplitSources(amrex::Mult
 			amrex::GpuArray<amrex::Real, AMREX_SPACEDIM> posvec, GradPhi;
 			double x1mom_new, x2mom_new, x3mom_new;
 
-			const Real rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
-			const Real x1mom = state(i, j, k, HydroSystem<NewProblem>::x1Momentum_index);
-			const Real x2mom = state(i, j, k, HydroSystem<NewProblem>::x2Momentum_index);
-			const Real x3mom = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index);
-			const Real Egas = state(i, j, k, HydroSystem<NewProblem>::energy_index);
+			const Real rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
+			const Real x1mom = state(i, j, k, RadSystem<NewProblem>::x1GasMomentum_index);
+			const Real x2mom = state(i, j, k, RadSystem<NewProblem>::x2GasMomentum_index);
+			const Real x3mom = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index);
+			const Real Egas = state(i, j, k, RadSystem<NewProblem>::gasEnergy_index);
 
 			Real Eint = RadSystem<NewProblem>::ComputeEintFromEgas(rho, x1mom, x2mom, x3mom, Egas);
 
@@ -376,11 +376,11 @@ template <> void QuokkaSimulation<NewProblem>::addStrangSplitSources(amrex::Mult
 			x3mom_new = x3mom + dt * (-rho * GradPhi[2]);
 
 			// State momentum values need to be updated this way.
-			state(i, j, k, HydroSystem<NewProblem>::x1Momentum_index) = x1mom_new;
-			state(i, j, k, HydroSystem<NewProblem>::x2Momentum_index) = x2mom_new;
-			state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) = x3mom_new;
+			state(i, j, k, RadSystem<NewProblem>::x1GasMomentum_index) = x1mom_new;
+			state(i, j, k, RadSystem<NewProblem>::x2GasMomentum_index) = x2mom_new;
+			state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) = x3mom_new;
 
-			state(i, j, k, HydroSystem<NewProblem>::energy_index) =
+			state(i, j, k, RadSystem<NewProblem>::gasEnergy_index) =
 			    RadSystem<NewProblem>::ComputeEgasFromEint(rho, x1mom_new, x2mom_new, x3mom_new, Eint);
 		});
 	}
@@ -397,8 +397,8 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    // int nmscalars = Physics_Traits<NewProblem>::numMassScalars;
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
-		    Real const vx3 = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) / rho;
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
+		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
 		    return (rho * vx3);
 	    });
 
@@ -406,9 +406,9 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
-		    Real const vx3 = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) / rho;
-		    Real const Eint = state(i, j, k, HydroSystem<NewProblem>::internalEnergy_index);
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
+		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
+		    Real const Eint = state(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
 		    amrex::GpuArray<Real, 0> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state, i, j, k);
 		    Real const primTemp = quokka::EOS<NewProblem>::ComputeTgasFromEint(rho, Eint, massScalars);
 		    if (primTemp > 1.e6) {
@@ -423,9 +423,9 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
-		    Real const vx3 = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) / rho;
-		    Real const Eint = state(i, j, k, HydroSystem<NewProblem>::internalEnergy_index);
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
+		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
+		    Real const Eint = state(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
 		    amrex::GpuArray<Real, 0> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state, i, j, k);
 		    Real const primTemp = quokka::EOS<NewProblem>::ComputeTgasFromEint(rho, Eint, massScalars);
 		    if (primTemp < 2.e4) {
@@ -439,9 +439,9 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	proj["scalar_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
-		    Real const vz = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) / rho;
+		    Real const vz = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
 		    return (rhoZ * vz);
 	    });
 
@@ -449,10 +449,10 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
-		    Real const vx3 = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) / rho;
-		    Real const Eint = state(i, j, k, HydroSystem<NewProblem>::internalEnergy_index);
+		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
+		    Real const Eint = state(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
 		    amrex::GpuArray<Real, 0> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state, i, j, k);
 		    Real const primTemp = quokka::EOS<NewProblem>::ComputeTgasFromEint(rho, Eint, massScalars);
 		    if (primTemp < 2.e4) {
@@ -467,10 +467,10 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
-		    Real const vx3 = state(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) / rho;
-		    Real const Eint = state(i, j, k, HydroSystem<NewProblem>::internalEnergy_index);
+		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
+		    Real const Eint = state(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
 		    amrex::GpuArray<Real, 0> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state, i, j, k);
 		    Real const primTemp = quokka::EOS<NewProblem>::ComputeTgasFromEint(rho, Eint, massScalars);
 		    if (primTemp > 1.e6) {
@@ -484,7 +484,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	proj["rho"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
 		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
 	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
-		    Real const rho = state(i, j, k, HydroSystem<NewProblem>::density_index);
+		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    return (rho);
 	    });
 
@@ -522,25 +522,25 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<NewProblem>::setCustomBou
 		normal = 1.0;
 	}
 
-	const double rho_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::density_index);
-	const double x1Mom_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::x1Momentum_index);
-	const double x2Mom_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::x2Momentum_index);
-	double x3Mom_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::x3Momentum_index);
-	const double etot_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::energy_index);
-	const double eint_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::internalEnergy_index);
-	const double pscalar_edge = consVar(i, j, kedge, HydroSystem<NewProblem>::scalar0_index);
+	const double rho_edge = consVar(i, j, kedge, RadSystem<NewProblem>::gasDensity_index);
+	const double x1Mom_edge = consVar(i, j, kedge, RadSystem<NewProblem>::x1GasMomentum_index);
+	const double x2Mom_edge = consVar(i, j, kedge, RadSystem<NewProblem>::x2GasMomentum_index);
+	double x3Mom_edge = consVar(i, j, kedge, RadSystem<NewProblem>::x3GasMomentum_index);
+	const double etot_edge = consVar(i, j, kedge, RadSystem<NewProblem>::gasEnergy_index);
+	const double eint_edge = consVar(i, j, kedge, RadSystem<NewProblem>::gasInternalEnergy_index);
+	const double pscalar_edge = consVar(i, j, kedge, RadSystem<NewProblem>::scalar0_index);
 
 	if ((x3Mom_edge * normal) < 0) { // gas is inflowing
-		x3Mom_edge = -1. * consVar(i, j, kedge, HydroSystem<NewProblem>::x3Momentum_index);
+		x3Mom_edge = -1. * consVar(i, j, kedge, RadSystem<NewProblem>::x3GasMomentum_index);
 	}
 
-	consVar(i, j, k, HydroSystem<NewProblem>::density_index) = rho_edge;
-	consVar(i, j, k, HydroSystem<NewProblem>::x1Momentum_index) = x1Mom_edge;
-	consVar(i, j, k, HydroSystem<NewProblem>::x2Momentum_index) = x2Mom_edge;
-	consVar(i, j, k, HydroSystem<NewProblem>::x3Momentum_index) = x3Mom_edge;
-	consVar(i, j, k, HydroSystem<NewProblem>::energy_index) = etot_edge;
-	consVar(i, j, k, HydroSystem<NewProblem>::internalEnergy_index) = eint_edge;
-	consVar(i, j, k, HydroSystem<NewProblem>::scalar0_index) = pscalar_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::gasDensity_index) = rho_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::x1GasMomentum_index) = x1Mom_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::x2GasMomentum_index) = x2Mom_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) = x3Mom_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::gasEnergy_index) = etot_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index) = eint_edge;
+	consVar(i, j, k, RadSystem<NewProblem>::scalar0_index) = pscalar_edge;
 }
 
 template <> void QuokkaSimulation<NewProblem>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const
@@ -550,8 +550,8 @@ template <> void QuokkaSimulation<NewProblem>::ComputeDerivedVar(int lev, std::s
 		auto output = mf.arrays();
 
 		amrex::ParallelFor(mf, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
-			Real const rho = state[bx](i, j, k, HydroSystem<NewProblem>::density_index);
-			amrex::Real const Eint = state[bx](i, j, k, HydroSystem<NewProblem>::internalEnergy_index);
+			Real const rho = state[bx](i, j, k, RadSystem<NewProblem>::gasDensity_index);
+			amrex::Real const Eint = state[bx](i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
 
 			amrex::GpuArray<Real, Physics_Traits<NewProblem>::numMassScalars> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state[bx], i, j, k);
 
