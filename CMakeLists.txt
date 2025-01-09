@@ -49,6 +49,25 @@ if(AMReX_GPU_BACKEND MATCHES "CUDA")
   endif(CMAKE_VERSION VERSION_LESS 3.20)
 endif(AMReX_GPU_BACKEND MATCHES "CUDA")
 
+if(AMReX_GPU_BACKEND MATCHES "HIP")
+  execute_process(
+      COMMAND hipcc --version
+      RESULT_VARIABLE hipcc_result
+      OUTPUT_VARIABLE hipcc_version
+      ERROR_VARIABLE hipcc_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT hipcc_result EQUAL 0)
+      message(FATAL_ERROR "Failed to detect HIP compiler version: ${hipcc_error}")
+  else()
+      message(STATUS "HIP compiler version: ${hipcc_version}")
+  endif()
+
+  if(hipcc_version VERSION_LESS 6.3)
+    message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that cause Quokka to produce incorrect results.")
+  endif()
+endif(AMReX_GPU_BACKEND MATCHES "HIP")
+
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # abort! Intel Compiler Classic cannot compile Quokka!
   message(FATAL_ERROR "You have configured CMake to use the 'classic' Intel compilers (icc/icpc), which are the old Intel compilers. They cannot compile Quokka correctly! You must use the new LLVM-based Intel compilers (icx/icpx) instead by adding the following CMake command-line options: -DCMAKE_C_COMPILER=icx -DCMAKE_CXX_COMPILER=icpx")
