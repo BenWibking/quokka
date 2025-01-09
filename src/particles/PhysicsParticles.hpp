@@ -106,7 +106,7 @@ struct RadDeposition {
 					      if (current_time < part.rdata(birthTimeIndex) || current_time >= part.rdata(birthTimeIndex + 1)) {
 						      return 0.0;
 					      }
-					      return part.rdata(comp) * (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
+					      return part.rdata(comp) / (AMREX_D_TERM(dxi[0], *dxi[1], *dxi[2]));
 				      });
 	}
 };
