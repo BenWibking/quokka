@@ -47,6 +47,7 @@ sudo apt-get install -y --no-install-recommends \
     roctracer-dev6.3.1   \
     rocprofiler-dev6.3.1 \
     rocrand-dev6.3.1     \
+    hiprand-dev6.3.1     \
     rocprim-dev6.3.1     \
     rocsparse-dev6.3.1
 
