@@ -64,7 +64,7 @@ if(AMReX_GPU_BACKEND MATCHES "HIP")
   endif()
 
   if(hipcc_version VERSION_LESS 6.3)
-    message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that cause Quokka to produce incorrect results.")
+    message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that may cause Quokka to produce incorrect results.")
   endif()
 endif(AMReX_GPU_BACKEND MATCHES "HIP")
 
