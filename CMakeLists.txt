@@ -59,9 +59,10 @@ if(AMReX_GPU_BACKEND MATCHES "HIP")
   )
   if(NOT hipcc_result EQUAL 0)
       message(FATAL_ERROR "Failed to detect HIP compiler version: ${hipcc_error}")
-  else()
-      message(STATUS "HIP compiler version: ${hipcc_version}")
   endif()
+
+  string(REPLACE "HIP version: " "" hipcc_version ${hipcc_version})
+  message(STATUS "HIP compiler version: ${hipcc_version}")
 
   if(hipcc_version VERSION_LESS 6.3)
     message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that may cause Quokka to produce incorrect results.")
