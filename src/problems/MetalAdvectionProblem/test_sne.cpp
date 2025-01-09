@@ -32,9 +32,10 @@
 constexpr int nGroups_ = 2;
 constexpr amrex::GpuArray<double, 3> group_edges_{1e-3, 5.6, 1e2}; // eV
 constexpr double Erad_floor_ = C::a_rad * 1e-16;
-constexpr double v_max = 1000.0 * 1.e5; // km/s
-// constexpr double v_hat_over_c_ = 10. * v_max / C::c_light;
-constexpr double v_hat_over_c_ = 0.03;
+constexpr double v_max = 1000.0 * 1.e5; // km/s, C_s at 1e8 K
+constexpr double c_hat_over_c_ = 10. * v_max / C::c_light;
+// constexpr double c_hat_over_c_ = 1. * v_max / C::c_light;
+// constexpr double c_hat_over_c_ = 0.03;
 
 // global variables needed for Dirichlet boundary condition and initial conditions
 
@@ -97,7 +98,7 @@ template <> struct quokka::EOS_Traits<NewProblem> {
 
 template <> struct Physics_Traits<NewProblem> {
 	static constexpr bool is_hydro_enabled = true;
-	static constexpr bool is_radiation_enabled = false;
+	static constexpr bool is_radiation_enabled = true;
 	static constexpr bool is_chemistry_enabled = false;
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int numMassScalars = 0;    // number of mass scalars
@@ -107,7 +108,7 @@ template <> struct Physics_Traits<NewProblem> {
 };
 
 template <> struct RadSystem_Traits<NewProblem> {
-	static constexpr double c_hat_over_c = v_hat_over_c_;
+	static constexpr double c_hat_over_c = c_hat_over_c_;
 	static constexpr double Erad_floor = Erad_floor_;
 	static constexpr int beta_order = 1;
 	static constexpr double energy_unit = C::ev2erg;
@@ -211,6 +212,14 @@ template <> void QuokkaSimulation<NewProblem>::setInitialConditionsOnGrid(quokka
 		state_cc(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index) = P / (gamma - 1.);
 		state_cc(i, j, k, RadSystem<NewProblem>::gasEnergy_index) = P / (gamma - 1.);
 		state_cc(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex) = 1.e-5 / vol; // Injected tracer
+
+		// radiation
+		for (int g = 0; g < nGroups_; ++g) {
+			state_cc(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_floor_;
+			state_cc(i, j, k, RadSystem<NewProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
+			state_cc(i, j, k, RadSystem<NewProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
+			state_cc(i, j, k, RadSystem<NewProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
+		}
 	});
 }
 
@@ -251,9 +260,9 @@ void AddSupernova(amrex::MultiFab &mf, amrex::GpuArray<Real, AMREX_SPACEDIM> pro
 					state(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index) += rho_eint_blast;
 					state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex) += scalar_blast;
 
-					// printf("The total number of SN gone off=%d\n", cum_sn);
-					// Real Rpds = 14. * std::pow(state(i, j, k, HydroSystem<NewProblem>::density_index) / Const_mH, -3. / 7.);
-					// printf("Rpds = %.2e pc\n", Rpds);
+					printf("The total number of SN gone off=%d\n", cum_sn);
+					Real Rpds = 14. * std::pow(state(i, j, k, RadSystem<NewProblem>::gasDensity_index) / Const_mH, -3. / 7.);
+					printf("Rpds = %.2e pc\n", Rpds);
 				}
 			}
 		});
@@ -541,6 +550,23 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE void AMRSimulation<NewProblem>::setCustomBou
 	consVar(i, j, k, RadSystem<NewProblem>::gasEnergy_index) = etot_edge;
 	consVar(i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index) = eint_edge;
 	consVar(i, j, k, RadSystem<NewProblem>::scalar0_index) = pscalar_edge;
+
+	// radiation
+	for (int g = 0; g < Physics_Traits<NewProblem>::nGroups; ++g) {
+		const double Erad_edge = consVar(i, j, kedge, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g);
+		const double x1RadFlux_edge = consVar(i, j, kedge, RadSystem<NewProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g);
+		const double x2RadFlux_edge = consVar(i, j, kedge, RadSystem<NewProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g);
+		double x3RadFlux_edge = consVar(i, j, kedge, RadSystem<NewProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g);
+
+		if ((x3RadFlux_edge * normal) < 0) { // radiation is inflowing
+			x3RadFlux_edge *= -1.0;
+		}
+
+		consVar(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_edge;
+		consVar(i, j, k, RadSystem<NewProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = x1RadFlux_edge;
+		consVar(i, j, k, RadSystem<NewProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = x2RadFlux_edge;
+		consVar(i, j, k, RadSystem<NewProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = x3RadFlux_edge;
+	}
 }
 
 template <> void QuokkaSimulation<NewProblem>::ComputeDerivedVar(int lev, std::string const &dname, amrex::MultiFab &mf, int ncomp) const
@@ -551,7 +577,12 @@ template <> void QuokkaSimulation<NewProblem>::ComputeDerivedVar(int lev, std::s
 
 		amrex::ParallelFor(mf, [=] AMREX_GPU_DEVICE(int bx, int i, int j, int k) noexcept {
 			Real const rho = state[bx](i, j, k, RadSystem<NewProblem>::gasDensity_index);
-			amrex::Real const Eint = state[bx](i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
+			// amrex::Real const Eint = state[bx](i, j, k, RadSystem<NewProblem>::gasInternalEnergy_index);
+			amrex::Real const Etot = state[bx](i, j, k, RadSystem<NewProblem>::gasEnergy_index);
+			amrex::Real const x1Mom = state[bx](i, j, k, RadSystem<NewProblem>::x1GasMomentum_index);
+			amrex::Real const x2Mom = state[bx](i, j, k, RadSystem<NewProblem>::x2GasMomentum_index);
+			amrex::Real const x3Mom = state[bx](i, j, k, RadSystem<NewProblem>::x3GasMomentum_index);
+			const auto Eint = Etot - 0.5 * (x1Mom * x1Mom + x2Mom * x2Mom + x3Mom * x3Mom) / rho;
 
 			amrex::GpuArray<Real, Physics_Traits<NewProblem>::numMassScalars> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state[bx], i, j, k);
 
