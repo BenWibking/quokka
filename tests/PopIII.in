@@ -22,15 +22,15 @@ amr.grid_eff        = 0.7   # default
 
 hydro.reconstruction_order = 3  # PPM
 cfl = 0.15
-max_timesteps = 10
+max_timesteps = 300
 stop_time = 1e16
 
 do_reflux = 1
 do_subcycle = 0
 
 #ascent_interval = 50
-plotfile_interval = 50 #100
-checkpoint_interval = 200
+plotfile_interval = 300
+checkpoint_interval = 300
 
 perturb.cloud_radius = 3.086e18 #initial cloud radius in cm
 perturb.cloud_omega = 2.016008E-14 #initial cloud angular velocity in s^-1
