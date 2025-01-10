@@ -333,7 +333,15 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 	T_gas = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, Egas_guess, massScalars);
 	AMREX_ASSERT(T_gas >= 0.);
 
+	double Egas_prev = Egas_guess;
+	auto EradVec_prev = EradVec_guess;
+	double Egas_midpoint = Egas_guess;
+	double Egas_midpoint_prev = NAN;
+	auto EradVec_midpoint = EradVec_guess;
+	quokka::valarray<double, nGroups_> EradVec_midpoint_prev{};
+
 	const double resid_tol = 1.0e-11; // 1.0e-15;
+	const double midpoint_tol = 1.0e-6;
 	const int maxIter = 100;
 	int n = 0;
 	for (; n < maxIter; ++n) {
@@ -412,6 +420,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 				}
 			}
 		} else { // in the second and later loops, calculate tau and E (given R)
+			EradVec_prev = EradVec_guess;
+
 			tau = dt * rho * opacity_terms.kappaP * chat;
 			for (int g = 0; g < nGroups_; ++g) {
 				// If tau = 0.0, Erad_guess shouldn't change
@@ -493,6 +503,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 			T_d += delta_x;
 			Rvec += delta_R;
 		} else {
+			Egas_prev = Egas_guess;
+
 			const double T_rad = std::sqrt(std::sqrt(sum(EradVec_guess) / radiation_constant_));
 			if (enable_dE_constrain && delta_x / c_v > std::max(T_gas, T_rad)) {
 				Egas_guess = quokka::EOS<problem_t>::ComputeEintFromTgas(rho, T_rad);
