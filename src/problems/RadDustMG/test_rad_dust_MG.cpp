@@ -30,8 +30,7 @@ constexpr double k_B = 1.0;
 
 constexpr double max_time = 3.0e-5;
 
-constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
-constexpr double erad_floor = 1.0e-20 * Erad0;
+constexpr double erad_floor = 1.0e-20 * a_rad * T0 * T0 * T0 * T0;
 
 template <> struct SimulationData<DustProblem> {
 	std::vector<double> t_vec_;
@@ -192,6 +191,8 @@ auto problem_main() -> int
 	// evolve
 	sim.evolve();
 
+	const bool perfect_coupling = sim.dustGasInteractionCoeff_ > 1.0e15;
+
 	// read in exact solution
 	std::vector<double> ts_exact{};
 	std::vector<double> Trad_exact{};
@@ -228,14 +229,21 @@ auto problem_main() -> int
 	interpolate_arrays(t.data(), Trad_interp.data(), static_cast<int>(t.size()), ts_exact.data(), Trad_exact.data(), static_cast<int>(ts_exact.size()));
 
 	// compute error norm
+	const double error_tol = 0.003;
 	double err_norm = 0.;
 	double sol_norm = 0.;
-	for (size_t i = 0; i < t.size(); ++i) {
-		err_norm += std::abs(Tgas[i] - Tgas_interp[i]);
-		err_norm += std::abs(Trad[i] - Trad_interp[i]);
-		sol_norm += std::abs(Tgas_interp[i]) + std::abs(Trad_interp[i]);
+	if (!perfect_coupling) {
+		for (size_t i = 0; i < t.size(); ++i) {
+			err_norm += std::abs(Tgas[i] - Tgas_interp[i]);
+			err_norm += std::abs(Trad[i] - Trad_interp[i]);
+			sol_norm += std::abs(Tgas_interp[i]) + std::abs(Trad_interp[i]);
+		}
+	} else {
+		// compare the last value
+		err_norm += std::abs(Tgas.back() - Tgas_exact.back());
+		err_norm += std::abs(Trad.back() - Trad_exact.back());
+		sol_norm += std::abs(Tgas_exact.back()) + std::abs(Trad_exact.back());
 	}
-	const double error_tol = 0.003;
 	const double rel_error = err_norm / sol_norm;
 	amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
 
@@ -270,7 +278,11 @@ auto problem_main() -> int
 	matplotlibcpp::ylabel("T (dimensionless)");
 	matplotlibcpp::legend();
 	matplotlibcpp::tight_layout();
-	matplotlibcpp::save("./rad_dust_MG_T.pdf");
+	if (!perfect_coupling) {
+		matplotlibcpp::save("./rad_dust_MG_T.pdf");
+	} else {
+		matplotlibcpp::save("./rad_dust_MG_T_perfect_coupling.pdf");
+	}
 #endif
 
 	// Cleanup and exit

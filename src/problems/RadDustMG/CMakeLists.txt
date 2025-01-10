@@ -5,3 +5,4 @@ if(AMReX_GPU_BACKEND MATCHES "CUDA")
 endif(AMReX_GPU_BACKEND MATCHES "CUDA")
 
 add_test(NAME RadDustMG COMMAND test_rad_dust_MG RadDust.in ${QuokkaTestParams} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
+add_test(NAME RadDustLargeStep COMMAND test_rad_dust_MG RadDustLargeStep.in ${QuokkaTestParams} WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}/tests)
