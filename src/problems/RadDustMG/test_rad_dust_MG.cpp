@@ -16,14 +16,15 @@ struct DustProblem {
 
 // In this test, the hydro time step is dt = CFL * dx / (chat / 10) = 0.8 * (1/8) / (1e7 / 10) = 1e-8
 
+AMREX_GPU_MANAGED double C_V = 1.5;
+AMREX_GPU_MANAGED double chi0 = 10000.0;
+
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
 constexpr double chat = 0.1 * c;
 constexpr double v0 = 0.0;
-constexpr double chi0 = 10000.0;
 
 constexpr double T0 = 1.0;
-constexpr double rho0 = 1.0;
 constexpr double a_rad = 1.0;
 constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
@@ -117,6 +118,7 @@ template <> void QuokkaSimulation<DustProblem>::setInitialConditionsOnGrid(quokk
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
 
+  const double rho0 = C_V * mu / (1.5 * k_B);
 	const double Egas = quokka::EOS<DustProblem>::ComputeEintFromTgas(rho0, T0);
 
 	// loop over the grid and set the initial condition
@@ -174,6 +176,11 @@ auto problem_main() -> int
 			BCs_cc[n].setHi(i, amrex::BCType::int_dir);
 		}
 	}
+
+	// read C_V from input file
+	amrex::ParmParse pp("problem");
+	pp.query("C_V", C_V);
+	pp.query("chi0", chi0);
 
 	// Problem initialization
 	QuokkaSimulation<DustProblem> sim(BCs_cc);
