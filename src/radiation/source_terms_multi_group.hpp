@@ -227,7 +227,16 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 	double Egas_guess = Egas0;
 	auto EradVec_guess = Erad0Vec;
 
+	// define Egas_prev, Erad_prev, Egas_mid, Egas_mid_prev, Erad_mid, Erad_mid_prev
+	double Egas_prev = Egas0;
+	auto Erad_prev = Erad0Vec;
+	double Egas_mid = Egas0;
+	auto Erad_mid = Erad0Vec;
+	double Egas_mid_prev = NAN;
+	quokka::valarray<double, nGroups_> Erad_mid_prev{};
+
 	const double resid_tol = 1.0e-11; // 1.0e-15;
+	const double mid_tol = 1.0e-8;
 	const int maxIter = 100;
 	int n = 0;
 	for (; n < maxIter; ++n) {
@@ -288,6 +297,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 				}
 			}
 		} else { // in the second and later loops, calculate tau and E (given R)
+			Erad_prev = EradVec_guess;
+
 			tau = dt * rho * opacity_terms.kappaP * chat;
 			for (int g = 0; g < nGroups_; ++g) {
 				// If tau = 0.0, Erad_guess shouldn't change
@@ -319,8 +330,22 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 		}
 
 		// check relative convergence of the residuals
-		if ((std::abs(jacobian.F0 / Etot0) < resid_tol) && (cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol)) {
-			break;
+		if (std::abs(jacobian.F0 / Etot0) < resid_tol) {
+			if (cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol) {
+				break;
+			}
+			if (n % 2 == 0) {
+				Egas_mid_prev = Egas_mid;
+				Erad_mid_prev = Erad_mid;
+				Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+				Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
+				if (std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+				    max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
+					// for debugging
+					amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
+					break;
+				}
+			}
 		}
 
 #if 0
@@ -359,6 +384,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 		// enable_dE_constrain is used to prevent the gas temperature from dropping/increasing below/above the radiation
 		// temperature
 		const double T_rad = std::sqrt(std::sqrt(sum(EradVec_guess) / radiation_constant_));
+		Egas_prev = Egas_guess;
 		if (enable_dE_constrain && delta_x / c_v > std::max(T_gas, T_rad)) {
 			Egas_guess = quokka::EOS<problem_t>::ComputeEintFromTgas(rho, T_rad);
 			// Rvec.fillin(0.0);
