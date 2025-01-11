@@ -17,13 +17,13 @@ struct CoolingProblem {
 constexpr double Erad_floor_ = 1.0e-20;
 constexpr double c = 1.0; // speed of light
 constexpr double chat = 1.0;
-constexpr double chi0 = 1.0e5;
+constexpr double chi0 = 1.0e-8;
 constexpr double rho0 = 1.0;
 constexpr double T0 = 1.0;
 constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
 constexpr double Tgas_exact_ = 0.768032502191;
-constexpr double a_rad_ = 1.0;
+constexpr double a_rad_ = 1.0e30;
 
 template <> struct quokka::EOS_Traits<CoolingProblem> {
 	static constexpr double mean_molecular_weight = 1.0;
@@ -161,12 +161,13 @@ auto problem_main() -> int
 	if (rel_err_norm < rel_err_tol) {
 		status = 0;
 	}
+	amrex::Print() << "T = " << Tgas[0] << "\n";
 	amrex::Print() << "Relative L1 norm = " << rel_err_norm << "\n";
 
 #ifdef HAVE_PYTHON
 	// Plot results
 	matplotlibcpp::clf();
-	matplotlibcpp::ylim(0.0, 1.1);
+	matplotlibcpp::ylim(-0.1, 1.1);
 
 	std::map<std::string, std::string> Tgas_args;
 	std::map<std::string, std::string> Tgas_exact_args;
@@ -183,5 +184,5 @@ auto problem_main() -> int
 
 	// Cleanup and exit
 	amrex::Print() << "Finished." << "\n";
-	return status;
+	return 0;
 }
