@@ -18,9 +18,9 @@
 #include "radiation/radiation_system.hpp"
 #include "util/fextract.hpp"
 #include <cmath>
-#include <string>
 #include <cstdlib>
 #include <map>
+#include <string>
 #ifdef HAVE_PYTHON
 #include "util/matplotlibcpp.h"
 #endif
