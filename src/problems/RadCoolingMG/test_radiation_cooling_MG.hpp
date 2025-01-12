@@ -5,6 +5,7 @@
 ///
 
 // external headers
-#include <fmt/format.h>
+
+auto problem_main() -> int;
 
 #endif // TEST_RADIATION_COOLING_MG_HPP_
