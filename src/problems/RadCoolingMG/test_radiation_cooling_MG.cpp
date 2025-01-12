@@ -6,6 +6,7 @@
 #include "AMReX_Array.H"
 #include "AMReX_Array4.H"
 #include "AMReX_BCRec.H"
+#include "AMReX_BC_TYPES.H"
 #include "AMReX_Box.H"
 #include "AMReX_Extension.H"
 #include "AMReX_REAL.H"
@@ -22,6 +23,7 @@
 #include <cstdlib>
 #include <map>
 #include <string>
+#include <vector>
 #ifdef HAVE_PYTHON
 #include "util/matplotlibcpp.h"
 #endif
