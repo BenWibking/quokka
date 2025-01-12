@@ -8,8 +8,10 @@
 #include "AMReX_BCRec.H"
 #include "AMReX_Box.H"
 #include "AMReX_Extension.H"
+#include "AMReX_REAL.H"
 #include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
+#include "fmt/format.h"
 #include "grid.hpp"
 #include "hydro/EOS.hpp"
 #include "physics_info.hpp"
@@ -205,5 +207,5 @@ auto problem_main() -> int
 	// Cleanup and exit
 	amrex::Print() << "Finished."
 		       << "\n";
-	return 0;
+	return status;
 }
