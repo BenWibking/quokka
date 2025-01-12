@@ -330,21 +330,19 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 		}
 
 		// check relative convergence of the residuals
-		if (std::abs(jacobian.F0 / Etot0) < resid_tol) {
-			if (cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol) {
+		if (std::abs(jacobian.F0 / Etot0) < resid_tol && cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol) {
+			break;
+		}
+		if (n > 0 && n % 2 == 0) {
+			Egas_mid_prev = Egas_mid;
+			Erad_mid_prev = Erad_mid;
+			Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+			Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
+			if (std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+					cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
+				// for debugging
+				amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
 				break;
-			}
-			if (n % 2 == 0) {
-				Egas_mid_prev = Egas_mid;
-				Erad_mid_prev = Erad_mid;
-				Egas_mid = 0.5 * (Egas_prev + Egas_guess);
-				Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
-				if (std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
-				    cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
-					// for debugging
-					amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
-					break;
-				}
 			}
 		}
 
@@ -396,11 +394,6 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 				Rvec += delta_R;
 			}
 		}
-
-		// check relative and absolute convergence of E_r
-		// if (std::abs(deltaEgas / Egas_guess) < 1e-7) {
-		// 	break;
-		// }
 	} // END NEWTON-RAPHSON LOOP
 
 	AMREX_ASSERT(Egas_guess > 0.0);

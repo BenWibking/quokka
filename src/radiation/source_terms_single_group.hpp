@@ -155,7 +155,6 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 				double deltaR = NAN;
 				double F_D = NAN;
 
-				// define Egas_prev, Erad_prev, Egas_mid, Egas_mid_prev, Erad_mid, Erad_mid_prev
 				double Egas_prev = Egas0;
 				double Erad_prev = Erad0;
 				double Egas_mid = Egas0;
@@ -164,6 +163,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 				double Erad_mid_prev = NAN;
 
 				const double resid_tol = 1.0e-11; // 1.0e-15;
+				const double mid_tol = 1.0e-8;
 				const int maxIter = 100;
 				int n = 0;
 				for (; n < maxIter; ++n) {
@@ -259,22 +259,19 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					}
 
 					// check relative convergence of the residuals
-					const double mid_tol = 1.0e-8;
-					if (std::abs(F_G) < resid_tol * Etot0) {
-						if (cscale * F_D_abs < resid_tol * Etot0) {
+					if (std::abs(F_G) < resid_tol * Etot0 && cscale * F_D_abs < resid_tol * Etot0) {
+						break;
+					}
+					if (n > 0 && n % 2 == 0) {
+						Egas_mid_prev = Egas_mid;
+						Erad_mid_prev = Erad_mid;
+						Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+						Erad_mid = 0.5 * (Erad_prev + Erad_guess);
+						if (std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+								cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
+							// for debugging
+							amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
 							break;
-						}
-						if (n % 2 == 0) {
-							Egas_mid_prev = Egas_mid;
-							Erad_mid_prev = Erad_mid;
-							Egas_mid = 0.5 * (Egas_prev + Egas_guess);
-							Erad_mid = 0.5 * (Erad_prev + Erad_guess);
-							if (std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
-							    cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
-								// for debugging
-								amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
-								break;
-							}
 						}
 					}
 
