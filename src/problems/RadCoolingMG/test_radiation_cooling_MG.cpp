@@ -3,8 +3,20 @@
 ///
 
 #include "test_radiation_cooling_MG.hpp"
+#include "AMReX_Array.H"
+#include "AMReX_Array4.H"
+#include "AMReX_BCRec.H"
+#include "AMReX_Box.H"
+#include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
+#include "grid.hpp"
+#include "hydro/EOS.hpp"
+#include "physics_info.hpp"
+#include "radiation/radiation_system.hpp"
 #include "util/fextract.hpp"
+#ifdef HAVE_PYTHON
+#include "util/matplotlibcpp.h"
+#endif
 
 struct CoolingProblem {
 };
@@ -185,6 +197,7 @@ auto problem_main() -> int
 #endif // HAVE_PYTHON
 
 	// Cleanup and exit
-	amrex::Print() << "Finished." << "\n";
+	amrex::Print() << "Finished."
+		       << "\n";
 	return 0;
 }
