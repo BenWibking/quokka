@@ -156,7 +156,15 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 				double deltaR = NAN;
 				double F_D = NAN;
 
+				double Egas_prev = Egas0;
+				double Erad_prev = Erad0;
+				double Egas_mid = Egas0;
+				double Egas_mid_prev = NAN;
+				double Erad_mid = Erad0;
+				double Erad_mid_prev = NAN;
+
 				const double resid_tol = 1.0e-11; // 1.0e-15;
+				const double mid_tol = 1.0e-8;
 				const int maxIter = 100;
 				int n = 0;
 				for (; n < maxIter; ++n) {
@@ -212,6 +220,8 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 						// tau0 is used as a scaling factor for Rvec
 						tau0 = std::max(tau0, 1.0);
 					} else { // in the second and later loops, calculate tau and E (given R)
+						Erad_prev = Erad_guess;
+
 						tau = dt * rho * kappaP * chat * lorentz_factor;
 						if (tau > 0.0) {
 							Erad_guess = kappaPoverE * (fourPiBoverC - (R - work) / tau);
@@ -250,8 +260,21 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					}
 
 					// check relative convergence of the residuals
-					if ((std::abs(F_G) < resid_tol * Etot0) && (cscale * F_D_abs < resid_tol * Etot0)) {
+					if (std::abs(F_G) < resid_tol * Etot0 && cscale * F_D_abs < resid_tol * Etot0) {
 						break;
+					}
+					// check convergence of the average of two consecutive iterations
+					if (n > 0 && n % 2 == 0) {
+						Egas_mid_prev = Egas_mid;
+						Erad_mid_prev = Erad_mid;
+						Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+						Erad_mid = 0.5 * (Erad_prev + Erad_guess);
+						if (std::abs(F_G) < resid_tol * Etot0 && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+						    cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
+							// for debugging
+							// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
+							break;
+						}
 					}
 
 					const double c_v = quokka::EOS<problem_t>::ComputeEintTempDerivative(rho, T_gas, massScalars); // Egas = c_v * T
@@ -318,6 +341,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					deltaEgas = (J11 * y0 - J01 * y1) / det;
 					deltaR = (J00 * y1 - J10 * y0) / det;
 
+					Egas_prev = Egas_guess;
 					if (!enable_dE_constrain) {
 						Egas_guess += deltaEgas;
 						R += deltaR;
