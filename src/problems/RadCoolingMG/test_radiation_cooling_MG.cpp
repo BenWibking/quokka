@@ -32,13 +32,16 @@ struct CoolingProblem {
 constexpr double Erad_floor_ = 1.0e-20;
 constexpr double c = 1.0; // speed of light
 constexpr double chat = 1.0;
-constexpr double chi0 = 1.0e-8;
+constexpr double chi0 = 1.0e-2;
 constexpr double rho0 = 1.0;
 constexpr double T0 = 1.0;
 constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
-constexpr double Tgas_exact_ = 0.768032502191;
-constexpr double a_rad_ = 1.0e30;
+constexpr double a_rad_ = 1.0e10;
+// const double Tgas_exact_ = 0.768032502191; // for a_rad = 1.0
+const double Tgas_exact_ = 0.00349659; // for a_rad = 1.0e20
+const double dt_ = 1.0e-3;
+const double tmax = 1.0;
 
 constexpr int n_groups_ = 2;
 
@@ -116,8 +119,7 @@ auto problem_main() -> int
 	// const double Lx = 1.0;
 	const double CFL_number = 0.8;
 	// const double dt_max = 1e-2;
-	const double tmax = 10.0;
-	const int max_timesteps = 5000;
+	const int max_timesteps = 10000;
 
 	// Boundary conditions
 	constexpr int nvars = RadSystem<CoolingProblem>::nvar_;
@@ -135,7 +137,8 @@ auto problem_main() -> int
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	sim.stopTime_ = tmax;
 	sim.radiationCflNumber_ = CFL_number;
-	// sim.maxDt_ = dt_max;
+	sim.initDt_ = dt_;
+	sim.maxDt_ = dt_;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
 
