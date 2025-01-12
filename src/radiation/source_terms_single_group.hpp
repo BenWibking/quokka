@@ -262,6 +262,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					if (std::abs(F_G) < resid_tol * Etot0 && cscale * F_D_abs < resid_tol * Etot0) {
 						break;
 					}
+					// check convergence of the average of two consecutive iterations
 					if (n > 0 && n % 2 == 0) {
 						Egas_mid_prev = Egas_mid;
 						Erad_mid_prev = Erad_mid;

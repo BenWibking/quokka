@@ -332,6 +332,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 		if (std::abs(jacobian.F0 / Etot0) < resid_tol && cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol) {
 			break;
 		}
+		// check convergence of the average of two consecutive iterations
 		if (n > 0 && n % 2 == 0) {
 			Egas_mid_prev = Egas_mid;
 			Erad_mid_prev = Erad_mid;
