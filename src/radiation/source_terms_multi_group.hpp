@@ -227,7 +227,6 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 	double Egas_guess = Egas0;
 	auto EradVec_guess = Erad0Vec;
 
-	// define Egas_prev, Erad_prev, Egas_mid, Egas_mid_prev, Erad_mid, Erad_mid_prev
 	double Egas_prev = Egas0;
 	auto Erad_prev = Erad0Vec;
 	double Egas_mid = Egas0;
@@ -341,7 +340,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 			if (std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
 					cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
 				// for debugging
-				amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
+				// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
 				break;
 			}
 		}
