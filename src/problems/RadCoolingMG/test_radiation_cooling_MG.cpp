@@ -8,7 +8,6 @@
 #include "AMReX_BCRec.H"
 #include "AMReX_Box.H"
 #include "AMReX_Extension.H"
-#include "AMReX_GpuLaunchFunctsC.H"
 #include "AMReX_Vector.H"
 #include "QuokkaSimulation.hpp"
 #include "grid.hpp"
@@ -18,9 +17,9 @@
 #include "radiation/radiation_system.hpp"
 #include "util/fextract.hpp"
 #include <cmath>
-#include <string>
 #include <cstdlib>
 #include <map>
+#include <string>
 #ifdef HAVE_PYTHON
 #include "util/matplotlibcpp.h"
 #endif
