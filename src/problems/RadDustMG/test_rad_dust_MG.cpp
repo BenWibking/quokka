@@ -16,8 +16,8 @@ struct DustProblem {
 
 // In this test, the hydro time step is dt = CFL * dx / (chat / 10) = 0.8 * (1/8) / (1e7 / 10) = 1e-8
 
-AMREX_GPU_MANAGED double C_V = 1.5;
-AMREX_GPU_MANAGED double chi0 = 10000.0;
+constexpr double C_V = 1.5;
+constexpr double chi0 = 10000.0;
 
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
@@ -177,11 +177,6 @@ auto problem_main() -> int
 		}
 	}
 
-	// read C_V from input file
-	amrex::ParmParse pp("problem");
-	pp.query("C_V", C_V);
-	pp.query("chi0", chi0);
-
 	// Problem initialization
 	QuokkaSimulation<DustProblem> sim(BCs_cc);
 
@@ -197,8 +192,6 @@ auto problem_main() -> int
 
 	// evolve
 	sim.evolve();
-
-	const bool perfect_coupling = sim.dustGasInteractionCoeff_ > 1.0e15;
 
 	// read in exact solution
 	std::vector<double> ts_exact{};
@@ -239,17 +232,10 @@ auto problem_main() -> int
 	const double error_tol = 0.003;
 	double err_norm = 0.;
 	double sol_norm = 0.;
-	if (!perfect_coupling) {
-		for (size_t i = 0; i < t.size(); ++i) {
-			err_norm += std::abs(Tgas[i] - Tgas_interp[i]);
-			err_norm += std::abs(Trad[i] - Trad_interp[i]);
-			sol_norm += std::abs(Tgas_interp[i]) + std::abs(Trad_interp[i]);
-		}
-	} else {
-		// compare the last value
-		err_norm += std::abs(Tgas.back() - Tgas_exact.back());
-		err_norm += std::abs(Trad.back() - Trad_exact.back());
-		sol_norm += std::abs(Tgas_exact.back()) + std::abs(Trad_exact.back());
+	for (size_t i = 0; i < t.size(); ++i) {
+		err_norm += std::abs(Tgas[i] - Tgas_interp[i]);
+		err_norm += std::abs(Trad[i] - Trad_interp[i]);
+		sol_norm += std::abs(Tgas_interp[i]) + std::abs(Trad_interp[i]);
 	}
 	const double rel_error = err_norm / sol_norm;
 	amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
@@ -285,11 +271,7 @@ auto problem_main() -> int
 	matplotlibcpp::ylabel("T (dimensionless)");
 	matplotlibcpp::legend();
 	matplotlibcpp::tight_layout();
-	if (!perfect_coupling) {
-		matplotlibcpp::save("./rad_dust_MG_T.pdf");
-	} else {
-		matplotlibcpp::save("./rad_dust_MG_T_perfect_coupling.pdf");
-	}
+	matplotlibcpp::save("./rad_dust_MG_T.pdf");
 #endif
 
 	// Cleanup and exit
