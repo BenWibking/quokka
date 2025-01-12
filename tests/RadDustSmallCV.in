@@ -29,5 +29,5 @@ do_reflux = 0
 do_subcycle = 1
 suppress_output = 0
 
-problem.C_V = 1.5
-problem.chi0 = 1.0e4
+problem.C_V = 1.5e-20
+problem.chi0 = 1.0e-8
