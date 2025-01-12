@@ -26,7 +26,7 @@
 #include "hydro/hydro_system.hpp"
 #include "io/projection.hpp"
 #include "physics_numVars.hpp"
-#include "radiation/radiation_system.hpp"
+#include "radiation/radiation_dust_system.hpp"
 #include "test_sne.hpp"
 
 constexpr int nGroups_ = 2;
@@ -36,6 +36,10 @@ constexpr double v_max = 1000.0 * 1.e5; // km/s, C_s at 1e8 K
 constexpr double c_hat_over_c_ = 10. * v_max / C::c_light;
 // constexpr double c_hat_over_c_ = 1. * v_max / C::c_light;
 // constexpr double c_hat_over_c_ = 0.03;
+constexpr double chi0 = 1.0e-30; // cm^-1, tau = chi0 * 1 kpc = 3e-9
+// constexpr double chi0 = 0.0;
+
+constexpr double mu_ = C::m_u;
 
 // global variables needed for Dirichlet boundary condition and initial conditions
 
@@ -93,7 +97,13 @@ template <> struct HydroSystem_Traits<NewProblem> {
 
 template <> struct quokka::EOS_Traits<NewProblem> {
 	static constexpr double gamma = 5. / 3.;
-	static constexpr double mean_molecular_weight = C::m_u;
+	static constexpr double mean_molecular_weight = mu_;
+};
+
+template <> struct ISM_Traits<NewProblem> {
+	static constexpr bool enable_dust_gas_thermal_coupling_model = false;
+	static constexpr double gas_dust_coupling_threshold = 1.0e-6;
+	static constexpr bool enable_photoelectric_heating = false;
 };
 
 template <> struct Physics_Traits<NewProblem> {
@@ -103,7 +113,7 @@ template <> struct Physics_Traits<NewProblem> {
 	static constexpr bool is_mhd_enabled = false;
 	static constexpr int numMassScalars = 0;    // number of mass scalars
 	static constexpr int numPassiveScalars = 1; // number of passive scalars
-	static constexpr int nGroups = nGroups_;	    // number of radiation groups
+	static constexpr int nGroups = nGroups_;    // number of radiation groups
 	static constexpr UnitSystem unit_system = UnitSystem::CGS;
 };
 
@@ -115,7 +125,6 @@ template <> struct RadSystem_Traits<NewProblem> {
 	static constexpr amrex::GpuArray<double, nGroups_ + 1> radBoundaries = group_edges_;
 	static constexpr OpacityModel opacity_model = OpacityModel::piecewise_constant_opacity;
 };
-
 
 template <> struct SimulationData<NewProblem> {
 
@@ -131,21 +140,23 @@ template <> struct SimulationData<NewProblem> {
 	Real refine_threshold = 1.0; // gradient refinement threshold
 };
 
-// template <> void QuokkaSimulation<NewProblem>::createInitialCICRadParticles()
-// {
-// 	// generate random particles
-// 	const int nreal_extra = 6 + nGroups_; // mass vx vy vz birth_time death_time lum1
-// }
+template <> void QuokkaSimulation<NewProblem>::createInitialRadParticles()
+{
+	// read particles from ASCII file
+	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1 lum2 ...
+	RadParticles->SetVerbose(1);
+	RadParticles->InitFromAsciiFile("SNEParticles3D.txt", nreal_extra, nullptr);
+}
 
 template <>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto
-RadSystem<NewProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, nGroups_ + 1> /*rad_boundaries*/, const double /*rho*/,
-								   const double /*Tgas*/) -> amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2>
+RadSystem<NewProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, nGroups_ + 1> /*rad_boundaries*/, const double rho, const double /*Tgas*/)
+    -> amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2>
 {
 	amrex::GpuArray<amrex::GpuArray<double, nGroups_ + 1>, 2> exponents_and_values{};
 	for (int i = 0; i < nGroups_ + 1; ++i) {
 		exponents_and_values[0][i] = 0.0;
-		exponents_and_values[1][i] = 0.0;
+		exponents_and_values[1][i] = chi0 / rho;
 	}
 	return exponents_and_values;
 }
@@ -205,6 +216,9 @@ template <> void QuokkaSimulation<NewProblem>::setInitialConditionsOnGrid(quokka
 
 		const auto gamma = RadSystem<NewProblem>::gamma_;
 
+		const double temp = P / (rho / mu_ * C::k_B);
+		const auto E_g = RadSystem<NewProblem>::ComputeThermalRadiationMultiGroup(temp, group_edges_);
+
 		state_cc(i, j, k, RadSystem<NewProblem>::gasDensity_index) = rho;
 		state_cc(i, j, k, RadSystem<NewProblem>::x1GasMomentum_index) = 0.0;
 		state_cc(i, j, k, RadSystem<NewProblem>::x2GasMomentum_index) = 0.0;
@@ -215,7 +229,7 @@ template <> void QuokkaSimulation<NewProblem>::setInitialConditionsOnGrid(quokka
 
 		// radiation
 		for (int g = 0; g < nGroups_; ++g) {
-			state_cc(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_floor_;
+			state_cc(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = E_g[g];
 			state_cc(i, j, k, RadSystem<NewProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
 			state_cc(i, j, k, RadSystem<NewProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
 			state_cc(i, j, k, RadSystem<NewProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
@@ -403,8 +417,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	std::unordered_map<std::string, amrex::BaseFab<amrex::Real>> proj;
 
 	proj["mass_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    // int nmscalars = Physics_Traits<NewProblem>::numMassScalars;
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
@@ -412,8 +425,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	    });
 
 	proj["hot_mass_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
@@ -429,8 +441,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	    });
 
 	proj["warm_mass_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const vx3 = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
@@ -446,8 +457,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	    });
 
 	proj["scalar_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
 		    Real const vz = state(i, j, k, RadSystem<NewProblem>::x3GasMomentum_index) / rho;
@@ -455,8 +465,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	    });
 
 	proj["warm_scalar_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
@@ -473,8 +482,7 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	    });
 
 	proj["hot_scalar_outflow"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    double flux;
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
@@ -491,15 +499,13 @@ auto QuokkaSimulation<NewProblem>::ComputeProjections(const amrex::Direction dir
 	    });
 
 	proj["rho"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    Real const rho = state(i, j, k, RadSystem<NewProblem>::gasDensity_index);
 		    return (rho);
 	    });
 
 	proj["scalar"] = quokka::diagnostics::ComputePlaneProjection<amrex::ReduceOpSum>(
-		state_new_cc_, finestLevel(), geom, ref_ratio, dir,
-	    [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
+	    state_new_cc_, finestLevel(), geom, ref_ratio, dir, [=] AMREX_GPU_DEVICE(int i, int j, int k, amrex::Array4<const Real> const &state) noexcept {
 		    Real const rhoZ = state(i, j, k, Physics_Indices<NewProblem>::pscalarFirstIndex);
 		    return (rhoZ);
 	    });
@@ -584,7 +590,8 @@ template <> void QuokkaSimulation<NewProblem>::ComputeDerivedVar(int lev, std::s
 			amrex::Real const x3Mom = state[bx](i, j, k, RadSystem<NewProblem>::x3GasMomentum_index);
 			const auto Eint = Etot - 0.5 * (x1Mom * x1Mom + x2Mom * x2Mom + x3Mom * x3Mom) / rho;
 
-			amrex::GpuArray<Real, Physics_Traits<NewProblem>::numMassScalars> massScalars = RadSystem<NewProblem>::ComputeMassScalars(state[bx], i, j, k);
+			amrex::GpuArray<Real, Physics_Traits<NewProblem>::numMassScalars> massScalars =
+			    RadSystem<NewProblem>::ComputeMassScalars(state[bx], i, j, k);
 
 			output[bx](i, j, k, ncomp) = quokka::EOS<NewProblem>::ComputeTgasFromEint(rho, Eint, massScalars);
 		});
@@ -617,10 +624,11 @@ auto problem_main() -> int
 	// Problem initialization
 	QuokkaSimulation<NewProblem> sim(BCs_cc);
 
-	sim.reconstructionOrder_ = 3; // 2=PLM, 3=PPM
+	sim.reconstructionOrder_ = 3;	       // 2=PLM, 3=PPM
 	sim.radiationReconstructionOrder_ = 3; // PPM
-	sim.cflNumber_ = 0.3;	      // *must* be less than 1/3 in 3D!
-	sim.radiationCflNumber_ = 0.3; // Same as hydro CFL
+	sim.cflNumber_ = 0.3;		       // *must* be less than 1/3 in 3D!
+	sim.radiationCflNumber_ = 0.3;	       // Same as hydro CFL
+	sim.dustGasInteractionCoeff_ = 0.0;    // dust-gas interaction coefficient
 
 	sim.setInitialConditions();
 

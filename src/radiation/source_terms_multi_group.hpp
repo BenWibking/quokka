@@ -323,9 +323,15 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 			break;
 		}
 
-#if 0
+		// update variables
+		RadSystem<problem_t>::SolveLinearEqs(jacobian, delta_x, delta_R); // This is modify delta_x and delta_R in place
+		AMREX_ASSERT(!std::isnan(delta_x));
+		AMREX_ASSERT(!delta_R.hasnan());
+
+#if 1
 		// For debugging: print (Egas0, Erad0Vec, tau0), which defines the initial condition for a Newton-Raphson iteration
 		if (n == 0) {
+			std::cout << "\n";
 			std::cout << "Egas0 = " << Egas0 << ", Erad0Vec = [";
 			for (int g = 0; g < nGroups_; ++g) {
 				std::cout << Erad0Vec[g] << ", ";
@@ -335,25 +341,27 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 				std::cout << tau0[g] << ", ";
 			}
 			std::cout << "]";
-			std::cout << "; C_V = " << c_v << ", a_rad = " << radiation_constant_ << ", coeff_n = " << coeff_n << "\n";
-		} else if (n >= 0) {
-			std::cout << "n = " << n << ", Egas_guess = " << Egas_guess << ", EradVec_guess = [";
-			for (int g = 0; g < nGroups_; ++g) {
-				std::cout << EradVec_guess[g] << ", ";
-			}
-			std::cout << "], tau = [";
-			for (int g = 0; g < nGroups_; ++g) {
-				std::cout << tau[g] << ", ";
-			}
-			std::cout << "]";
-			std::cout << ", F_G = " << jacobian.F0 << ", F_D_abs_sum = " << jacobian.Fg_abs_sum << ", Etot0 = " << Etot0 << "\n";
+			std::cout << "; C_V = " << c_v << ", a_rad = " << radiation_constant_ << "\n";
+		} 
+		std::cout << "n = " << n << ", Egas_guess = " << Egas_guess << ", EradVec_guess = [";
+		for (int g = 0; g < nGroups_; ++g) {
+			std::cout << EradVec_guess[g] << ", ";
 		}
+		std::cout << "], tau = [";
+		for (int g = 0; g < nGroups_; ++g) {
+			std::cout << tau[g] << ", ";
+		}
+		std::cout << "]";
+		std::cout << ", F_G = " << jacobian.F0 << ", F_D = [";
+		for (int g = 0; g < nGroups_; ++g) {
+			std::cout << jacobian.Fg[g] << ", ";
+		}
+		std::cout << "]; Etot0 = " << Etot0 << "; delta_x = " << delta_x << "; delta_R = [";
+		for (int g = 0; g < nGroups_; ++g) {
+			std::cout << delta_R[g] << ", ";
+		}
+		std::cout << "]\n";
 #endif
-
-		// update variables
-		RadSystem<problem_t>::SolveLinearEqs(jacobian, delta_x, delta_R); // This is modify delta_x and delta_R in place
-		AMREX_ASSERT(!std::isnan(delta_x));
-		AMREX_ASSERT(!delta_R.hasnan());
 
 		// Update independent variables (Egas_guess, Rvec)
 		// enable_dE_constrain is used to prevent the gas temperature from dropping/increasing below/above the radiation
@@ -380,10 +388,10 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 	AMREX_ASSERT(Egas_guess > 0.0);
 	AMREX_ASSERT(min(EradVec_guess) >= 0.0);
 
-	AMREX_ASSERT_WITH_MESSAGE(n < maxIter, "Newton-Raphson iteration failed to converge!");
 	if (n >= maxIter) {
 		amrex::Gpu::Atomic::Add(&p_iteration_failure_counter[0], 1); // NOLINT
 	}
+	AMREX_ASSERT_WITH_MESSAGE(n < maxIter, "Newton-Raphson iteration failed to converge!");
 
 	amrex::Gpu::Atomic::Add(&p_iteration_counter[0], 1);	 // total number of radiation updates. NOLINT
 	amrex::Gpu::Atomic::Add(&p_iteration_counter[1], n + 1); // total number of Newton-Raphson iterations. NOLINT

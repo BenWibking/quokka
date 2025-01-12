@@ -279,24 +279,24 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void replaceFluxes(std::array<amrex::MultiFab, AMREX_SPACEDIM> &fluxes, std::array<amrex::MultiFab, AMREX_SPACEDIM> &FOfluxes,
 			   amrex::iMultiFab &redoFlag);
 
-	// void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
+	void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
 };
 
 // For debugging only; will be removed
-// template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
-// {
-// 	amrex::Print() << "radEnergySource_arr.data() = ";
-// 	for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
-// 		const amrex::Box &indexRange = iter.validbox();
-// 		auto const &radEnergySource_arr = radEnergySource.array(iter);
-// 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-// 			amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
-// 			// if (k == 31 && i == 15 && j == 31) {
-// 			// 	amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
-// 			// }
-// 		});
-// 	}
-// }
+template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
+{
+	amrex::Print() << "radEnergySource_arr.data() = ";
+	for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
+		const amrex::Box &indexRange = iter.validbox();
+		auto const &radEnergySource_arr = radEnergySource.array(iter);
+		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+			amrex::Print() << radEnergySource_arr(i, j, k) << ", ";
+			// if (k == 31 && i == 15 && j == 31) {
+			// 	amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
+			// }
+		});
+	}
+}
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentNames()
 {
@@ -1713,14 +1713,14 @@ void QuokkaSimulation<problem_t>::subcycleRadiationAtLevel(int lev, amrex::Real 
 
 #ifdef AMREX_PARTICLES
 			// for debugging, print the radEnergySource array
-			// amrex::Print() << "Initial, ";
+			amrex::Print() << "Initial, ";
 			// PrintRadEnergySource(radEnergySource);
 
 			// Deposit radiation from all particles that have luminosity. When there are no particles with luminosity, this will do nothing.
 			particleRegister_.depositRadiation(radEnergySource, lev, time_subcycle);
 
 			// for debugging, print the radEnergySource array
-			// amrex::Print() << "after ParticleToMesh, ";
+			amrex::Print() << "after ParticleToMesh, ";
 			// PrintRadEnergySource(radEnergySource);
 #endif
 

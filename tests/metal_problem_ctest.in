@@ -24,8 +24,8 @@ do_reflux     = 1
 do_subcycle   = 1
 #stop_time     = 9.462e+15
 stop_time     = 1.5e12
-max_timesteps = 1000000
-plotfile_interval = 1
+max_timesteps = 1
+plotfile_interval = 1000000
 checkpoint_interval = -1
 
 density_floor = 1.67e-30 #in g cm^-3
@@ -35,9 +35,11 @@ cooling.enabled = 1
 cooling.cooling_table_type = "grackle"
 cooling.hdf5_data_file = "../extern/grackle_data_files/input/CloudyData_UVB=HM2012.h5"
 
-projection_interval = 1
+projection_interval = 10000000
 projection.dirs = y
 
 derived_vars = temperature
 
 suppress_output = 0
+
+do_rad_particles = 0
