@@ -31,7 +31,7 @@
 
 constexpr int nGroups_ = 2;
 constexpr amrex::GpuArray<double, 3> group_edges_{1e-3, 5.6, 1e2}; // eV
-constexpr double Erad_floor_ = C::a_rad * 1e-16;
+constexpr double Erad_floor_ = C::a_rad * 1e-20;
 constexpr double v_max = 1000.0 * 1.e5; // km/s, C_s at 1e8 K
 constexpr double c_hat_over_c_ = 10. * v_max / C::c_light;
 // constexpr double c_hat_over_c_ = 1. * v_max / C::c_light;
@@ -229,7 +229,8 @@ template <> void QuokkaSimulation<NewProblem>::setInitialConditionsOnGrid(quokka
 
 		// radiation
 		for (int g = 0; g < nGroups_; ++g) {
-			state_cc(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = E_g[g];
+			// state_cc(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = E_g[g];
+			state_cc(i, j, k, RadSystem<NewProblem>::radEnergy_index + Physics_NumVars::numRadVars * g) = Erad_floor_;
 			state_cc(i, j, k, RadSystem<NewProblem>::x1RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
 			state_cc(i, j, k, RadSystem<NewProblem>::x2RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
 			state_cc(i, j, k, RadSystem<NewProblem>::x3RadFlux_index + Physics_NumVars::numRadVars * g) = 0.0;
