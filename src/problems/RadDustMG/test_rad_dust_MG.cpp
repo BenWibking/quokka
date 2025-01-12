@@ -118,7 +118,7 @@ template <> void QuokkaSimulation<DustProblem>::setInitialConditionsOnGrid(quokk
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
 
-  const double rho0 = C_V * mu / (1.5 * k_B);
+	const double rho0 = C_V * mu / (1.5 * k_B);
 	const double Egas = quokka::EOS<DustProblem>::ComputeEintFromTgas(rho0, T0);
 
 	// loop over the grid and set the initial condition

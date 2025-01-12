@@ -78,8 +78,8 @@ template <> void QuokkaSimulation<CoolingProblem>::setInitialConditionsOnGrid(qu
 
 template <>
 AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto
-RadSystem<CoolingProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, n_groups_ + 1> /*rad_boundaries*/, const double rho, const double /*Tgas*/)
-    -> amrex::GpuArray<amrex::GpuArray<double, n_groups_ + 1>, 2>
+RadSystem<CoolingProblem>::DefineOpacityExponentsAndLowerValues(amrex::GpuArray<double, n_groups_ + 1> /*rad_boundaries*/, const double rho,
+								const double /*Tgas*/) -> amrex::GpuArray<amrex::GpuArray<double, n_groups_ + 1>, 2>
 {
 	amrex::GpuArray<amrex::GpuArray<double, n_groups_ + 1>, 2> exponents_and_values{};
 	for (int i = 0; i < n_groups_ + 1; ++i) {
