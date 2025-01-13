@@ -1,4 +1,4 @@
-FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-24.04
+FROM mcr.microsoft.com/devcontainers/cpp:ubuntu-24.04@sha256:6493de2f97b96f46c61cedf3f31361c754337db912fd1fd5fc7660b331208df8
 
 RUN apt-get --yes -qq update \
  && apt-get --yes -qq upgrade \
