@@ -16,22 +16,22 @@ struct DustProblem {
 
 // In this test, the hydro time step is dt = CFL * dx / (chat / 10) = 0.8 * (1/8) / (1e7 / 10) = 1e-8
 
+constexpr double C_V = 1.5;
+constexpr double chi0 = 10000.0;
+
 constexpr int beta_order_ = 1; // order of beta in the radiation four-force
 constexpr double c = 1.0e8;
 constexpr double chat = 0.1 * c;
 constexpr double v0 = 0.0;
-constexpr double chi0 = 10000.0;
 
 constexpr double T0 = 1.0;
-constexpr double rho0 = 1.0;
 constexpr double a_rad = 1.0;
 constexpr double mu = 1.0;
 constexpr double k_B = 1.0;
 
 constexpr double max_time = 3.0e-5;
 
-constexpr double Erad0 = a_rad * T0 * T0 * T0 * T0;
-constexpr double erad_floor = 1.0e-20 * Erad0;
+constexpr double erad_floor = 1.0e-20 * a_rad * T0 * T0 * T0 * T0;
 
 template <> struct SimulationData<DustProblem> {
 	std::vector<double> t_vec_;
@@ -118,6 +118,7 @@ template <> void QuokkaSimulation<DustProblem>::setInitialConditionsOnGrid(quokk
 	const amrex::Box &indexRange = grid_elem.indexRange_;
 	const amrex::Array4<double> &state_cc = grid_elem.array_;
 
+	const double rho0 = C_V * mu / (1.5 * k_B);
 	const double Egas = quokka::EOS<DustProblem>::ComputeEintFromTgas(rho0, T0);
 
 	// loop over the grid and set the initial condition
@@ -228,6 +229,7 @@ auto problem_main() -> int
 	interpolate_arrays(t.data(), Trad_interp.data(), static_cast<int>(t.size()), ts_exact.data(), Trad_exact.data(), static_cast<int>(ts_exact.size()));
 
 	// compute error norm
+	const double error_tol = 0.003;
 	double err_norm = 0.;
 	double sol_norm = 0.;
 	for (size_t i = 0; i < t.size(); ++i) {
@@ -235,7 +237,6 @@ auto problem_main() -> int
 		err_norm += std::abs(Trad[i] - Trad_interp[i]);
 		sol_norm += std::abs(Tgas_interp[i]) + std::abs(Trad_interp[i]);
 	}
-	const double error_tol = 0.003;
 	const double rel_error = err_norm / sol_norm;
 	amrex::Print() << "Relative L1 error norm = " << rel_error << std::endl;
 

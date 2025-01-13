@@ -333,7 +333,15 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 	T_gas = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, Egas_guess, massScalars);
 	AMREX_ASSERT(T_gas >= 0.);
 
+	double Egas_prev = Egas0;
+	auto Erad_prev = Erad0Vec;
+	double Egas_mid = Egas0;
+	auto Erad_mid = Erad0Vec;
+	double Egas_mid_prev = NAN;
+	quokka::valarray<double, nGroups_> Erad_mid_prev{};
+
 	const double resid_tol = 1.0e-11; // 1.0e-15;
+	const double mid_tol = 1.0e-8;
 	const int maxIter = 100;
 	int n = 0;
 	for (; n < maxIter; ++n) {
@@ -412,6 +420,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 				}
 			}
 		} else { // in the second and later loops, calculate tau and E (given R)
+			Erad_prev = EradVec_guess;
+
 			tau = dt * rho * opacity_terms.kappaP * chat;
 			for (int g = 0; g < nGroups_; ++g) {
 				// If tau = 0.0, Erad_guess shouldn't change
@@ -450,8 +460,23 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 		}
 
 		// check relative convergence of the residuals
-		if ((std::abs(jacobian.F0 / Etot0) < resid_tol) && (cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol)) {
+		if (std::abs(jacobian.F0 / Etot0) < resid_tol && cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol) {
 			break;
+		}
+		if constexpr (do_midpoint_convergence_check) {
+			// check convergence of the average of two consecutive iterations
+			if (n > 0 && n % 2 == 0) {
+				Egas_mid_prev = Egas_mid;
+				Erad_mid_prev = Erad_mid;
+				Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+				Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
+				if (std::abs(jacobian.F0 / Etot0) < resid_tol && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+				    cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
+					// for debugging
+					// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
+					break;
+				}
+			}
 		}
 
 #if 0
@@ -493,6 +518,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 			T_d += delta_x;
 			Rvec += delta_R;
 		} else {
+			Egas_prev = Egas_guess;
+
 			const double T_rad = std::sqrt(std::sqrt(sum(EradVec_guess) / radiation_constant_));
 			if (enable_dE_constrain && delta_x / c_v > std::max(T_gas, T_rad)) {
 				Egas_guess = quokka::EOS<problem_t>::ComputeEintFromTgas(rho, T_rad);
@@ -506,11 +533,6 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 				}
 			}
 		}
-
-		// check relative and absolute convergence of E_r
-		// if (std::abs(deltaEgas / Egas_guess) < 1e-7) {
-		// 	break;
-		// }
 	} // END NEWTON-RAPHSON LOOP
 
 	const auto cooling_tend = DefineNetCoolingRate(T_gas, H_num_den) * dt;
@@ -678,6 +700,13 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 	double Egas_guess = Egas0;
 	auto EradVec_guess = Erad0Vec;
 
+	double Egas_prev = Egas0;
+	auto Erad_prev = Erad0Vec;
+	double Egas_mid = Egas0;
+	auto Erad_mid = Erad0Vec;
+	double Egas_mid_prev = NAN;
+	quokka::valarray<double, nGroups_> Erad_mid_prev{};
+
 	T_gas = quokka::EOS<problem_t>::ComputeTgasFromEint(rho, Egas_guess, massScalars);
 	AMREX_ASSERT(T_gas >= 0.);
 
@@ -686,6 +715,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 	const double PE_heating_energy_derivative = dt * DefinePhotoelectricHeatingE1Derivative(T_gas, H_num_den);
 
 	const double resid_tol = 1.0e-11; // 1.0e-15;
+	const double mid_tol = 1.0e-8;
 	const int maxIter = 100;
 	int n = 0;
 	for (; n < maxIter; ++n) {
@@ -763,6 +793,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 				}
 			}
 		} else { // in the second and later loops, calculate tau and E (given R)
+			Erad_prev = EradVec_guess;
+
 			tau = dt * rho * opacity_terms.kappaP * chat;
 			for (int g = 0; g < nGroups_; ++g) {
 				// If tau = 0.0, Erad_guess shouldn't change
@@ -802,8 +834,23 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 		}
 
 		// check relative convergence of the residuals
-		if ((std::abs(jacobian.F0 / Etot0) < resid_tol) && (cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol)) {
+		if (std::abs(jacobian.F0 / Etot0) < resid_tol && cscale * jacobian.Fg_abs_sum / Etot0 < resid_tol) {
 			break;
+		}
+		if constexpr (do_midpoint_convergence_check) {
+			// check convergence of the average of two consecutive iterations
+			if (n > 0 && n % 2 == 0) {
+				Egas_mid_prev = Egas_mid;
+				Erad_mid_prev = Erad_mid;
+				Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+				Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
+				if (std::abs(jacobian.F0 / Etot0) < resid_tol && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+				    cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
+					// for debugging
+					// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
+					break;
+				}
+			}
 		}
 
 #if 0
@@ -845,6 +892,8 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 			T_d += delta_x;
 			Rvec += delta_R;
 		} else {
+			Egas_prev = Egas_guess;
+
 			const double T_rad = std::sqrt(std::sqrt(sum(EradVec_guess) / radiation_constant_));
 			if (enable_dE_constrain && delta_x / c_v > std::max(T_gas, T_rad)) {
 				Egas_guess = quokka::EOS<problem_t>::ComputeEintFromTgas(rho, T_rad);
@@ -858,11 +907,6 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 				}
 			}
 		}
-
-		// check relative and absolute convergence of E_r
-		// if (std::abs(deltaEgas / Egas_guess) < 1e-7) {
-		// 	break;
-		// }
 	} // END NEWTON-RAPHSON LOOP
 
 	const auto cooling_tend = DefineNetCoolingRate(T_gas, H_num_den) * dt;
