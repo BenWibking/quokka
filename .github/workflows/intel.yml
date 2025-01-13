@@ -13,12 +13,15 @@ concurrency:
   group: ${{ github.ref }}-${{ github.head_ref }}-cmake-intel
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   tests-oneapi-sycl:
     name: oneAPI CPU [tests]
     runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
       with:
         submodules: true
         
@@ -28,7 +31,7 @@ jobs:
         .github/workflows/dependencies/dependencies_ccache.sh
         
     - name: Set Up Cache
-      uses: actions/cache@v4
+      uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
       with:
         path: ~/.cache/ccache
         key: ccache-${{ github.workflow }}-${{ github.job }}-git-${{ github.sha }}
@@ -66,7 +69,7 @@ jobs:
       
     - name: Upload test output
       if: always()
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
       with:
         name: test-results
         path: ${{github.workspace}}/tests
@@ -80,7 +83,7 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         run: |
           echo $PR_NUMBER > pr_number.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: pr_number
           path: pr_number.txt

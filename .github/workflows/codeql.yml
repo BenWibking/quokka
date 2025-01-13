@@ -12,6 +12,9 @@ concurrency:
   group: ${{ github.ref }}-${{ github.head_ref }}-codeql
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   analyze:
     if: ${{ github.repository == 'quokka-astro/quokka' || github.event_name != 'schedule' }}
@@ -29,7 +32,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
         with:
           submodules: true
           fetch-depth: 0
@@ -44,7 +47,7 @@ jobs:
 
       - name: Set Up Cache
         if: ${{ matrix.language == 'cpp' }}
-        uses: actions/cache@v4
+        uses: actions/cache@1bd1e32a3bdc45362d1e726936510720a7c30a57 # v4.2.0
         with:
           path: ~/.cache/ccache
           key: ccache-${{ github.workflow }}-${{ github.job }}-git-${{ github.sha }}
@@ -61,14 +64,14 @@ jobs:
               -DCMAKE_CXX_COMPILER="/usr/local/bin/g++"
 
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@b6a472f63d85b9c78a3ac5e89422239fc15e9b3c # v3.28.1
         with:
           languages: ${{ matrix.language }}
           queries: +security-and-quality
           config-file: ./.github/workflows/codeql/codeql-config.yml
 
       - name: Build (py)
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@b6a472f63d85b9c78a3ac5e89422239fc15e9b3c # v3.28.1
         if: ${{ matrix.language == 'python' }}
 
       - name: Build (C++)
@@ -91,7 +94,7 @@ jobs:
           make -j 4
 
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@b6a472f63d85b9c78a3ac5e89422239fc15e9b3c # v3.28.1
         with:
           category: "/language:${{ matrix.language }}"
 
@@ -104,7 +107,7 @@ jobs:
           PR_NUMBER: ${{ github.event.number }}
         run: |
           echo $PR_NUMBER > pr_number.txt
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@65c4c4a1ddee5b72f698fdd19549f0f0fb45cf08 # v4.6.0
         with:
           name: pr_number
           path: pr_number.txt

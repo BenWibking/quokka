@@ -1,5 +1,5 @@
 # Use the NVIDIA CUDA image as the base image
-FROM nvcr.io/nvidia/nvhpc:24.9-devel-cuda12.6-ubuntu24.04
+FROM nvcr.io/nvidia/nvhpc:24.9-devel-cuda12.6-ubuntu24.04@sha256:6cbd4c7752a91ae3bb921cea5cbcb1779493c2e2797198a29d3e153a09f2273b
 
 # Set environment variables for NVIDIA
 ENV NVIDIA_VISIBLE_DEVICES=all
