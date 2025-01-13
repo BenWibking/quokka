@@ -68,7 +68,7 @@ namespace filesystem = experimental::filesystem;
 #include <yaml-cpp/yaml.h>
 
 #ifdef AMREX_PARTICLES
-#include "particles/CICParticles.hpp"
+#include "particles/PhysicsParticles.hpp"
 #include <AMReX_AmrParticles.H>
 #include <AMReX_Particles.H>
 #endif
@@ -225,7 +225,9 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	virtual void preCalculateInitialConditions() = 0;
 	virtual void setInitialConditionsOnGrid(quokka::grid const &grid_elem) = 0;
 	virtual void setInitialConditionsOnGridFaceVars(quokka::grid const &grid_elem) = 0;
-	virtual void createInitialParticles() = 0;
+	virtual void createInitialCICParticles() = 0;
+	virtual void createInitialRadParticles() = 0;
+	virtual void createInitialCICRadParticles() = 0;
 	virtual void computeBeforeTimestep() = 0;
 	virtual void computeAfterTimestep() = 0;
 	virtual void computeAfterEvolve(amrex::Vector<amrex::Real> &initSumCons) = 0;
@@ -447,17 +449,24 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	// tracer particles
 #ifdef AMREX_PARTICLES
 	void InitParticles();	 // create tracer particles
-	void InitCICParticles(); // create CIC particles
+	void InitPhyParticles(); // create PhysicsParticles
 	int do_tracers = 0;
 	int do_cic_particles = 0;
+	int do_rad_particles = 0;
+	int do_cic_rad_particles = 0;
 	std::unique_ptr<amrex::AmrTracerParticleContainer> TracerPC;
 	std::unique_ptr<quokka::CICParticleContainer> CICParticles;
+	std::unique_ptr<quokka::RadParticleContainer<problem_t>> RadParticles;
+	std::unique_ptr<quokka::CICRadParticleContainer<problem_t>> CICRadParticles;
 #endif
 
 	// external objects
 #ifdef AMREX_USE_ASCENT
 	Ascent ascent_;
 #endif
+
+	// Add PhysicsParticleRegister member
+	quokka::PhysicsParticleRegister<problem_t> particleRegister_;
 };
 
 template <typename problem_t> void AMRSimulation<problem_t>::setChkFile(std::string const &chkfile_number) { restart_chkfile = chkfile_number; }
@@ -538,6 +547,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::initialize()
 	ascent_options["mpi_comm"] = MPI_Comm_c2f(amrex::ParallelContext::CommunicatorSub());
 	ascent_.open(ascent_options);
 #endif
+
+	// Update constructor to initialize particleRegister_
+	// particleRegister_ = std::make_unique<quokka::PhysicsParticleRegister<problem_t>>(); // Remove this line as it's no longer needed
 }
 
 template <typename problem_t> void AMRSimulation<problem_t>::PerformanceHints()
@@ -651,6 +663,12 @@ template <typename problem_t> void AMRSimulation<problem_t>::readParameters()
 	// Default do_cic_particles = 0 (turns on/off CIC particles)
 	pp.query("do_cic_particles", do_cic_particles);
 
+	// Default do_rad_particles = 0 (turns on/off radiating particles)
+	pp.query("do_rad_particles", do_rad_particles);
+
+	// Default do_cic_rad_particles = 0 (turns on/off CIC radiating particles)
+	pp.query("do_cic_rad_particles", do_cic_rad_particles);
+
 	// Default suppress_output = 0
 	pp.query("suppress_output", suppress_output);
 
@@ -701,9 +719,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::setInitialCondition
 		if (do_tracers != 0) {
 			InitParticles();
 		}
-		if (do_cic_particles != 0) {
-			InitCICParticles();
-		}
+
+		InitPhyParticles();
 #endif
 
 		if (checkpointInterval_ > 0) {
@@ -949,6 +966,14 @@ template <typename problem_t> void AMRSimulation<problem_t>::evolve()
 		// N.B.: MUST be done *before* Poisson solve at new time!
 		driftParticlesAllLevels(dt_[0]);
 
+		// Redistribute particles after movement. This ensures particles are in the correct cells/processors for radiation deposition
+		// TODO(cch): I believe this is needed and missing this in the original code was a bug, but I don't understand why this was not caught earlier.
+		// Maybe the binary_orbit test was the only test for gravity and there was no multiple boxes in that test?
+		for (int lev = 0; lev <= finest_level; ++lev) {
+			// Use ngrow=0 since we only need particles in valid cells for radiation
+			particleRegister_.redistribute(lev, 0);
+		}
+
 		// elliptic solve over entire AMR grid (post-timestep)
 		ellipticSolveAllLevels(dt_[0]);
 
@@ -1119,11 +1144,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::calculateGpotAllLev
 		}
 
 #ifdef AMREX_PARTICLES
-		if (do_cic_particles != 0) {
-			// deposit particles using amrex::ParticleToMesh
-			amrex::ParticleToMesh(*CICParticles, amrex::GetVecOfPtrs(rhs), 0, finest_level,
-					      quokka::CICDeposition{Gconst_, quokka::ParticleMassIdx, 0, 1});
-		}
+		// deposit particle mass from all particles that have mass
+		// TODO(cch): this is working, but I'm not sure if I should use amrex::GetVecOfPtrs(rhs) or rhs directly
+		particleRegister_.depositMass(rhs, finest_level, Gconst_);
 #endif
 
 		for (int lev = 0; lev <= finest_level; ++lev) {
@@ -1187,7 +1210,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 {
 	// kick particles (do: vel[i] += 0.5 * dt * accel[i])
 
-	if (do_cic_particles != 0) {
+	if (do_cic_particles != 0 || do_cic_rad_particles != 0) {
 		// gravitational acceleration multifabs
 		amrex::Vector<amrex::MultiFab> accel(finest_level + 1);
 
@@ -1245,28 +1268,7 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 			AMREX_ALWAYS_ASSERT(!accel[lev].contains_nan());
 
 			// loop over boxes of particles on this level
-			for (quokka::CICParticleIterator pIter(*CICParticles, lev); pIter.isValid(); ++pIter) {
-				auto &particles = pIter.GetArrayOfStructs();
-				quokka::CICParticleContainer::ParticleType *pData = particles().data();
-				const amrex::Long np = pIter.numParticles();
-
-				amrex::Array4<const amrex::Real> const &accel_arr = accel[lev].array(pIter);
-				const auto plo = geom[lev].ProbLoArray();
-
-				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-					amrex::ParticleInterpolator::Linear interp(p, plo, dx_inv);
-					interp.MeshToParticle(
-					    p, accel_arr, 0, quokka::ParticleVxIdx, AMREX_SPACEDIM,
-					    [=] AMREX_GPU_DEVICE(amrex::Array4<const amrex::Real> const &acc, int i, int j, int k, int comp) {
-						    return acc(i, j, k, comp); // no weighting
-					    },
-					    [=] AMREX_GPU_DEVICE(quokka::CICParticleContainer::ParticleType & p, int comp, amrex::Real acc_comp) {
-						    // kick particle by updating its velocity
-						    p.rdata(comp) += 0.5 * dt * static_cast<amrex::ParticleReal>(acc_comp);
-					    });
-				});
-			}
+			particleRegister_.kickParticles(dt, accel[lev], geom, lev);
 		}
 	}
 }
@@ -1274,23 +1276,8 @@ template <typename problem_t> void AMRSimulation<problem_t>::kickParticlesAllLev
 template <typename problem_t> void AMRSimulation<problem_t>::driftParticlesAllLevels(const amrex::Real dt)
 {
 	// drift all particles (do: pos[i] += dt * vel[i])
-
-	if (do_cic_particles != 0) {
-		for (int lev = 0; lev <= finest_level; ++lev) {
-			for (quokka::CICParticleIterator pIter(*CICParticles, lev); pIter.isValid(); ++pIter) {
-				auto &particles = pIter.GetArrayOfStructs();
-				quokka::CICParticleContainer::ParticleType *pData = particles().data();
-				const amrex::Long np = pIter.numParticles();
-
-				amrex::ParallelFor(np, [=] AMREX_GPU_DEVICE(int64_t idx) {
-					quokka::CICParticleContainer::ParticleType &p = pData[idx]; // NOLINT(cppcoreguidelines-pro-bounds-pointer-arithmetic)
-					// update particle position
-					for (int i = 0; i < AMREX_SPACEDIM; ++i) {
-						p.pos(i) += dt * p.rdata(quokka::ParticleVxIdx + i);
-					}
-				});
-			}
-		}
+	if (do_cic_particles != 0 || do_cic_rad_particles != 0) {
+		particleRegister_.driftParticlesAllLevels(dt);
 	}
 }
 
@@ -1335,9 +1322,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 				if (do_tracers != 0) {
 					TracerPC->Redistribute(lev);
 				}
-				if (do_cic_particles != 0) {
-					CICParticles->Redistribute(lev);
-				}
+
+				// redistribute all particles in particleRegister_
+				particleRegister_.redistribute(lev);
 #endif
 
 				// do fix-up on all levels that have been re-gridded
@@ -1406,17 +1393,17 @@ template <typename problem_t> void AMRSimulation<problem_t>::timeStepWithSubcycl
 			TracerPC->Redistribute(lev, TracerPC->finestLevel(), redistribute_ngrow);
 		}
 	}
-	// redistribute CIC particles
-	if (do_cic_particles != 0) {
-		int redistribute_ngrow = 0;
-		if ((iteration < nsubsteps[lev]) || (lev == 0)) {
-			if (lev == 0) {
-				redistribute_ngrow = 0;
-			} else {
-				redistribute_ngrow = iteration;
-			}
-			CICParticles->Redistribute(lev, CICParticles->finestLevel(), redistribute_ngrow);
+
+	// redistribute all particles in particleRegister_
+	int redistribute_ngrow = 0;
+	if ((iteration < nsubsteps[lev]) || (lev == 0)) {
+		if (lev == 0) {
+			redistribute_ngrow = 0;
+		} else {
+			redistribute_ngrow = iteration;
 		}
+		// redistribute all particles in particleRegister_
+		particleRegister_.redistribute(lev, redistribute_ngrow);
 	}
 #endif
 }
@@ -2083,16 +2070,79 @@ template <typename problem_t> void AMRSimulation<problem_t>::InitParticles()
 	}
 }
 
-template <typename problem_t> void AMRSimulation<problem_t>::InitCICParticles()
+template <typename problem_t> void AMRSimulation<problem_t>::InitPhyParticles()
 {
+	if (do_rad_particles != 0) {
+		AMREX_ASSERT(RadParticles == nullptr);
+
+		// Create radiating particle descriptor
+		// the indices are: mass, lum, birth_time, hydro_interact
+		auto radParticleDesc =
+		    std::make_unique<quokka::RadParticleDescriptor<problem_t>>(-1, quokka::RadParticleLumIdx, quokka::RadParticleBirthTimeIdx, false);
+
+		// Create particle container
+		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
+		RadParticles->SetVerbose(0);
+
+		// Set container in descriptor
+		radParticleDesc->setParticleContainer(RadParticles.get());
+
+		// Register with particle register
+		particleRegister_.registerParticleType("Rad_particles", std::move(radParticleDesc));
+
+		// Initialize particles through derived class
+		createInitialRadParticles();
+
+		// Redistribute particles through register
+		// particleRegister_.redistribute(0);
+	}
+
 	if (do_cic_particles != 0) {
 		AMREX_ASSERT(CICParticles == nullptr);
+
+		// Create CIC particle descriptor
+		auto cicParticleDesc = std::make_unique<quokka::CICParticleDescriptor<problem_t>>(quokka::CICParticleMassIdx, -1, -1, false);
+
+		// Create particle container
 		CICParticles = std::make_unique<quokka::CICParticleContainer>(this);
 
-		CICParticles->SetVerbose(0);
-		createInitialParticles();
-		CICParticles->Redistribute();
+		// Set container in descriptor
+		cicParticleDesc->setParticleContainer(CICParticles.get());
+
+		// Register with particle register
+		particleRegister_.registerParticleType("CIC_particles", std::move(cicParticleDesc));
+
+		// Initialize particles through derived class
+		createInitialCICParticles();
+
+		// Redistribute particles through register
+		// particleRegister_.redistribute(0);
 	}
+
+	if (do_cic_rad_particles != 0) {
+		AMREX_ASSERT(CICRadParticles == nullptr);
+
+		// Create CIC particle descriptor
+		auto cicRadParticleDesc = std::make_unique<quokka::CICRadParticleDescriptor<problem_t>>(
+		    quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx, quokka::CICRadParticleBirthTimeIdx, false);
+
+		// Create particle container
+		CICRadParticles = std::make_unique<quokka::CICRadParticleContainer<problem_t>>(this);
+
+		// Set container in descriptor
+		cicRadParticleDesc->setParticleContainer(CICRadParticles.get());
+
+		// Register with particle register
+		particleRegister_.registerParticleType("CICRad_particles", std::move(cicRadParticleDesc));
+
+		// Initialize particles through derived class
+		createInitialCICRadParticles();
+
+		// Redistribute particles through register
+		// particleRegister_.redistribute(0);
+	}
+
+	particleRegister_.redistribute(0);
 }
 #endif
 
@@ -2410,9 +2460,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::WritePlotFile()
 	if (do_tracers != 0) {
 		TracerPC->WritePlotFile(plotfilename, "tracer_particles");
 	}
-	if (do_cic_particles != 0) {
-		CICParticles->WritePlotFile(plotfilename, "CIC_particles");
-	}
+
+	// write all particles in particleRegister_ to plotfile
+	particleRegister_.writePlotFile(plotfilename);
 #endif // AMREX_PARTICLES
 #endif
 }
@@ -2662,9 +2712,9 @@ template <typename problem_t> void AMRSimulation<problem_t>::WriteCheckpointFile
 	if (do_tracers != 0) {
 		TracerPC->Checkpoint(checkpointname, "tracer_particles", true);
 	}
-	if (do_cic_particles != 0) {
-		CICParticles->Checkpoint(checkpointname, "CIC_particles", true);
-	}
+
+	// write all particles in particleRegister_ to checkpoint file
+	particleRegister_.writeCheckpoint(checkpointname, true);
 #endif
 
 	// create symlink and point it at this checkpoint dir
@@ -2828,10 +2878,35 @@ template <typename problem_t> void AMRSimulation<problem_t>::ReadCheckpointFile(
 		TracerPC = std::make_unique<amrex::AmrTracerParticleContainer>(this);
 		TracerPC->Restart(restart_chkfile, "tracer_particles");
 	}
+
+	// Initialize and register particle containers from checkpoint file
 	if (do_cic_particles != 0) {
 		AMREX_ASSERT(CICParticles == nullptr);
 		CICParticles = std::make_unique<quokka::CICParticleContainer>(this);
+		auto cicParticleDesc = std::make_unique<quokka::CICParticleDescriptor<problem_t>>(0, -1, -1, false);
+		cicParticleDesc->setParticleContainer(CICParticles.get());
+		particleRegister_.registerParticleType("CIC_particles", std::move(cicParticleDesc));
 		CICParticles->Restart(restart_chkfile, "CIC_particles");
+	}
+
+	if (do_rad_particles != 0) {
+		AMREX_ASSERT(RadParticles == nullptr);
+		RadParticles = std::make_unique<quokka::RadParticleContainer<problem_t>>(this);
+		auto radParticleDesc =
+		    std::make_unique<quokka::RadParticleDescriptor<problem_t>>(-1, quokka::RadParticleLumIdx, quokka::RadParticleBirthTimeIdx, false);
+		radParticleDesc->setParticleContainer(RadParticles.get());
+		particleRegister_.registerParticleType("Rad_particles", std::move(radParticleDesc));
+		RadParticles->Restart(restart_chkfile, "Rad_particles");
+	}
+
+	if (do_cic_rad_particles != 0) {
+		AMREX_ASSERT(CICRadParticles == nullptr);
+		CICRadParticles = std::make_unique<quokka::CICRadParticleContainer<problem_t>>(this);
+		auto cicRadParticleDesc = std::make_unique<quokka::CICRadParticleDescriptor<problem_t>>(
+		    quokka::CICRadParticleMassIdx, quokka::CICRadParticleLumIdx, quokka::CICRadParticleBirthTimeIdx, false);
+		cicRadParticleDesc->setParticleContainer(CICRadParticles.get());
+		particleRegister_.registerParticleType("CICRad_particles", std::move(cicRadParticleDesc));
+		CICRadParticles->Restart(restart_chkfile, "CICRad_particles");
 	}
 #endif
 

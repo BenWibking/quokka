@@ -87,7 +87,7 @@ template <> void QuokkaSimulation<CollapseProblem>::setInitialConditionsOnGrid(q
 	});
 }
 
-template <> void QuokkaSimulation<CollapseProblem>::createInitialParticles()
+template <> void QuokkaSimulation<CollapseProblem>::createInitialCICParticles()
 {
 	// add particles at random positions in the box
 	const bool generate_on_root_rank = true;

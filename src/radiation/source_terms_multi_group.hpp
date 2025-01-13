@@ -616,9 +616,10 @@ void RadSystem<problem_t>::AddSourceTermsMultiGroup(array_t &consVar, arrayconst
 
 		// load radiation energy source term
 		// plus advection source term (for well-balanced/SDC integrators)
+		// Note that radEnergySource should contain the luminosity volume density, L / V; unit: erg s^-1 cm^-3
 		quokka::valarray<double, nGroups_> Src;
 		for (int g = 0; g < nGroups_; ++g) {
-			Src[g] = dt * (chat * radEnergySource(i, j, k, g));
+			Src[g] = dt * (chat / c * radEnergySource(i, j, k, g));
 		}
 
 		double Egas0 = NAN;
