@@ -30,7 +30,7 @@
 #include "test_sne.hpp"
 
 constexpr int nGroups_ = 2;
-constexpr amrex::GpuArray<double, 3> group_edges_{1e-3, 5.6, 1e2}; // eV
+constexpr amrex::GpuArray<double, 3> group_edges_{1e-4, 5.6, 1e6}; // eV
 constexpr double Erad_floor_ = C::a_rad * 1e-20;
 constexpr double v_max = 1000.0 * 1.e5; // km/s, C_s at 1e8 K
 constexpr double c_hat_over_c_ = 10. * v_max / C::c_light;
@@ -101,8 +101,8 @@ template <> struct quokka::EOS_Traits<NewProblem> {
 };
 
 template <> struct ISM_Traits<NewProblem> {
-	static constexpr bool enable_dust_gas_thermal_coupling_model = false;
-	static constexpr double gas_dust_coupling_threshold = 1.0e-6;
+	static constexpr bool enable_dust_gas_thermal_coupling_model = true;
+	static constexpr double gas_dust_coupling_threshold = 1.0e-5;
 	static constexpr bool enable_photoelectric_heating = false;
 };
 

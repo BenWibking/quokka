@@ -42,4 +42,9 @@ derived_vars = temperature
 
 suppress_output = 0
 
+# *****************************************************************
+# RADIATION
+# *****************************************************************
 do_rad_particles = 0
+radiation.dust_gas_interaction_coeff = 2.5e-34
+radiation.print_iteration_counts = 1
