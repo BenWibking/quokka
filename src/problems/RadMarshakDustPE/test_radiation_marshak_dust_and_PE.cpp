@@ -20,11 +20,14 @@ constexpr double PE_rate = 1.0;	       // photoelectric heating rate in s^-1 (ac
 AMREX_GPU_MANAGED double kappa1 = NAN; // dust opacity at IR
 AMREX_GPU_MANAGED double kappa2 = NAN; // dust opacity at FUV
 
-constexpr bool dust_on = 1;
-constexpr bool PE_on = 1;
+constexpr bool dust_on = true;
+constexpr bool PE_on = true;
 constexpr double gas_dust_coupling_threshold_ = 1.0e-4;
 
+constexpr double stop_time = 0.5;
 constexpr double c = 1.0; // speed of light
+constexpr double c_hat_over_c_ = 0.1;
+constexpr double c_hat_ = c * c_hat_over_c_;
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight
@@ -60,9 +63,9 @@ template <> struct Physics_Traits<MarshakProblem> {
 };
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_hat_over_c = 1.0;
+	static constexpr double c_hat_over_c = c_hat_over_c_;
 	static constexpr double Erad_floor = erad_floor;
-	static constexpr int beta_order = 1;
+	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = 1.0;
 	static constexpr amrex::GpuArray<double, n_group_ + 1> radBoundaries = radBoundaries_;
 	static constexpr OpacityModel opacity_model = opacity_model_;
@@ -209,9 +212,11 @@ auto problem_main() -> int
 
 	sim.radiationReconstructionOrder_ = 3; // PPM
 	// sim.stopTime_ = tmax; // set with runtime parameters
+	sim.cflNumber_ = CFL_number;
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
+	// sim.stopTime_ = stop_time;
 	sim.plotfileInterval_ = -1;
 
 	// initialize
@@ -219,6 +224,8 @@ auto problem_main() -> int
 
 	// evolve
 	sim.evolve();
+
+	const bool is_coupled = sim.dustGasInteractionCoeff_ > 1.0;
 
 	// read output variables
 	auto [position, values] = fextract(sim.state_new_cc_[0], sim.Geom(0), 0, 0.0);
@@ -243,11 +250,12 @@ auto problem_main() -> int
 			erad.at(i) += erad2.at(i);
 		}
 		const double e_gas = values.at(RadSystem<MarshakProblem>::gasInternalEnergy_index)[i];
-		T.at(i) = quokka::EOS<MarshakProblem>::ComputeTgasFromEint(rho0, e_gas);
-		T_exact.at(i) = x < c * sim.tNew_[0] ? initial_T + PE_rate * (sim.tNew_[0] - x / c) : initial_T;
 
 		erad1_exact.at(i) = 0.0;
-		erad2_exact.at(i) = x < c * sim.tNew_[0] ? EradL : erad_floor;
+		erad2_exact.at(i) = x < c_hat_ * sim.tNew_[0] ? EradL : erad_floor;
+
+		T.at(i) = quokka::EOS<MarshakProblem>::ComputeTgasFromEint(rho0, e_gas);
+		T_exact.at(i) = x < c_hat_ * sim.tNew_[0] ? initial_T + PE_rate * (sim.tNew_[0] - x / c_hat_) : initial_T;
 	}
 
 	double err_norm = 0.;
@@ -284,7 +292,11 @@ auto problem_main() -> int
 	matplotlibcpp::legend();
 	matplotlibcpp::title(fmt::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
 	matplotlibcpp::tight_layout();
-	matplotlibcpp::save("./radiation_marshak_dust_PE_Erad1.pdf");
+	if (is_coupled) {
+		matplotlibcpp::save("./radiation_marshak_dust_PE_coupled_Erad1.pdf");
+	} else {
+		matplotlibcpp::save("./radiation_marshak_dust_PE_decoupled_Erad1.pdf");
+	}
 
 	// Plot erad2
 	if (n_group_ > 1) {
@@ -297,12 +309,16 @@ auto problem_main() -> int
 		matplotlibcpp::legend();
 		matplotlibcpp::title(fmt::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
 		matplotlibcpp::tight_layout();
-		matplotlibcpp::save("./radiation_marshak_dust_PE_Erad2.pdf");
+		if (is_coupled) {
+			matplotlibcpp::save("./radiation_marshak_dust_PE_coupled_Erad2.pdf");
+		} else {
+			matplotlibcpp::save("./radiation_marshak_dust_PE_decoupled_Erad2.pdf");
+		}
 	}
 
 	// plot temperature
 	matplotlibcpp::clf();
-	matplotlibcpp::ylim(0.0, 2.1);
+	// matplotlibcpp::ylim(0.0, 2.1);
 	matplotlibcpp::plot(xs, T, plot_args);
 	matplotlibcpp::plot(xs, T_exact, plot_args2);
 	matplotlibcpp::xlabel("x");
@@ -310,7 +326,11 @@ auto problem_main() -> int
 	matplotlibcpp::legend();
 	matplotlibcpp::title(fmt::format("Marshak_dust test at t = {:.1f}", sim.tNew_[0]));
 	matplotlibcpp::tight_layout();
-	matplotlibcpp::save("./radiation_marshak_dust_PE_temperature.pdf");
+	if (is_coupled) {
+		matplotlibcpp::save("./radiation_marshak_dust_PE_coupled_temperature.pdf");
+	} else {
+		matplotlibcpp::save("./radiation_marshak_dust_PE_decoupled_temperature.pdf");
+	}
 #endif // HAVE_PYTHON
 
 	// Cleanup and exit

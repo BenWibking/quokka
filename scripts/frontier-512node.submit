@@ -1,0 +1,20 @@
+#!/usr/bin/env zsh
+
+#SBATCH -A ast146
+#SBATCH -J amrex_quokka
+#SBATCH -o 512node_%x-%j.out
+#SBATCH -t 00:10:00
+#SBATCH -p batch
+#SBATCH --ntasks-per-node=8
+#SBATCH --cpus-per-task=7
+#SBATCH --gpus-per-task=1
+#SBATCH --gpu-bind=closest
+#SBATCH -N 512
+
+# note (5-16-22, OLCFHELP-6888): libfabric workaround
+export FI_MR_CACHE_MAX_COUNT=0
+
+# GPU-aware MPI
+export MPICH_GPU_SUPPORT_ENABLED=1
+
+srun build/src/problems/HydroBlast3D/test_hydro3d_blast tests/benchmark_unigrid_4096.in

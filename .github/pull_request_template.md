@@ -7,9 +7,7 @@ Are there any GitHub issues that are fixed by this pull request? Add a link to t
 ### Checklist
 _Before this pull request can be reviewed, all of these tasks should be completed. Denote completed tasks with an `x` inside the square brackets `[ ]` in the Markdown source below:_
 - [ ] I have added a description (see above).
-- [ ] I have added a link to any related issues see (see above).
+- [ ] I have added a link to any related issues (if applicable; see above).
 - [ ] I have read the [Contributing Guide](https://github.com/quokka-astro/quokka/blob/development/CONTRIBUTING.md).
 - [ ] I have added tests for any new physics that this PR adds to the code.
-- [ ] I have tested this PR on my local computer and all tests pass.
-- [ ] I have manually triggered the GPU tests with the magic comment `/azp run`.
-- [ ] I have requested a reviewer for this PR.
+- [ ] *(For quokka-astro org members)* I have manually triggered the GPU tests with the magic comment `/azp run`.

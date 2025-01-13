@@ -1,7 +1,7 @@
 # Set the backend, otherwise the figure won't show up. Note that this will 
 # depend on your system setup; to see which backend is the default,
 # run "matplotlib.get_backend()" in the Python interpreter.
-backend                 :  GTK3Agg    
+backend                 :  Agg    
 
 # Increase the default DPI, and change the file type from png to pdf 
 savefig.dpi             :   300

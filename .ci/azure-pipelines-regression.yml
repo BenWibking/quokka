@@ -3,9 +3,10 @@ pr: none
 trigger: none
 
 # run on timed schedule, like a cron job
+# NOTE: all times are in UTC!
 schedules:
-- cron: '0 0 * * *'
-  displayName: Daily midnight build
+- cron: '0 14 * * *'
+  displayName: Daily 1am build (AEDT)
   branches:
     include:
     - development

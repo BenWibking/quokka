@@ -112,7 +112,7 @@ if __name__ == "__main__":
 
     # solve for critical point
     def g(r):
-        return 3.0*r_0*dlnF_dr(r*r_0) + (4.0/r) + 2.0*sqrt(3.0)*r_0*rho(r*r_0)*kappa0
+        return float(3.0*r_0*dlnF_dr(r*r_0) + (4.0/r) + 2.0*sqrt(3.0)*r_0*rho(r*r_0)*kappa0)
 
     #plt.figure()
     #r_arr = np.linspace(1.0e-3, 2.0, 100)
@@ -139,7 +139,7 @@ if __name__ == "__main__":
 
     # solve right branch
     r_start = r_crit + eps
-    r_end = 3.5  # in units of r_0
+    r_end = 7.0  # in units of r_0
     f_start = f_crit + eps * df_dr_crit
     print(f"r_crit = {r_crit}; r_start = {r_start}")
     print(f"f_crit = {f_crit}; f_start = {f_start}")
@@ -166,7 +166,8 @@ if __name__ == "__main__":
 
     plt.xlabel('radius r (dimensionless)')
     plt.ylabel('reduced flux f (dimensionless)')
-    plt.xlim(0., 3.5)
+    #plt.xlim(0., 3.5)
+    plt.xlim(0., 7.0)
     plt.ylim(0., 1.)
     plt.savefig('solution.pdf')
 

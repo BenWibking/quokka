@@ -10,6 +10,7 @@
 /// interpolation.
 ///
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_BLassert.H"
 #include "AMReX_TableData.H"
 
@@ -26,12 +27,12 @@ AMREX_GPU_HOST_DEVICE AMREX_FORCE_INLINE auto interpolate2d(double x, double y, 
 	double dx = (xf - xi) / static_cast<double>(xv.end - xv.begin - 1);
 	double dy = (yf - yi) / static_cast<double>(yv.end - yv.begin - 1);
 
-	x = std::clamp(x, xi, xf);
-	y = std::clamp(y, yi, yf);
+	x = amrex::Clamp(x, xi, xf);
+	y = amrex::Clamp(y, yi, yf);
 
 	// compute indices
-	int ix = std::clamp(static_cast<int>(std::floor((x - xi) / dx)), xv.begin, xv.end - 1);
-	int iy = std::clamp(static_cast<int>(std::floor((y - yi) / dy)), yv.begin, yv.end - 1);
+	int ix = amrex::Clamp(static_cast<int>(std::floor((x - xi) / dx)), xv.begin, xv.end - 1);
+	int iy = amrex::Clamp(static_cast<int>(std::floor((y - yi) / dy)), yv.begin, yv.end - 1);
 	int iix = (ix == xv.end - 1) ? ix : ix + 1;
 	int iiy = (iy == yv.end - 1) ? iy : iy + 1;
 
