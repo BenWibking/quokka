@@ -21,7 +21,7 @@ export MPICH_GPU_SUPPORT_ENABLED=1
 export MPICH_OFI_NIC_POLICY=NUMA
 
 ## run
-EXE="build/src/HydroBlast3D/test_hydro3d_blast"
+EXE="build/src/problems/HydroBlast3D/test_hydro3d_blast"
 INPUTS="tests/benchmark_unigrid_512.in"
 
 srun bash -c "

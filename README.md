@@ -34,7 +34,7 @@ Quokka also features advanced Adaptive Quokka Refinement:tm: technology:
 * MPI library with GPU-aware support (OpenMPI, MPICH, or Cray MPI)
 * HDF5 1.10+ (serial version)
 * CUDA 11.7+ (optional, for NVIDIA GPUs)
-* ROCm 5.2.0+ (optional, for AMD GPUs)
+* ROCm 6.3+ (optional, for AMD GPUs)
 * ADIOS2 2.9+ with GPU-aware support (optional, for writing terabyte-sized or larger outputs)
 
 ## Problems?

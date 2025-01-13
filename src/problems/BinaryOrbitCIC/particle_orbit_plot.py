@@ -1,6 +1,5 @@
-# note: the AMReX frontend is broken in yt 4.3.0
+# note: requires yt>=4.3.0
 import yt
-from yt.frontends.boxlib.data_structures import AMReXDataset
 
 def particle_dist(plotfiles):
     t_arr = []
@@ -8,7 +7,7 @@ def particle_dist(plotfiles):
     d0 = 2.0 * 3.125e12
 
     for pltfile in plotfiles:
-        ds = AMReXDataset(pltfile)
+        ds = yt.load(pltfile)
         Lx = ds.domain_right_edge[0] - ds.domain_left_edge[0]
         Nx = ds.domain_dimensions[0]
         cell_dx = Lx/Nx

@@ -14,7 +14,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: ZedThree/clang-tidy-review/post@95398232f4a8b8b8d7cd3191370f4ac077ca2046
+      - uses: ZedThree/clang-tidy-review/post@e005a6ddf5cc4884b4bcab9930df255438183fd1
       # lgtm_comment_body, max_comments, and annotations need to be set on the posting workflow in a split setup
         with:
         # adjust options as necessary

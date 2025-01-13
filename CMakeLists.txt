@@ -16,12 +16,12 @@ set(AMReX_SPACEDIM 1 CACHE STRING "")
 set(AMReX_MPI ON CACHE BOOL "" FORCE)
 set(AMReX_HDF5 OFF CACHE BOOL "" FORCE) # do not use
 set(AMReX_LINEAR_SOLVERS ON CACHE BOOL "" FORCE)
+set(AMReX_LINEAR_SOLVERS_INCFLO OFF CACHE BOOL "" FORCE)
+set(AMReX_LINEAR_SOLVERS_EM OFF CACHE BOOL "" FORCE)
 set(AMReX_CONDUIT OFF CACHE BOOL "") # optional
 set(AMReX_ASCENT OFF CACHE BOOL "") # optional
 set(AMReX_AMRLEVEL OFF CACHE BOOL "" FORCE)
 set(AMReX_PROBINIT OFF CACHE BOOL "" FORCE)
-set(AMReX_ASSERTIONS OFF CACHE BOOL "" FORCE)
-set(AMReX_FPE OFF CACHE BOOL "" FORCE)
 set(AMReX_TINY_PROFILE ON CACHE BOOL "" FORCE)
 
 ## a Python installation can be specified with Python_ROOT_DIR
@@ -48,6 +48,26 @@ if(AMReX_GPU_BACKEND MATCHES "CUDA")
     include(AMReX_SetupCUDA)
   endif(CMAKE_VERSION VERSION_LESS 3.20)
 endif(AMReX_GPU_BACKEND MATCHES "CUDA")
+
+if(AMReX_GPU_BACKEND MATCHES "HIP")
+  execute_process(
+      COMMAND hipcc --version
+      RESULT_VARIABLE hipcc_result
+      OUTPUT_VARIABLE hipcc_version
+      ERROR_VARIABLE hipcc_error
+      OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  if(NOT hipcc_result EQUAL 0)
+      message(FATAL_ERROR "Failed to detect HIP compiler version: ${hipcc_error}")
+  endif()
+
+  string(REPLACE "HIP version: " "" hipcc_version ${hipcc_version})
+  message(STATUS "HIP compiler version: ${hipcc_version}")
+
+  if(hipcc_version VERSION_LESS 6.3)
+    message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that may cause Quokka to produce incorrect results.")
+  endif()
+endif(AMReX_GPU_BACKEND MATCHES "HIP")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
   # abort! Intel Compiler Classic cannot compile Quokka!

@@ -1,8 +1,7 @@
 ---
-Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-fuchsia-*,-llvmlibc-*,-altera-*,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-non-private-member-variables-in-classes,-google-runtime-references,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-bugprone-easily-swappable-parameters,-readability-identifier-length,-cppcoreguidelines-pro-bounds-constant-array-index,-readability-function-cognitive-complexity'
+Checks:          'clang-diagnostic-*,clang-analyzer-*,*,-fuchsia-*,-llvmlibc-*,-altera-*,-misc-non-private-member-variables-in-classes,-cppcoreguidelines-non-private-member-variables-in-classes,-google-runtime-references,-readability-magic-numbers,-cppcoreguidelines-avoid-magic-numbers,-bugprone-easily-swappable-parameters,-readability-identifier-length,-cppcoreguidelines-pro-bounds-constant-array-index,-readability-function-cognitive-complexity,-llvm-header-guard,-performance-enum-size,-misc-include-cleaner'
 WarningsAsErrors: ''
 HeaderFilterRegex: ''
-AnalyzeTemporaryDtors: false
 FormatStyle:     none
 User:            benwibking
 CheckOptions:

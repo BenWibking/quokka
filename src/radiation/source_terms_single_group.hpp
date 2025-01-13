@@ -263,17 +263,19 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 					if (std::abs(F_G) < resid_tol * Etot0 && cscale * F_D_abs < resid_tol * Etot0) {
 						break;
 					}
-					// check convergence of the average of two consecutive iterations
-					if (n > 0 && n % 2 == 0) {
-						Egas_mid_prev = Egas_mid;
-						Erad_mid_prev = Erad_mid;
-						Egas_mid = 0.5 * (Egas_prev + Egas_guess);
-						Erad_mid = 0.5 * (Erad_prev + Erad_guess);
-						if (std::abs(F_G) < resid_tol * Etot0 && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
-						    cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
-							// for debugging
-							// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
-							break;
+					if constexpr (do_midpoint_convergence_check) {
+						// check convergence of the average of two consecutive iterations
+						if (n > 0 && n % 2 == 0) {
+							Egas_mid_prev = Egas_mid;
+							Erad_mid_prev = Erad_mid;
+							Egas_mid = 0.5 * (Egas_prev + Egas_guess);
+							Erad_mid = 0.5 * (Erad_prev + Erad_guess);
+							if (std::abs(F_G) < resid_tol * Etot0 && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
+							    cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
+								// for debugging
+								// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
+								break;
+							}
 						}
 					}
 
