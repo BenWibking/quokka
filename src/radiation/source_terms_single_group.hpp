@@ -47,9 +47,12 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		const double Erad0 = consPrev(i, j, k, radEnergy_index);
 		AMREX_ASSERT(Erad0 > 0.0);
 
+		const double cscale = c / chat;
+
 		// load radiation energy source term
 		// plus advection source term (for well-balanced/SDC integrators)
-		const double Src = radEnergySource(i, j, k, 0) * dt * chat;
+		// Note that radEnergySource should contain the luminosity volume density, L / V; unit: erg s^-1 cm^-3
+		const double Src = radEnergySource(i, j, k, 0) * dt / cscale;
 		if constexpr (gamma_ != 1.0) {
 			AMREX_ASSERT(Src >= 0.0);
 		}
@@ -73,8 +76,6 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 		double work_prev = 0.0;
 		amrex::GpuArray<Real, 3> dMomentum{};
 		amrex::GpuArray<Real, 3> Frad_t1{};
-
-		const double cscale = c / chat;
 
 		if constexpr (gamma_ != 1.0) {
 			Egas0 = ComputeEintFromEgas(rho, x1GasMom0, x2GasMom0, x3GasMom0, Egastot0);
