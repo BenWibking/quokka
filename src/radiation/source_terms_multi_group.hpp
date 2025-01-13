@@ -358,19 +358,23 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasRadiationEnergyExchange(
 				std::cout << tau0[g] << ", ";
 			}
 			std::cout << "]";
-			std::cout << "; C_V = " << c_v << ", a_rad = " << radiation_constant_ << ", coeff_n = " << coeff_n << "\n";
-		} else if (n >= 0) {
-			std::cout << "n = " << n << ", Egas_guess = " << Egas_guess << ", EradVec_guess = [";
-			for (int g = 0; g < nGroups_; ++g) {
-				std::cout << EradVec_guess[g] << ", ";
+			std::cout << "; C_V = " << c_v << ", a_rad = " << radiation_constant_ << "\n";
+			std::cout << "rad_boundaries = [";
+			for (int g = 0; g < nGroups_ + 1; ++g) {
+				std::cout << RadSystem_Traits<problem_t>::energy_unit * rad_boundaries[g] / boltzmann_constant_ << ", ";
 			}
-			std::cout << "], tau = [";
-			for (int g = 0; g < nGroups_; ++g) {
-				std::cout << tau[g] << ", ";
-			}
-			std::cout << "]";
-			std::cout << ", F_G = " << jacobian.F0 << ", F_D_abs_sum = " << jacobian.Fg_abs_sum << ", Etot0 = " << Etot0 << "\n";
+			std::cout << "]\n";
 		}
+		std::cout << "n = " << n << ", Egas_guess = " << Egas_guess << ", EradVec_guess = [";
+		for (int g = 0; g < nGroups_; ++g) {
+			std::cout << EradVec_guess[g] << ", ";
+		}
+		std::cout << "], tau = [";
+		for (int g = 0; g < nGroups_; ++g) {
+			std::cout << tau[g] << ", ";
+		}
+		std::cout << "]";
+		std::cout << ", F_G = " << jacobian.F0 << ", F_D_abs_sum = " << jacobian.Fg_abs_sum << ", Etot0 = " << Etot0 << "\n";
 #endif
 
 		// update variables
