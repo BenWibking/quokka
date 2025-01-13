@@ -270,7 +270,7 @@ void RadSystem<problem_t>::AddSourceTermsSingleGroup(array_t &consVar, arraycons
 							Egas_mid = 0.5 * (Egas_prev + Egas_guess);
 							Erad_mid = 0.5 * (Erad_prev + Erad_guess);
 							if (std::abs(F_G) < resid_tol * Etot0 && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
-									cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
+							    cscale * std::abs(Erad_mid - Erad_mid_prev) < mid_tol * Etot0) {
 								// for debugging
 								// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
 								break;

@@ -471,7 +471,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 				Egas_mid = 0.5 * (Egas_prev + Egas_guess);
 				Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
 				if (std::abs(jacobian.F0 / Etot0) < resid_tol && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
-						cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
+				    cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
 					// for debugging
 					// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
 					break;
@@ -845,7 +845,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchangeW
 				Egas_mid = 0.5 * (Egas_prev + Egas_guess);
 				Erad_mid = 0.5 * (Erad_prev + EradVec_guess);
 				if (std::abs(jacobian.F0 / Etot0) < resid_tol && std::abs(Egas_mid - Egas_mid_prev) < mid_tol * Etot0 &&
-						cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
+				    cscale * max(abs(Erad_mid - Erad_mid_prev)) < mid_tol * Etot0) {
 					// for debugging
 					// amrex::Print() << "Converged at n = " << n << " via mid-point method.\n";
 					break;
