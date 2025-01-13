@@ -39,6 +39,7 @@ static constexpr bool use_diffuse_flux_mean_opacity = true;
 static constexpr bool special_edge_bin_slopes = false;	    // Use 2 and -4 as the slopes for the first and last bins, respectively
 static constexpr bool force_rad_floor_in_iteration = false; // force radiation energy density to be positive (and above the floor value) in the Newton iteration
 static constexpr bool include_work_term_in_source = true;
+static constexpr bool do_midpoint_convergence_check = true;
 
 static const int max_iter_to_update_alpha_E = 5; // Apply to the PPL_opacity_full_spectrum only. Only update alpha_E for the first max_iter_to_update_alpha_E
 // iterations of the Newton iteration

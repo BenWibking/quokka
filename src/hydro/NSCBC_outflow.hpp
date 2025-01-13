@@ -9,6 +9,7 @@
 /// \brief Implements the Navier-Stokes Characteristic Boundary Condition for
 /// subsonic outflows. (This also works trivially for _super_sonic outflows.)
 
+#include "AMReX_Algorithm.H"
 #include "AMReX_GpuQualifiers.H"
 #include "AMReX_REAL.H"
 #include "hydro/EOS.hpp"
@@ -61,7 +62,7 @@ AMREX_GPU_DEVICE AMREX_FORCE_INLINE auto dQ_dx_outflow(quokka::valarray<amrex::R
 	const amrex::Real dP_dz = dQ_dz_data[4];
 
 	const amrex::Real c = quokka::EOS<problem_t>::ComputeSoundSpeed(rho, P, massScalars);
-	const amrex::Real M = std::clamp(std::sqrt(u * u + v * v + w * w) / c, 0., 1.);
+	const amrex::Real M = amrex::Clamp(std::sqrt(u * u + v * v + w * w) / c, 0., 1.);
 	const amrex::Real beta = M;
 	const amrex::Real K = 0.25 * c * (1 - M * M) / L_x; // must be non-zero for well-posedness
 
