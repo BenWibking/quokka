@@ -145,7 +145,7 @@ template <> void QuokkaSimulation<NewProblem>::createInitialRadParticles()
 	// read particles from ASCII file
 	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1 lum2 ...
 	RadParticles->SetVerbose(1);
-	RadParticles->InitFromAsciiFile("SNEParticles3D.txt", nreal_extra, nullptr);
+	RadParticles->InitFromAsciiFile("stars.txt", nreal_extra, nullptr);
 }
 
 template <>
@@ -630,6 +630,7 @@ auto problem_main() -> int
 	sim.cflNumber_ = 0.3;		       // *must* be less than 1/3 in 3D!
 	sim.radiationCflNumber_ = 0.3;	       // Same as hydro CFL
 	sim.dustGasInteractionCoeff_ = 0.0;    // dust-gas interaction coefficient
+	sim.do_rad_particles = 1;
 
 	sim.setInitialConditions();
 
