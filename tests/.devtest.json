@@ -1,0 +1,27 @@
+{
+	"source": "/Users/cche/rc/quokka.rc",
+	"[main]": {
+		"build": {
+			"path": "/Users/cche/softwares/quokka/quokka/build/build-3D",
+			"command": "ninja",
+			"args": ["-j4", "test_sne"]
+		},
+		"run": {
+			"path": "/Users/cche/softwares/quokka/quokka/tests",
+			"command": "../build/build-3D/src/problems/MetalAdvectionProblem/test_sne",
+			"args": ["metal_problem_ctest.in"]
+		}
+	},
+	"[debug]": {
+		"build": {
+			"path": "/Users/cche/softwares/quokka/quokka/build/build-3D-debug",
+			"command": "ninja",
+			"args": ["-j4", "test_sne"]
+		},
+		"run": {
+			"path": "/Users/cche/softwares/quokka/quokka/tests",
+			"command": "../build/build-3D-debug/src/problems/MetalAdvectionProblem/test_sne",
+			"args": ["metal_problem_ctest.in"]
+		}
+	}
+}

@@ -690,11 +690,12 @@ template <typename problem_t> AMREX_GPU_DEVICE void RadSystem<problem_t>::amendR
 		const auto Fx = cons[x1RadFlux_index + numRadVars_ * g - nstartHyperbolic_];
 		const auto Fy = cons[x2RadFlux_index + numRadVars_ * g - nstartHyperbolic_];
 		const auto Fz = cons[x3RadFlux_index + numRadVars_ * g - nstartHyperbolic_];
-		if (Fx * Fx + Fy * Fy + Fz * Fz > c_light_ * c_light_ * E_r * E_r) {
+		if (Fx * Fx + Fy * Fy + Fz * Fz >= (1.0 - 1.0e-12) * c_light_ * c_light_ * E_r * E_r) {
 			const auto Fnorm = std::sqrt(Fx * Fx + Fy * Fy + Fz * Fz);
-			cons[x1RadFlux_index + numRadVars_ * g - nstartHyperbolic_] = Fx / Fnorm * c_light_ * E_r;
-			cons[x2RadFlux_index + numRadVars_ * g - nstartHyperbolic_] = Fy / Fnorm * c_light_ * E_r;
-			cons[x3RadFlux_index + numRadVars_ * g - nstartHyperbolic_] = Fz / Fnorm * c_light_ * E_r;
+			const auto scale = (1.0 - 1.0e-12) * c_light_ * E_r / Fnorm; // Scale slightly below c*E
+			cons[x1RadFlux_index + numRadVars_ * g - nstartHyperbolic_] = Fx * scale;
+			cons[x2RadFlux_index + numRadVars_ * g - nstartHyperbolic_] = Fy * scale; 
+			cons[x3RadFlux_index + numRadVars_ * g - nstartHyperbolic_] = Fz * scale;
 		}
 	}
 }
@@ -733,6 +734,9 @@ void RadSystem<problem_t>::PredictStep(arrayconst_t &consVarOld, array_t &consVa
 											     +(dt / dz) * (x3Flux(i, j, k, n) - x3Flux(i, j, k + 1, n))));
 		}
 
+		if (!isStateValid(cons)) {
+			amendRadState(cons);
+		}
 		if (!isStateValid(cons)) {
 			amendRadState(cons);
 		}
@@ -794,6 +798,9 @@ void RadSystem<problem_t>::AddFluxesRK2(array_t &U_new, arrayconst_t &U0, arrayc
 				      (0.5 * (AMREX_D_TERM(FxU_1, +FyU_1, +FzU_1)));
 		}
 
+		if (!isStateValid(cons_new)) {
+			amendRadState(cons_new);
+		}
 		if (!isStateValid(cons_new)) {
 			amendRadState(cons_new);
 		}
