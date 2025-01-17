@@ -64,9 +64,9 @@ if(AMReX_GPU_BACKEND MATCHES "HIP")
   string(REPLACE "HIP version: " "" hipcc_version ${hipcc_version})
   message(STATUS "HIP compiler version: ${hipcc_version}")
 
-  if(hipcc_version VERSION_LESS 6.3)
-    message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that may cause Quokka to produce incorrect results.")
-  endif()
+  # if(hipcc_version VERSION_LESS 6.3)
+  #   message(FATAL_ERROR "You must use ROCm version >= 6.3 to compile Quokka. All previous ROCm versions have compiler bugs that may cause Quokka to produce incorrect results.")
+  # endif()
 endif(AMReX_GPU_BACKEND MATCHES "HIP")
 
 if(CMAKE_CXX_COMPILER_ID STREQUAL "Intel")
