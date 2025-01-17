@@ -1,0 +1,86 @@
+#!/bin/zsh
+
+# Function to find .devtest.json by traversing up directories
+find_config() {
+	local current_dir="$PWD"
+	while [[ "$current_dir" != "/" ]]; do
+		if [[ -f "$current_dir/.devtest.json" ]]; then
+			echo "$current_dir/.devtest.json"
+			return 0
+		fi
+		current_dir="$(dirname "$current_dir")"
+	done
+	return 1
+}
+
+# Check if we have the required arguments
+if [ "$#" -lt 2 ]; then
+	echo "Usage: $0 <mode> <action>"
+	echo "Example: $0 main run"
+	exit 1
+fi
+
+mode="$1"
+action="$2"
+mode_key="[$mode]"
+
+# Find the config file
+config_file=$(find_config)
+if [ $? -ne 0 ]; then
+	echo "Error: Could not find .devtest.json in current or parent directories"
+	exit 1
+fi
+
+# Use jq to parse the JSON and extract the required fields
+if ! command -v /usr/bin/jq &>/dev/null; then
+	echo "Error: jq is required but not installed"
+	exit 1
+fi
+
+# Extract the path, command, and args from the JSON
+target_dir=$(/usr/bin/jq -r ".[\"$mode_key\"][\"$action\"].path" "$config_file")
+cmd=$(/usr/bin/jq -r ".[\"$mode_key\"][\"$action\"].command" "$config_file")
+# Get args as array in zsh-compatible way
+args_array=($(/usr/bin/jq -r ".[\"$mode_key\"][\"$action\"].args[]" "$config_file"))
+# Get source file if it exists
+source_file=$(/usr/bin/jq -r ".source // empty" "$config_file")
+
+if [ -z "$target_dir" ] || [ "$target_dir" = "null" ] || [ -z "$cmd" ] || [ "$cmd" = "null" ]; then
+	echo "Error: Invalid mode or action, or missing required fields in config"
+	exit 1
+fi
+
+# Execute the command
+cd "$target_dir" || exit 1
+
+# Source the file if specified
+if [ -n "$source_file" ]; then
+	if [ -f "$source_file" ]; then
+		echo "Sourcing $source_file"
+		source "$source_file"
+	else
+		echo "Warning: Source file $source_file not found"
+	fi
+fi
+
+if [ ${#args_array[@]} -gt 0 ]; then
+	echo "Running command '$cmd ${args_array[*]}' in $target_dir"
+	read -q "REPLY?Do you want to proceed? (y/n) "
+	echo    # add a newline
+	if [[ $REPLY =~ ^[Yy]$ ]]; then
+		$cmd "${args_array[@]}"
+	else
+		echo "Command cancelled"
+		exit 1
+	fi
+else
+	echo "Running command '$cmd' in $target_dir"
+	read -q "REPLY?Do you want to proceed? (y/n) "
+	echo    # add a newline
+	if [[ $REPLY =~ ^[Yy]$ ]]; then
+		$cmd
+	else
+		echo "Command cancelled"
+		exit 1
+	fi
+fi

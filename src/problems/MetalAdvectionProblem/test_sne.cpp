@@ -29,8 +29,8 @@
 #include "radiation/radiation_dust_system.hpp"
 #include "test_sne.hpp"
 
-constexpr int nGroups_ = 2;
-constexpr amrex::GpuArray<double, 3> group_edges_{1e-4, 5.6, 1e6}; // eV
+constexpr int nGroups_ = 4;
+constexpr amrex::GpuArray<double, nGroups_ + 1> group_edges_{1e-4, 1.0, 5.6, 13.6, 1e6}; // eV
 constexpr double Erad_floor_ = C::a_rad * 1e-20;
 constexpr double v_max = 1000.0 * 1.e5; // km/s, C_s at 1e8 K
 constexpr double c_hat_over_c_ = 10. * v_max / C::c_light;
@@ -145,7 +145,7 @@ template <> void QuokkaSimulation<NewProblem>::createInitialRadParticles()
 	// read particles from ASCII file
 	const int nreal_extra = 2 + nGroups_; // birth_time death_time lum1 lum2 ...
 	RadParticles->SetVerbose(1);
-	RadParticles->InitFromAsciiFile("SNEParticles3D.txt", nreal_extra, nullptr);
+	RadParticles->InitFromAsciiFile("stars_real.txt", nreal_extra, nullptr);
 }
 
 template <>
@@ -630,6 +630,7 @@ auto problem_main() -> int
 	sim.cflNumber_ = 0.3;		       // *must* be less than 1/3 in 3D!
 	sim.radiationCflNumber_ = 0.3;	       // Same as hydro CFL
 	sim.dustGasInteractionCoeff_ = 0.0;    // dust-gas interaction coefficient
+	sim.do_rad_particles = 1;
 
 	sim.setInitialConditions();
 

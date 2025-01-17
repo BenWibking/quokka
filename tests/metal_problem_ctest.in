@@ -13,20 +13,21 @@ amr.v              = 1      # verbosity in Amr
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 32 32 256
+amr.n_cell          = 16 16 64
 amr.max_level       = 0     # number of levels = max_level + 1
 amr.max_grid_size   = 128   # at least 128 for GPUs
-amr.blocking_factor = 32   # grid size must be divisible by this
+amr.blocking_factor = 16   # grid size must be divisible by this
 amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
 amr.grid_eff        = 0.7   # default
 
 do_reflux     = 1
 do_subcycle   = 1
 #stop_time     = 9.462e+15
-stop_time     = 1.5e12
+stop_time     = 1.5e14
 max_timesteps = 10
-plotfile_interval = 10
-checkpoint_interval = 10000
+plotfile_interval = 1
+checkpoint_interval = 1
+#restartfile = chk00024
 
 density_floor = 1.67e-30 #in g cm^-3
 temperature_floor = 10.0 #K

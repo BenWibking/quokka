@@ -1,0 +1,51 @@
+# *****************************************************************
+# Problem size and geometry
+# *****************************************************************
+geometry.prob_lo     =  0.0       0.0       -6.036e+21
+geometry.prob_hi     =  3.018e21  3.018e21   6.036e+21
+geometry.is_periodic =  1    1    0
+
+# *****************************************************************
+# VERBOSITY
+# *****************************************************************
+amr.v              = 1      # verbosity in Amr
+
+# *****************************************************************
+# Resolution and refinement
+# *****************************************************************
+amr.n_cell          = 64 64 256
+amr.max_level       = 0     # number of levels = max_level + 1
+amr.max_grid_size   = 128   # at least 128 for GPUs
+amr.blocking_factor = 16   # grid size must be divisible by this
+amr.n_error_buf     = 3     # minimum 3 cell buffer around tagged cells
+amr.grid_eff        = 0.7   # default
+
+do_reflux     = 1
+do_subcycle   = 1
+#stop_time     = 9.462e+15
+stop_time     = 1.5e14
+max_timesteps = 100
+plotfile_interval = 1
+checkpoint_interval = 1
+#restartfile = chk00024
+
+density_floor = 1.67e-30 #in g cm^-3
+temperature_floor = 10.0 #K
+
+cooling.enabled = 1
+cooling.cooling_table_type = "grackle"
+cooling.hdf5_data_file = "../extern/grackle_data_files/input/CloudyData_UVB=HM2012.h5"
+
+projection_interval = 10000000
+projection.dirs = y
+
+derived_vars = temperature
+
+suppress_output = 0
+
+# *****************************************************************
+# RADIATION
+# *****************************************************************
+do_rad_particles = 0
+radiation.dust_gas_interaction_coeff = 2.5e-34
+radiation.print_iteration_counts = 1

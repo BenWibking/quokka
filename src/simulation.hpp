@@ -175,6 +175,10 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	amrex::Real densityFloor_ = 0.0; // default
 	amrex::Real tempFloor_ = 0.0;	 // default
 
+	int do_cic_particles = 0;
+	int do_rad_particles = 0;
+	int do_cic_rad_particles = 0;
+
 	std::unordered_map<std::string, variant_t> simulationMetadata_;
 
 	// constructor
@@ -451,9 +455,6 @@ template <typename problem_t> class AMRSimulation : public amrex::AmrCore
 	void InitParticles();	 // create tracer particles
 	void InitPhyParticles(); // create PhysicsParticles
 	int do_tracers = 0;
-	int do_cic_particles = 0;
-	int do_rad_particles = 0;
-	int do_cic_rad_particles = 0;
 	std::unique_ptr<amrex::AmrTracerParticleContainer> TracerPC;
 	std::unique_ptr<quokka::CICParticleContainer> CICParticles;
 	std::unique_ptr<quokka::RadParticleContainer<problem_t>> RadParticles;

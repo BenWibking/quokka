@@ -342,7 +342,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::SolveGasDustRadiationEnergyExchange(
 
 	const double resid_tol = 1.0e-11; // 1.0e-15;
 	const double mid_tol = 1.0e-8;
-	const int maxIter = 100;
+	const int maxIter = 400;
 	int n = 0;
 	for (; n < maxIter; ++n) {
 		// 1. Compute dust temperature

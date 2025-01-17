@@ -279,25 +279,25 @@ template <typename problem_t> class QuokkaSimulation : public AMRSimulation<prob
 	void replaceFluxes(std::array<amrex::MultiFab, AMREX_SPACEDIM> &fluxes, std::array<amrex::MultiFab, AMREX_SPACEDIM> &FOfluxes,
 			   amrex::iMultiFab &redoFlag);
 
-	// void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
+	void PrintRadEnergySource(amrex::MultiFab const &radEnergySource);
 };
 
 // For debugging only; will be removed
-// template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
-// {
-// 	amrex::Print() << "radEnergySource_arr.data() = ";
-// 	for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
-// 		const amrex::Box &indexRange = iter.validbox();
-// 		auto const &radEnergySource_arr = radEnergySource.array(iter);
-// 		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
-// 			std::cout << radEnergySource_arr(i, j, k) << ", ";
-// 			// if (k == 31 && i == 15 && j == 31) {
-// 			// 	amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
-// 			// }
-// 		});
-// 	}
-// 	amrex::Print() << "\n";
-// }
+template <typename problem_t> void QuokkaSimulation<problem_t>::PrintRadEnergySource(amrex::MultiFab const &radEnergySource)
+{
+	amrex::Print() << "radEnergySource_arr.data() = ";
+	for (amrex::MFIter iter(radEnergySource); iter.isValid(); ++iter) {
+		const amrex::Box &indexRange = iter.validbox();
+		auto const &radEnergySource_arr = radEnergySource.array(iter);
+		amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
+			std::cout << radEnergySource_arr(i, j, k) << ", ";
+			// if (k == 31 && i == 15 && j == 31) {
+			// 	amrex::Print() << "(" << i << ", " << j << ", " << k << "): " << radEnergySource_arr(i, j, k) << "\n";
+			// }
+		});
+	}
+	amrex::Print() << "\n";
+}
 
 template <typename problem_t> void QuokkaSimulation<problem_t>::defineComponentNames()
 {
