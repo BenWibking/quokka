@@ -1433,7 +1433,7 @@ AMREX_GPU_DEVICE auto RadSystem<problem_t>::BackwardEulerOneVariable(RHSFunction
 	double x = x0;
 	const double rel_tol = 1.0e-8;
 	const double rel_change_tol = 1.0e-6;
-	const int max_iter_td = 100;
+	const int max_iter_td = 1000;
 	int iter_Td = 0;
 	for (; iter_Td < max_iter_td; ++iter_Td) {
 		const auto the_rhs = rhs(x);
