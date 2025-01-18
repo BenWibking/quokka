@@ -42,12 +42,10 @@ template <> struct quokka::EOS_Traits<AdvPulseProblem> {
 };
 
 template <> struct RadSystem_Traits<PulseProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
 template <> struct RadSystem_Traits<AdvPulseProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = beta_order_;
 };
@@ -225,6 +223,7 @@ auto problem_main() -> int
 	sim.maxDt_ = max_dt;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = chat / c;
 
 	// initialize
 	sim.setInitialConditions();
@@ -271,6 +270,7 @@ auto problem_main() -> int
 	sim2.maxDt_ = max_dt;
 	sim2.maxTimesteps_ = max_timesteps;
 	sim2.plotfileInterval_ = -1;
+	sim2.chat_over_c_ = chat / c;
 
 	// initialize
 	sim2.setInitialConditions();

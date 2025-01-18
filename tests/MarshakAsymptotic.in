@@ -1,5 +1,3 @@
-cfl= = 10.0
-
 # *****************************************************************
 # Problem size and geometry
 # *****************************************************************
@@ -21,4 +19,6 @@ amr.blocking_factor = 4     # grid size must be divisible by this
 
 do_reflux = 0
 do_subcycle = 0
-suppress_output = 1
+suppress_output = 0
+
+max_timesteps = 100000

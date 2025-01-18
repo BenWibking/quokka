@@ -42,7 +42,6 @@ constexpr double Q = (1.0 / (2.0 * x0));						// do NOT change this
 constexpr double S = Q * (a_rad * (T_hohlraum * T_hohlraum * T_hohlraum * T_hohlraum)); // erg cm^{-3}
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double mean_molecular_mass = 1.0;
 	static constexpr double gamma = 5. / 3.;
 	static constexpr double Erad_floor = 0.;

@@ -40,7 +40,6 @@ template <> struct quokka::EOS_Traits<ShellProblem> {
 };
 
 template <> struct RadSystem_Traits<ShellProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };
@@ -336,6 +335,17 @@ auto problem_main() -> int
 
 	// Problem initialization
 	QuokkaSimulation<ShellProblem> sim(BCs_cc);
+
+	sim.cflNumber_ = 0.3;
+	sim.densityFloor_ = 1.0e-8 * rho_0;
+	sim.pressureFloor_ = 1.0e-8 * P_0;
+	// reconstructionOrder: 1 == donor cell, 2 == PLM, 3 == PPM (not recommended
+	// for this problem)
+	sim.reconstructionOrder_ = 2;
+	sim.radiationReconstructionOrder_ = 2;
+	sim.integratorOrder_ = 2; // RK2
+	sim.chat_over_c_ = chat / c;
+
 	constexpr amrex::Real t0_hydro = r_0 / a0; // seconds
 	// sim.densityFloor_ = 1.0e-8 * rho_0;
 	sim.stopTime_ = 0.125 * t0_hydro;

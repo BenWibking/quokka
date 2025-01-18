@@ -45,7 +45,6 @@ template <> struct Physics_Traits<StreamingProblem> {
 };
 
 template <> struct RadSystem_Traits<StreamingProblem> {
-	static constexpr double c_hat_over_c = chat / c;
 	static constexpr double Erad_floor = initial_Erad;
 	static constexpr int beta_order = 0;
 };
@@ -186,6 +185,7 @@ auto problem_main() -> int
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = chat / c;
 
 	// initialize
 	sim.setInitialConditions();

@@ -1,8 +1,8 @@
 # *****************************************************************
 # Problem size and geometry
 # *****************************************************************
-geometry.prob_lo     =  0.0  0.0  0.0 
-geometry.prob_hi     =  1.0  1.0  1.0
+geometry.prob_lo     =  -0.04  0.0  0.0 
+geometry.prob_hi     =  0.01  1.0  1.0
 geometry.is_periodic =  0    1    1
 
 # *****************************************************************
@@ -13,24 +13,23 @@ amr.v              = 0       # verbosity in Amr
 # *****************************************************************
 # Resolution and refinement
 # *****************************************************************
-amr.n_cell          = 1000 4 4
+amr.n_cell          = 128 4 4
 amr.max_level       = 0     # number of levels = max_level + 1
 amr.blocking_factor = 4     # grid size must be divisible by this
-
-# *****************************************************************
-# Radiation
-# *****************************************************************
-radiation.print_iteration_counts = 1
-radiation.dust_gas_interaction_coeff = 1e-20
-
-# *****************************************************************
-# Problem
-# *****************************************************************
-problem.kappa1 			= 1e-20
-problem.kappa2 			= 1e-20
+amr.max_grid_size_x = 256
 
 do_reflux = 0
 do_subcycle = 0
+plotfile_interval = 10000000
+
+radiation.print_iteration_counts = 0
+
+max_timesteps = 10000
+
 suppress_output = 0
-#checkpoint_interval = 1
-#restartfile = chk00006
+
+cfl = 0.4
+radiation.cfl = 0.4
+radiation.c_hat_over_c = 0.025
+radiation.variable_chat_param1 = 0.01
+radiation.variable_chat_param2 = 0.5

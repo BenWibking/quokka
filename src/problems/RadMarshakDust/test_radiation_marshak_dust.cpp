@@ -63,7 +63,6 @@ template <> struct Physics_Traits<MarshakProblem> {
 };
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_hat_over_c = c_hat_over_c_;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = 1.0;
@@ -215,6 +214,7 @@ auto problem_main() -> int
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = c_hat / c;
 
 	// initialize
 	sim.setInitialConditions();
@@ -267,12 +267,12 @@ auto problem_main() -> int
 	}
 
 	const double rel_err_norm = err_norm / sol_norm;
-	const double rel_err_tol = 0.02;
+	const double rel_err_tol = 0.015;
 	int status = 1;
 	if (rel_err_norm < rel_err_tol) {
 		status = 0;
 	}
-	amrex::Print() << "Relative L1 norm = " << rel_err_norm << std::endl;
+	amrex::Print() << "Relative L1 norm = " << rel_err_norm << "\n";
 
 #ifdef HAVE_PYTHON
 	// Plot erad1

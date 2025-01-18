@@ -36,7 +36,6 @@ template <> struct quokka::EOS_Traits<CouplingProblem> {
 };
 
 template <> struct RadSystem_Traits<CouplingProblem> {
-	static constexpr double c_hat_over_c = 1.0;
 	static constexpr double Erad_floor = 0.;
 	static constexpr int beta_order = 1;
 };

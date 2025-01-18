@@ -32,6 +32,5 @@ problem.kappa2 			= 1e-20
 do_reflux = 0
 do_subcycle = 0
 suppress_output = 0
-stop_time = 5.0
 #checkpoint_interval = 1
 #restartfile = chk00006

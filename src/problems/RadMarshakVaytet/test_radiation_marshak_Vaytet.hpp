@@ -10,9 +10,6 @@
 ///
 
 // external headers
-#ifdef HAVE_PYTHON
-#include "util/matplotlibcpp.h"
-#endif
 #include <fmt/format.h>
 #include <fstream>
 

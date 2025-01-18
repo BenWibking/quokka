@@ -26,8 +26,7 @@ constexpr double gas_dust_coupling_threshold_ = 1.0e-4;
 
 constexpr double stop_time = 0.5;
 constexpr double c = 1.0; // speed of light
-constexpr double c_hat_over_c_ = 0.1;
-constexpr double c_hat_ = c * c_hat_over_c_;
+constexpr double c_hat_ = 0.5 * c;
 constexpr double rho0 = 1.0;
 constexpr double CV = 1.0;
 constexpr double mu = 1.5 / CV; // mean molecular weight
@@ -63,7 +62,6 @@ template <> struct Physics_Traits<MarshakProblem> {
 };
 
 template <> struct RadSystem_Traits<MarshakProblem> {
-	static constexpr double c_hat_over_c = c_hat_over_c_;
 	static constexpr double Erad_floor = erad_floor;
 	static constexpr int beta_order = 0;
 	static constexpr double energy_unit = 1.0;
@@ -211,13 +209,13 @@ auto problem_main() -> int
 	QuokkaSimulation<MarshakProblem> sim(BCs_cc);
 
 	sim.radiationReconstructionOrder_ = 3; // PPM
-	// sim.stopTime_ = tmax; // set with runtime parameters
 	sim.cflNumber_ = CFL_number;
 	sim.radiationCflNumber_ = CFL_number;
 	sim.maxDt_ = dt_max;
 	sim.maxTimesteps_ = max_timesteps;
-	// sim.stopTime_ = stop_time;
+	sim.stopTime_ = stop_time;
 	sim.plotfileInterval_ = -1;
+	sim.chat_over_c_ = c_hat_ / c;
 
 	// initialize
 	sim.setInitialConditions();
