@@ -101,8 +101,6 @@ AMRSimulation<SuOlsonProblemCgs>::setCustomBoundaryConditions(const amrex::IntVe
 		const double T_H = T_hohlraum;
 		const double E_inc = radiation_constant_cgs_ * std::pow(T_H, 4);
 		const double c = c_light_cgs_;
-		const double chat = c * chat_over_c_;
-		// const double F_inc = c * E_inc / 4.0; // incident flux
 
 		const double E_0 = consVar(0, j, k, RadSystem<SuOlsonProblemCgs>::radEnergy_index);
 		const double F_0 = consVar(0, j, k, RadSystem<SuOlsonProblemCgs>::x1RadFlux_index);
@@ -117,7 +115,6 @@ AMRSimulation<SuOlsonProblemCgs>::setCustomBoundaryConditions(const amrex::IntVe
 
 		// use value at interface to solve for F_rad in the ghost zones
 		const double F_bdry = 0.5 * c * E_inc - 0.5 * (c * E_0 + 2.0 * F_0);
-		// const double F_bdry = 0.5 * chat * E_inc - 0.5 * (c * E_0 + 2.0 * F_0);
 		// F_bdry = std::max(F_bdry, 0.0);
 		// AMREX_ASSERT(F_bdry >= 0.0);
 
