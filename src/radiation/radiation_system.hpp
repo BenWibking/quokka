@@ -1574,7 +1574,6 @@ void RadSystem<problem_t>::ComputeReducedSpeedOfLightFactor(arrayconst_t &consVa
 	amrex::ParallelFor(indexRange, [=] AMREX_GPU_DEVICE(int i, int j, int k) {
 		const auto tau_cell = ComputeCellOpticalDepthAllDirMin(consVar_in, dx, i, j, k, radBoundaries_);
 
-		const double max_chat_scaleup = 10.0;
 		const double scaling = variable_chat_param1;
 		const double pow = variable_chat_param2;
 
